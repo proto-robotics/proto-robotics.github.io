@@ -75,6 +75,24 @@ const spin = {
 
 Blockly.common.defineBlocks({ spin: spin });
 
+const spinBack = {
+    init: function () {
+        this.appendDummyInput('action')
+            .appendField('Spin')
+            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField('backwards at')
+            .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
+            .appendField('power');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setTooltip('Spins the motor backwards at a power until stopped.');
+        this.setHelpUrl('');
+        this.setColour(0);
+    }
+};
+
+Blockly.common.defineBlocks({ spinBack: spinBack });
+
 const spinForTime = {
     init: function () {
         this.appendDummyInput('action')
@@ -94,6 +112,26 @@ const spinForTime = {
 };
 
 Blockly.common.defineBlocks({ spinForTime: spinForTime });
+
+const spinBackForTime = {
+    init: function () {
+        this.appendDummyInput('action')
+            .appendField('Spin')
+            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField('backwards at')
+            .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
+            .appendField('power for')
+            .appendField(new Blockly.FieldNumber(0, 0, Infinity, 0.01), 'time')
+            .appendField('seconds');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setTooltip('Spins the motor at a power for a time.');
+        this.setHelpUrl('');
+        this.setColour(0);
+    }
+};
+
+Blockly.common.defineBlocks({ spinBackForTime: spinBackForTime });
 
 const stop = {
     init: function () {
@@ -350,12 +388,29 @@ python.pythonGenerator.forBlock['spin'] = function (block) {
     return code;
 }
 
+python.pythonGenerator.forBlock['spinBack'] = function (block) {
+    const text_name = block.getFieldValue('name').replace(' ', '_');
+    const number_power = block.getFieldValue('power');
+
+    const code = `${text_name}.spin_back(power=${number_power})\n`;
+    return code;
+}
+
 python.pythonGenerator.forBlock['spinForTime'] = function (block) {
     const text_name = block.getFieldValue('name').replace(' ', '_');
     const number_power = block.getFieldValue('power');
     const number_time = block.getFieldValue('time');
 
     const code = `${text_name}.spin(power=${number_power}, seconds=${number_time})\n`;
+    return code;
+}
+
+python.pythonGenerator.forBlock['spinBackForTime'] = function (block) {
+    const text_name = block.getFieldValue('name').replace(' ', '_');
+    const number_power = block.getFieldValue('power');
+    const number_time = block.getFieldValue('time');
+
+    const code = `${text_name}.spin_back(power=${number_power}, seconds=${number_time})\n`;
     return code;
 }
 
@@ -502,6 +557,14 @@ const toolbox = {
                 {
                     kind: 'block',
                     type: 'spinForTime',
+                },
+                {
+                    kind: 'block',
+                    type: 'spinBack',
+                },
+                {
+                    kind: 'block',
+                    type: 'spinBackForTime',
                 },
                 {
                     kind: 'block',
