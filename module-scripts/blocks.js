@@ -32,6 +32,28 @@ const smallmotor = {
 
 Blockly.common.defineBlocks({ smallmotor: smallmotor });
 
+const servo = {
+    init: function () {
+        this.appendDummyInput('name')
+            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField('is a servo on port')
+            .appendField(new Blockly.FieldDropdown([
+                ['1', '1'],
+                ['2', '2'],
+                ['3', '3'],
+                ['4', '4'],
+                ['5', '5'],
+            ]), 'port');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setTooltip('Creates a servo');
+        this.setHelpUrl('');
+        this.setColour(0);
+    }
+};
+
+Blockly.common.defineBlocks({ servo: servo });
+
 const largemotor = {
     init: function () {
         this.appendDummyInput('name')
@@ -147,6 +169,44 @@ const stop = {
 };
 
 Blockly.common.defineBlocks({ stop: stop });
+
+const moveto = {
+    init: function () {
+        this.appendDummyInput('action')
+            .appendField('Move')
+            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField('to')
+            .appendField(new Blockly.FieldNumber(0, 0, 180, 0.1), 'angle')
+            .appendField('degrees');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setTooltip('Moves the servo to the given angle.');
+        this.setHelpUrl('');
+        this.setColour(0);
+    }
+};
+
+Blockly.common.defineBlocks({ moveto: moveto });
+
+const movetoForTime = {
+    init: function () {
+        this.appendDummyInput('action')
+            .appendField('Move')
+            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField('to')
+            .appendField(new Blockly.FieldNumber(0, 0, 180, 0.1), 'angle')
+            .appendField('degrees for')
+            .appendField(new Blockly.FieldNumber(0, 0, Infinity, 0.01), 'time')
+            .appendField('seconds');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setTooltip('Moves the servo to the given angle and holds for the given time.');
+        this.setHelpUrl('');
+        this.setColour(0);
+    }
+};
+
+Blockly.common.defineBlocks({ movetoForTime: movetoForTime });
 
 const drivetrain = {
     init: function () {
@@ -369,6 +429,15 @@ python.pythonGenerator.forBlock['smallmotor'] = function (block) {
     return code;
 }
 
+python.pythonGenerator.forBlock['servo'] = function (block) {
+    const text_name = block.getFieldValue('name').replace(' ', '_');
+
+    const dropdown_port = block.getFieldValue('port');
+
+    const code = `${text_name} = make.servo(port=${dropdown_port})\n`;
+    return code;
+}
+
 python.pythonGenerator.forBlock['largemotor'] = function (block) {
     const text_name = block.getFieldValue('name').replace(' ', '_');
 
@@ -418,6 +487,23 @@ python.pythonGenerator.forBlock['stop'] = function (block) {
     const text_name = block.getFieldValue('name').replace(' ', '_');
 
     const code = `${text_name}.stop()\n`;
+    return code;
+}
+
+python.pythonGenerator.forBlock['moveto'] = function (block) {
+    const text_name = block.getFieldValue('name').replace(' ', '_');
+    const number_angle = block.getFieldValue('angle');
+
+    const code = `${text_name}.moveto(angle=${number_angle})\n`;
+    return code;
+}
+
+python.pythonGenerator.forBlock['movetoForTime'] = function (block) {
+    const text_name = block.getFieldValue('name').replace(' ', '_');
+    const number_angle = block.getFieldValue('angle');
+    const number_time = block.getFieldValue('time');
+
+    const code = `${text_name}.moveto(angle=${number_angle}, seconds=${number_time})\n`;
     return code;
 }
 
@@ -548,6 +634,10 @@ const toolbox = {
                 },
                 {
                     kind: 'block',
+                    type: 'servo',
+                },
+                {
+                    kind: 'block',
                     type: 'largemotor',
                 },
                 {
@@ -565,6 +655,14 @@ const toolbox = {
                 {
                     kind: 'block',
                     type: 'spinBackForTime',
+                },
+                {
+                    kind: 'block',
+                    type: 'moveto',
+                },
+                {
+                    kind: 'block',
+                    type: 'movetoForTime',
                 },
                 {
                     kind: 'block',
