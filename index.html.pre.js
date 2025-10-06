@@ -30,8 +30,8 @@ function switchEditor() {
     document.getElementById('block-editor').toggleAttribute('data-closed');
     const editorInfo = document.getElementById("editor-tip");
     if (document.getElementById('line-editor').hasAttribute('data-closed')) {
-        editorInfo.textContent = messages['block'];
+        editorInfo.textContent = messages.block;
     } else {
-        editorInfo.textContent = messages['line'];
+        editorInfo.textContent = messages.line;
     }
 }
