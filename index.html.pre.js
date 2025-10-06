@@ -21,10 +21,11 @@ function saveText(element) {
 }
 
 function switchEditor() {
-    const messages = {block: `For the block coder: Drag blocks from the left-most column into the middle
-         column. A preview of your code will appear on the right.`,
-        line: 'For the line coder: Type in the box below.'
+    const messages = {
+        block: 'For the block coder: Drag blocks from the left-most column into the middle column. A preview of your code will appear on the right.',
+        line: 'For the line coder: Type in the box below.',
     }
+
     document.getElementById('line-editor').toggleAttribute('data-closed');
     document.getElementById('block-editor').toggleAttribute('data-closed');
     const editorInfo = document.getElementById("editor-tip");
