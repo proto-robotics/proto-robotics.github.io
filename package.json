@@ -1,0 +1,18 @@
+{
+  "name": "code.protorobotics.org",
+  "description": "Block and line coding interface for PROTO Robotics",
+  "license": "MIT",
+  "author": "Carston Wiebe <ctwiebe23@gmail.com>",
+  "scripts": {
+    "pack": "npx webpack"
+  },
+  "dependencies": {
+    "@protorobotics/jenga": "^1.0.1",
+    "blockly": "^12.3.1",
+    "prismjs": "^1.30.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1"
+  }
+}
