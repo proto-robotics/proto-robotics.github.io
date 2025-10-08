@@ -9,6 +9,7 @@
   "dependencies": {
     "@protorobotics/jenga": "^1.0.1",
     "blockly": "^12.3.1",
+    "jszip": "^3.10.1",
     "prismjs": "^1.30.0"
   },
   "devDependencies": {
