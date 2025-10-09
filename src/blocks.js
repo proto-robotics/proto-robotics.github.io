@@ -1,6 +1,6 @@
 import { FieldDropdown, FieldTextInput } from "blockly"
 
-export const blockDefinitions = [
+export default [
     {
         name: "Motor",
         color: "#cc4444",
@@ -10,14 +10,14 @@ export const blockDefinitions = [
                 description: "Creates a smallmotor",
                 blocklyTemplate: [
                     {
-                        field: new FieldTextInput("motor"),
+                        field: () => new FieldTextInput("motor"),
                         name: "name",
                     },
                     {
                         text: "is a smallmotor on port",
                     },
                     {
-                        field: new FieldDropdown([
+                        field: () => new FieldDropdown([
                             ["1", "1"],
                             ["2", "2"],
                             ["3", "3"],
@@ -30,7 +30,7 @@ export const blockDefinitions = [
                         text: "in direction",
                     },
                     {
-                        field: new FieldDropdown([
+                        field: () => new FieldDropdown([
                             ["clockwise ↻", "1"],
                             ["counter-clockwise ↺", "-1"]
                         ]),

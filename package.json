@@ -7,10 +7,13 @@
     "pack": "npx webpack"
   },
   "dependencies": {
-    "@protorobotics/jenga": "^1.0.1",
+    "@protorobotics/jenga": "^1.1.1",
     "blockly": "^12.3.1",
+    "css-loader": "^7.1.2",
+    "ellipsi": "^3.0.2",
     "jszip": "^3.10.1",
-    "prismjs": "^1.30.0"
+    "prismjs": "^1.30.0",
+    "style-loader": "^4.0.0"
   },
   "devDependencies": {
     "webpack": "^5.102.1",
