@@ -1,13 +1,13 @@
 import { a, button, footer, header, img, on, span, tag } from "ellipsi"
 import buildBlockMode from "./buildBlockMode"
 import buildLineMode from "./buildLineMode"
-import { EditMode } from "./editMode"
+import { EditorMode } from "./editorMode"
 
 export default (toolbox, vocab) => {
     const blockMode = buildBlockMode(toolbox)
     const lineMode = buildLineMode(vocab)
 
-    /** @type {EditMode} The current editor mode. */
+    /** @type {EditorMode} The current editor mode. */
     let currentMode = null
 
     // Contains the current editor element.

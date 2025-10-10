@@ -74,7 +74,7 @@
     button {
       border: 2px solid var(--text);
       border-bottom: none;
-      background: none;
+      background: var(--offset-grey);
       font-size: 0.8rem;
       margin: 4px 4px 0 4px;
       padding: 2px 4px;
@@ -99,11 +99,11 @@
       "blockly code" 1fr
       / 2fr 1fr;
 
-    #block-canvas {
+    div.injectionDiv {
       resize: horizontal;
     }
 
-    #block-code {
+    code#block-code {
       display: block;
       margin: 16px;
     }

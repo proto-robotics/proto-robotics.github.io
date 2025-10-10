@@ -4,7 +4,7 @@ import { code, div, pre, tag } from 'ellipsi'
 import { highlight, languages } from 'prismjs'
 import 'prismjs/components/prism-python'
 
-import { EditMode } from './editMode'
+import { EditorMode } from './editorMode'
 
 export default (toolbox) => {
     const BlocklyCanvas = div({ id: 'block-canvas' })
@@ -46,5 +46,5 @@ export default (toolbox) => {
         console.error('not implemented')
     }
 
-    return new EditMode(BlockEditor, saveCode, loadCode)
+    return new EditorMode(BlockEditor, saveCode, loadCode)
 }
