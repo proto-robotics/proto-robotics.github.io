@@ -25,6 +25,8 @@
     --offset-grey: #d8d8d8;
     --secondary-grey: #4e4e4e;
 
+    --rule-width: 2px;
+
     font: 14pt / 1.5 Monteserrat, sans-serif;
     hyphens: auto;
     color: var(--text);
@@ -69,15 +71,23 @@
     background: var(--offset-grey);
     display: block;
     width: 100%;
-    border-bottom: 2px solid var(--text);
+    border-bottom: var(--rule-width) solid var(--text);
 
     button {
-      border: 2px solid var(--text);
+      border: var(--rule-width) solid var(--text);
       border-bottom: none;
       background: var(--offset-grey);
       font-size: 0.8rem;
       margin: 4px 4px 0 4px;
       padding: 2px 4px;
+
+      &:hover {
+        background: rgb(from var(--primary-red) r g b / 0.3);
+      }
+
+      &:active {
+        background: var(--primary-red);
+      }
     }
   }
 
@@ -101,6 +111,11 @@
 
     div.injectionDiv {
       resize: horizontal;
+    }
+
+    pre:has(code#block-code) {
+      border-left: var(--rule-width) solid var(--text);
+      overflow: auto;
     }
 
     code#block-code {

@@ -50,6 +50,7 @@ export default (toolbox, vocab) => {
         button('Save', on('click', () => currentMode.saveCode())),
         button('Load', on('click', () => currentMode.loadCode())),
         button('Switch editor', on('click', () => switchEditor())),
+        button('Load example', on('click', () => {})),
     )
 
     const PageContent = [
