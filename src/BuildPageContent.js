@@ -1,8 +1,10 @@
-import { a, button, footer, header, on, span, tag } from "ellipsi"
+import { a, button, footer, header, on, span, tag, div, section } from "ellipsi"
 import BuildBlockEditor from "./BuildBlockEditor"
 import BuildLineEditor from "./BuildLineEditor"
 
 export default (toolbox, vocab) => {
+    const customTooltip = tag('custom-tooltip')
+
     const BlockEditor = BuildBlockEditor(toolbox)
     const LineEditor = BuildLineEditor(vocab)
 
@@ -35,6 +37,7 @@ export default (toolbox, vocab) => {
             Toolbar,
         ),
         EditorContainer,
+        customTooltip,
         footer(
             'PROTO Robotics | ',
             a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),
