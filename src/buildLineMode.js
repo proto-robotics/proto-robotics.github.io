@@ -6,5 +6,5 @@ export default (vocab) => {
         'line',
     )
 
-    return new EditorMode(LineEditor, () => {}, () => {})
+    return new EditorMode("line", LineEditor, () => {}, () => {})
 }

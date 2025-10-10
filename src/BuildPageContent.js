@@ -9,21 +9,37 @@ export default (toolbox, vocab) => {
 
     /** @type {EditorMode} The current editor mode. */
     let currentMode = null
-
     // Contains the current editor element.
     const EditorContainer = span()
 
-    const switchEditor = () => {
-        // Only moves references around, neither editor is removed from memory.
-        if (currentMode === blockMode) {
+    /**
+     * Swaps the current editor.
+     * @param {EditorMode?} targetMode The target editor mode.  If null, toggles between
+     * editors.
+     */
+    const switchEditor = (targetMode = null) => {
+        if (targetMode !== null) {
+            currentMode = targetMode
+        } else if (currentMode === blockMode) {
             currentMode = lineMode
         } else {
             currentMode = blockMode
         }
 
+        // Move the editor element onto the page.
         EditorContainer.replaceChildren(currentMode.EditorElement)
+
+        // Store the current choice in local storage.
+        localStorage.setItem('editorMode', currentMode.name)
     }
-    switchEditor()  // Set initial state.
+
+    // Set the initial editor.
+    const previousModeName = localStorage.getItem('editorMode')
+    if (previousModeName === lineMode.name) {
+        switchEditor(lineMode)
+    } else {
+        switchEditor(blockMode)
+    }
 
     const Navbar = tag('nav',
         a({ href: 'https://protorobotics.org' }, img({ src: '/images/proto-logo.png', alt: 'The PROTO logo', height: '32' })),
@@ -33,7 +49,7 @@ export default (toolbox, vocab) => {
     const Toolbar = tag('tool-bar',
         button('Save', on('click', () => currentMode.saveCode())),
         button('Load', on('click', () => currentMode.loadCode())),
-        button('Switch editor', on('click', switchEditor)),
+        button('Switch editor', on('click', () => switchEditor())),
     )
 
     const PageContent = [
