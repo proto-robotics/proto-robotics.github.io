@@ -1,31 +1,38 @@
-import { a, button, footer, header, on, span, tag } from "ellipsi"
-import BuildBlockEditor from "./BuildBlockEditor"
-import BuildLineEditor from "./BuildLineEditor"
+import { a, button, footer, header, img, on, span, tag } from "ellipsi"
+import buildBlockMode from "./buildBlockMode"
+import buildLineMode from "./buildLineMode"
+import { EditMode } from "./editMode"
 
 export default (toolbox, vocab) => {
-    const BlockEditor = BuildBlockEditor(toolbox)
-    const LineEditor = BuildLineEditor(vocab)
+    const blockMode = buildBlockMode(toolbox)
+    const lineMode = buildLineMode(vocab)
 
-    /** Contains the current editor. */
-    const EditorContainer = span(BlockEditor)
+    /** @type {EditMode} The current editor mode. */
+    let currentMode = null
+
+    // Contains the current editor element.
+    const EditorContainer = span()
 
     const switchEditor = () => {
         // Only moves references around, neither editor is removed from memory.
-        if (EditorContainer.contains(BlockEditor)) {
-            EditorContainer.replaceChildren(LineEditor)
+        if (currentMode === blockMode) {
+            currentMode = lineMode
         } else {
-            EditorContainer.replaceChildren(BlockEditor)
+            currentMode = blockMode
         }
+
+        EditorContainer.replaceChildren(currentMode.EditorElement)
     }
+    switchEditor()  // Set initial state.
 
     const Navbar = tag('nav',
-        a({ href: 'https://protorobotics.org' }, 'PROTO'),
+        a({ href: 'https://protorobotics.org' }, img({ src: '/images/proto-logo.png', alt: 'The PROTO logo', height: '32' })),
         a({ href: '/cheatsheet' }, 'Cheatsheet'),
     )
 
     const Toolbar = tag('tool-bar',
-        button('Save', on('click', console.log)),
-        button('Load', on('click', console.log)),
+        button('Save', on('click', () => currentMode.saveCode())),
+        button('Load', on('click', () => currentMode.loadCode())),
         button('Switch editor', on('click', switchEditor)),
     )
 

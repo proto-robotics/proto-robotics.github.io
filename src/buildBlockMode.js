@@ -4,9 +4,15 @@ import { code, div, pre, tag } from 'ellipsi'
 import { highlight, languages } from 'prismjs'
 import 'prismjs/components/prism-python'
 
+import { EditMode } from './editMode'
+
 export default (toolbox) => {
-    const BlocklyCanvas = div()
-    const CodePreview = code()
+    const BlocklyCanvas = div({ id: 'block-canvas' })
+    const CodePreview = code({ id: 'block-code'})
+    const BlockEditor = tag('block-editor',
+        BlocklyCanvas,
+        pre(CodePreview),
+    )
 
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
@@ -32,10 +38,13 @@ export default (toolbox) => {
         )
     })
 
-    const BlockEditor = tag('block-editor',
-        BlocklyCanvas,
-        pre(CodePreview),
-    )
+    const saveCode = () => {
+        console.debug(CodePreview.innerText)
+    }
 
-    return BlockEditor
+    const loadCode = () => {
+        console.error('not implemented')
+    }
+
+    return new EditMode(BlockEditor, saveCode, loadCode)
 }
