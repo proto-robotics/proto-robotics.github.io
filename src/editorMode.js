@@ -1,11 +1,15 @@
 /**
  * @callback SaveCodeProcedure
- * Takes no arguments, returns nothing.
+ * Saves the current code state to a zip file named after the project.
+ * @param {HTMLInputElement} ProjectNameInput HTML input element containing the name of the
+ * saved project.
  */
 
 /**
  * @callback LoadCodeProcedure
- * Takes no arguments, returns nothing.
+ * Loads a code state from a file stored on disk.
+ * @param {HTMLInputElement} ProjectNameInput HTML input element which will contain the name of
+ * the loaded project.
  */
 
 /**

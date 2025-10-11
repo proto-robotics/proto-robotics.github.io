@@ -1,7 +1,7 @@
-import { a, button, footer, header, img, on, span, tag } from "ellipsi"
-import buildBlockMode from "./buildBlockMode"
-import buildLineMode from "./buildLineMode"
-import { EditorMode } from "./editorMode"
+import { a, button, footer, header, img, on, span, tag } from 'ellipsi'
+import buildBlockMode from './buildBlockMode'
+import buildLineMode from './buildLineMode'
+import { EditorMode } from './editorMode'
 
 export default (toolbox, vocab) => {
     const blockMode = buildBlockMode(toolbox)
@@ -41,29 +41,64 @@ export default (toolbox, vocab) => {
         switchEditor(blockMode)
     }
 
-    const Navbar = tag('nav',
-        a({ href: 'https://protorobotics.org' }, img({ src: '/images/proto-logo.png', alt: 'The PROTO logo', height: '32' })),
+    const ProjectNameInput = tag(
+        'input',
+        { type: 'text', placeholder: 'Project name...' },
+        on('change', () =>
+            localStorage.setItem('projectName', ProjectNameInput.value),
+        ),
+    )
+
+    // Set initial project name.
+    const previousProjectName = localStorage.getItem('projectName')
+    if (previousProjectName) {
+        ProjectNameInput.value = previousProjectName
+    }
+
+    const Toolbar = tag(
+        'tool-bar',
+        ProjectNameInput,
+        button(
+            'Save',
+            on('click', () => currentMode.saveCode(ProjectNameInput)),
+        ),
+        button(
+            'Load',
+            on('click', () => currentMode.loadCode(ProjectNameInput)),
+        ),
+        button(
+            'Switch editor',
+            on('click', () => switchEditor()),
+        ),
+        button(
+            'Load example',
+            on('click', () => {}),
+        ),
+    )
+
+    const Navbar = tag(
+        'nav',
+        a(
+            { href: 'https://protorobotics.org' },
+            img({
+                src: '/images/proto-logo.png',
+                alt: 'The PROTO logo',
+                height: '32',
+            }),
+        ),
         a({ href: '/cheatsheet' }, 'Cheatsheet'),
     )
 
-    const Toolbar = tag('tool-bar',
-        button('Save', on('click', () => currentMode.saveCode())),
-        button('Load', on('click', () => currentMode.loadCode())),
-        button('Switch editor', on('click', () => switchEditor())),
-        button('Load example', on('click', () => {})),
-    )
-
     const PageContent = [
-        header(
-            Navbar,
-            Toolbar,
-        ),
+        header(Navbar, Toolbar),
         EditorContainer,
         footer(
             'PROTO Robotics | ',
             a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),
             ' | ',
-            a('Page source', { href: 'https://github.com/proto-robotics/proto-robotics.github.io' }),
+            a('View page source', {
+                href: 'https://github.com/proto-robotics/proto-robotics.github.io',
+            }),
         ),
     ]
 

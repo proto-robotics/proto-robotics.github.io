@@ -1,150 +1,173 @@
-@import url("/prism.css");
+@import url('/prism.css');
 
 @layer reset {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 }
 
 @layer elements {
-  a {
-    color: var(--primary-blue);
-    text-decoration: none;
-  }
+    a {
+        color: var(--primary-blue);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline 1px solid currentColor;
+        }
+    }
+
+    a:has(img) {
+        display: flex;
+        align-items: center;
+    }
 }
 
 @layer layout {
-  html {
-    --text: #333;
-    --bg: #fff;
-    --primary-red: #f2737b;
-    --primary-blue: #6395cf;
-    --secondary-blue: #325f94;
-    --offset-grey: #d8d8d8;
-    --secondary-grey: #4e4e4e;
+    html {
+        --text: #333;
+        --bg: #fff;
+        --primary-red: #f2737b;
+        --primary-blue: #6395cf;
+        --secondary-blue: #325f94;
+        --offset-grey: #d8d8d8;
+        --secondary-grey: #4e4e4e;
 
-    --rule-width: 2px;
+        --rule-width: 2px;
 
-    font: 14pt / 1.5 Monteserrat, sans-serif;
-    hyphens: auto;
-    color: var(--text);
-    background: var(--bg);
-  }
-
-  button {
-    font: 14pt / 1.5 Monteserrat, sans-serif;
-    color: var(--text);
-  }
-
-  body {
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    grid-template:
-      "head" min-content
-      "edit" 1fr
-      "foot" min-content
-      / 1fr;
-  }
-
-  nav {
-    padding: 8px;
-    background: var(--secondary-grey);
-    display: flex;
-    flex-direction: row;
-    gap: 16px;
-    align-items: center;
-
-    a:first-child:has(img) {
-      padding-right: 32px;
+        font:
+            14pt / 1.5 Monteserrat,
+            sans-serif;
+        hyphens: auto;
+        color: var(--text);
+        background: var(--bg);
     }
 
-    a {
-      color: var(--primary-red);
-      text-decoration: none;
+    button,
+    input {
+        font:
+            14pt / 1.5 Monteserrat,
+            sans-serif;
+        color: var(--text);
     }
-  }
 
-  tool-bar {
-    background: var(--offset-grey);
-    display: block;
-    width: 100%;
-    border-bottom: var(--rule-width) solid var(--text);
-
-    button {
-      border: var(--rule-width) solid var(--text);
-      border-bottom: none;
-      background: var(--offset-grey);
-      font-size: 0.8rem;
-      margin: 4px 4px 0 4px;
-      padding: 2px 4px;
-
-      &:hover {
-        background: rgb(from var(--primary-red) r g b / 0.3);
-      }
-
-      &:active {
-        background: var(--primary-red);
-      }
+    body {
+        width: 100vw;
+        height: 100vh;
+        display: grid;
+        grid-template:
+            'head' min-content
+            'edit' 1fr
+            'foot' min-content
+            / 1fr;
     }
-  }
 
-  footer {
-    text-align: center;
-    background-color: var(--secondary-grey);
-    color: var(--bg);
-    padding: 8px;
-    font-size: 0.7rem;
-  }
+    nav {
+        padding: 8px;
+        background: var(--secondary-grey);
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        align-items: center;
+
+        a:first-child:has(img) {
+            padding-right: 32px;
+        }
+
+        a {
+            color: var(--primary-red);
+            text-decoration: none;
+        }
+    }
+
+    tool-bar {
+        background: var(--offset-grey);
+        display: block;
+        width: 100%;
+        border-bottom: var(--rule-width) solid var(--text);
+
+        input[type='text'] {
+            border: var(--rule-width) solid var(--text);
+            border-bottom: none;
+            background: var(--bg);
+            font-size: 0.8rem;
+            margin: 4px 4px 0 4px;
+            padding: 2px 4px;
+        }
+
+        button {
+            border: var(--rule-width) solid var(--text);
+            border-bottom: none;
+            background: var(--offset-grey);
+            font-size: 0.8rem;
+            margin: 4px 4px 0 4px;
+            padding: 2px 4px;
+
+            &:hover {
+                background: rgb(from var(--primary-red) r g b / 0.3);
+            }
+
+            &:active {
+                background: var(--primary-red);
+            }
+        }
+    }
+
+    footer {
+        text-align: center;
+        background-color: var(--secondary-grey);
+        color: var(--bg);
+        padding: 8px;
+        font-size: 0.7rem;
+    }
 }
 
 @layer block-editor {
-  block-editor {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    grid-template:
-      "blockly code" 1fr
-      / 2fr 1fr;
+    block-editor {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template:
+            'blockly code' 1fr
+            / 2fr 1fr;
 
-    div.injectionDiv {
-      resize: horizontal;
+        div.injectionDiv {
+            resize: horizontal;
+        }
+
+        pre:has(code#block-code) {
+            border-left: var(--rule-width) solid var(--text);
+            overflow: auto;
+        }
+
+        code#block-code {
+            display: block;
+            margin: 16px;
+        }
     }
-
-    pre:has(code#block-code) {
-      border-left: var(--rule-width) solid var(--text);
-      overflow: auto;
-    }
-
-    code#block-code {
-      display: block;
-      margin: 16px;
-    }
-  }
 }
 
 @font-face {
-  font-family: Monteserrat;
-  src: url("/fonts/Montserrat/Montserrat-VariableFont_wght.ttf");
+    font-family: Monteserrat;
+    src: url('/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
 }
 
 @font-face {
-  font-family: Monteserrat;
-  src: url("/fonts/Montserrat/Montserrat-VariableFont_wght.ttf");
-  font-weight: bold;
+    font-family: Monteserrat;
+    src: url('/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
+    font-weight: bold;
 }
 
 @font-face {
-  font-family: Monteserrat;
-  src: url("/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf");
-  font-style: italic;
+    font-family: Monteserrat;
+    src: url('/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
+    font-style: italic;
 }
 
 @font-face {
-  font-family: Monteserrat;
-  src: url("/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf");
-  font-style: italic;
-  font-weight: bold;
+    font-family: Monteserrat;
+    src: url('/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
+    font-style: italic;
+    font-weight: bold;
 }

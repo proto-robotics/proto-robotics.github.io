@@ -1,9 +1,9 @@
-import { processJengaTower } from "@protorobotics/jenga"
-import { pythonGenerator } from "blockly/python"
-import Prism from "prismjs"
+import { processJengaTower } from '@protorobotics/jenga'
+import { pythonGenerator } from 'blockly/python'
+import Prism from 'prismjs'
 
-import blocks from "./blocks"
-import BuildPageContent from "./BuildPageContent"
+import blocks from './blocks'
+import BuildPageContent from './BuildPageContent'
 
 const main = () => {
     // Don't automatically highlight code
@@ -16,8 +16,8 @@ const main = () => {
     document.body.replaceChildren(...PageContent)
 }
 
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", main)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', main)
 } else {
     main()
 }

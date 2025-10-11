@@ -1,5 +1,5 @@
-import { a } from "ellipsi"
-import JSZip from "jszip"
+import { a } from 'ellipsi'
+import JSZip from 'jszip'
 
 /**
  * Saves multiple files as a zip file.
@@ -14,12 +14,11 @@ export const saveFilesInZip = (zipName, files) => {
         zip.file(file.name, file.text)
     }
 
-    zip.generateAsync({ type: 'base64' })
-        .then((encoding) => {
-            const dummyLink = a({
-                download: zipName,
-                href: 'data:application/zip;base64,' + encoding
-            })
-            dummyLink.dispatchEvent(new MouseEvent('click'))
+    zip.generateAsync({ type: 'base64' }).then((encoding) => {
+        const dummyLink = a({
+            download: zipName,
+            href: 'data:application/zip;base64,' + encoding,
         })
+        dummyLink.dispatchEvent(new MouseEvent('click'))
+    })
 }

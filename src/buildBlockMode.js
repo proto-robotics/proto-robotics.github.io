@@ -9,11 +9,8 @@ import { saveFilesInZip } from './zipHelper'
 
 export default (toolbox) => {
     const BlocklyCanvas = div({ id: 'block-canvas' })
-    const CodePreview = code({ id: 'block-code'})
-    const BlockEditor = tag('block-editor',
-        BlocklyCanvas,
-        pre(CodePreview),
-    )
+    const CodePreview = code({ id: 'block-code' })
+    const BlockEditor = tag('block-editor', BlocklyCanvas, pre(CodePreview))
 
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
@@ -42,11 +39,13 @@ export default (toolbox) => {
         )
     })
 
-    const saveCode = () => {
+    const saveCode = (ProjectNameInput) => {
+        const zipName = ProjectNameInput?.value || 'proto.zip'
+
         // Save the blockly state.
         const blocklyState = serialization.workspaces.save(workspace)
 
-        saveFilesInZip('proto.zip', [
+        saveFilesInZip(zipName, [
             {
                 name: 'main.py',
                 text: CodePreview.innerText,
@@ -54,13 +53,13 @@ export default (toolbox) => {
             {
                 name: 'blocks.json',
                 text: JSON.stringify(blocklyState),
-            }
+            },
         ])
     }
 
-    const loadCode = () => {
+    const loadCode = (ProjectNameInput) => {
         console.error('not implemented')
     }
 
-    return new EditorMode("block", BlockEditor, saveCode, loadCode)
+    return new EditorMode('block', BlockEditor, saveCode, loadCode)
 }
