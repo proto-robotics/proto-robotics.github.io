@@ -1,9 +1,10 @@
 import { a, button, footer, header, on, span, tag, div, section } from "ellipsi"
 import BuildBlockEditor from "./BuildBlockEditor"
 import BuildLineEditor from "./BuildLineEditor"
+import tooltipHelper from "./tooltipHelper"
 
 export default (toolbox, vocab) => {
-    const customTooltip = tag('custom-tooltip')
+    const customTooltip = tooltipHelper();
 
     const BlockEditor = BuildBlockEditor(toolbox)
     const LineEditor = BuildLineEditor(vocab)

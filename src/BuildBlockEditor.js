@@ -4,7 +4,7 @@ import { code, div, pre, tag } from 'ellipsi'
 import { highlight, languages } from 'prismjs'
 import 'prismjs/components/prism-python'
 
-import {showTooltip, moveTooltip, hideTooltip} from './main'
+import {claimTooltip, releaseTooltip} from './tooltipHelper'
 
 import blocks from "./blocks"
 
@@ -51,19 +51,15 @@ export default (toolbox) => {
             currentHoveredBlock = block;
             hoverTimer = setTimeout(() => {
               if (currentHoveredBlock === block) {
-                showTooltip({x: e.pageX, y: e.pageY}, blockDescriptionDictionary[block.type]);
+                claimTooltip("Block",{x: e.pageX, y: e.pageY}, blockDescriptionDictionary[block.type]);
               }
             }, 1000);
-          });
-
-          svgRoot.addEventListener('mousemove', (e) => {
-            if (customTooltip.style.display === 'block') moveTooltip({x: e.pageX, y: e.pageY});
           });
 
           svgRoot.addEventListener('mouseleave', () => {
             clearTimeout(hoverTimer);
             currentHoveredBlock = null;
-            hideTooltip();
+            releaseTooltip("Block");
           });
         }
       });
@@ -87,7 +83,7 @@ function getBlockDescriptionDictionary(categories) {
   const dictionary = {}
   for (const category of categories) {
     for (const entry of category.entries) {
-      dictionary[entry.name] = entry.blockDescription
+      dictionary[entry.name] = entry.description
     }
   }
   return dictionary
