@@ -3,8 +3,8 @@ import { pythonGenerator } from "blockly/python"
 import Prism from "prismjs"
 import { marked } from "marked"
 
-import blocks from "./blocks"
-import BuildPageContent from "./BuildPageContent"
+import blocks from './blocks'
+import BuildPageContent from './BuildPageContent'
 
 let customTooltip
 
@@ -20,8 +20,8 @@ const main = () => {
     customTooltip = document.querySelector("custom-tooltip")
 }
 
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", main)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', main)
 } else {
     main()
 }

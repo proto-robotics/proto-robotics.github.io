@@ -1,48 +1,110 @@
-import { a, button, footer, header, on, span, tag, div, section } from "ellipsi"
-import BuildBlockEditor from "./BuildBlockEditor"
-import BuildLineEditor from "./BuildLineEditor"
+import { a, button, footer, header, img, on, span, tag, div, section } from "ellipsi"
+//import BuildBlockEditor from "./BuildBlockEditor"
+//import BuildLineEditor from "./BuildLineEditor"
+
+import buildBlockMode from './buildBlockMode'
+import buildLineMode from './buildLineMode'
+import { EditorMode } from './editorMode'
 
 export default (toolbox, vocab) => {
     const customTooltip = tag('custom-tooltip')
 
-    const BlockEditor = BuildBlockEditor(toolbox)
-    const LineEditor = BuildLineEditor(vocab)
+    const blockMode = buildBlockMode(toolbox)
+    const lineMode = buildLineMode(vocab)
 
-    /** Contains the current editor. */
-    const EditorContainer = span(BlockEditor)
+    /** @type {EditorMode} The current editor mode. */
+    let currentMode = null
+    // Contains the current editor element.
+    const EditorContainer = span()
 
-    const switchEditor = () => {
-        // Only moves references around, neither editor is removed from memory.
-        if (EditorContainer.contains(BlockEditor)) {
-            EditorContainer.replaceChildren(LineEditor)
+    /**
+     * Swaps the current editor.
+     * @param {EditorMode?} targetMode The target editor mode.  If null, toggles between
+     * editors.
+     */
+    const switchEditor = (targetMode = null) => {
+        if (targetMode !== null) {
+            currentMode = targetMode
+        } else if (currentMode === blockMode) {
+            currentMode = lineMode
         } else {
-            EditorContainer.replaceChildren(BlockEditor)
+            currentMode = blockMode
         }
+
+        // Move the editor element onto the page.
+        EditorContainer.replaceChildren(currentMode.EditorElement)
+
+        // Store the current choice in local storage.
+        localStorage.setItem('editorMode', currentMode.name)
     }
 
-    const Navbar = tag('nav',
-        a({ href: 'https://protorobotics.org' }, 'PROTO'),
+    // Set the initial editor.
+    const previousModeName = localStorage.getItem('editorMode')
+    if (previousModeName === lineMode.name) {
+        switchEditor(lineMode)
+    } else {
+        switchEditor(blockMode)
+    }
+
+    const ProjectNameInput = tag(
+        'input',
+        { type: 'text', placeholder: 'Project name...' },
+        on('change', () =>
+            localStorage.setItem('projectName', ProjectNameInput.value),
+        ),
+    )
+
+    // Set initial project name.
+    const previousProjectName = localStorage.getItem('projectName')
+    if (previousProjectName) {
+        ProjectNameInput.value = previousProjectName
+    }
+
+    const Toolbar = tag(
+        'tool-bar',
+        ProjectNameInput,
+        button(
+            'Save',
+            on('click', () => currentMode.saveCode(ProjectNameInput)),
+        ),
+        button(
+            'Load',
+            on('click', () => currentMode.loadCode(ProjectNameInput)),
+        ),
+        button(
+            'Switch editor',
+            on('click', () => switchEditor()),
+        ),
+        button(
+            'Load example',
+            on('click', () => {}),
+        ),
+    )
+
+    const Navbar = tag(
+        'nav',
+        a(
+            { href: 'https://protorobotics.org' },
+            img({
+                src: '/images/proto-logo.png',
+                alt: 'The PROTO logo',
+                height: '32',
+            }),
+        ),
         a({ href: '/cheatsheet' }, 'Cheatsheet'),
     )
 
-    const Toolbar = tag('tool-bar',
-        button('Save', on('click', console.log)),
-        button('Load', on('click', console.log)),
-        button('Switch editor', on('click', switchEditor)),
-    )
-
     const PageContent = [
-        header(
-            Navbar,
-            Toolbar,
-        ),
+        header(Navbar, Toolbar),
         EditorContainer,
         customTooltip,
         footer(
             'PROTO Robotics | ',
             a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),
             ' | ',
-            a('Page source', { href: 'https://github.com/proto-robotics/proto-robotics.github.io' }),
+            a('View page source', {
+                href: 'https://github.com/proto-robotics/proto-robotics.github.io',
+            }),
         ),
     ]
 
