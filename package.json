@@ -24,7 +24,14 @@
     "pyodide": "^0.28.3"
   },
   "devDependencies": {
+    "prettier": "^3.6.2",
     "webpack": "^5.102.1",
     "webpack-cli": "^6.0.1"
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "tabWidth": 4,
+    "semi": false,
+    "singleQuote": true
   }
 }

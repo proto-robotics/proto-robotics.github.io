@@ -1,57 +1,54 @@
-import { FieldDropdown, FieldTextInput } from "blockly"
+import { FieldDropdown, FieldTextInput } from 'blockly'
 
 export default [
     {
-        name: "Motor",
-        color: "#cc4444",
+        name: 'Motor',
+        color: '#cc4444',
         entries: [
             {
-                name: "smallmotor",
-                description: `Here's our logo (hover to see the title text):
-
-Inline-style: 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
-
-Reference-style: 
-![alt text][logo]
-
-[logo]: https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 2"`,
+                name: 'smallmotor',
+                description: 'Creates a smallmotor',
                 blocklyTemplate: [
                     {
-                        field: () => new FieldTextInput("motor"),
-                        name: "name",
+                        field: () => new FieldTextInput('motor'),
+                        name: 'name',
                     },
                     {
-                        text: "is a smallmotor on port",
+                        text: 'is a smallmotor on port',
                     },
                     {
-                        field: () => new FieldDropdown([
-                            ["1", "1"],
-                            ["2", "2"],
-                            ["3", "3"],
-                            ["4", "4"],
-                            ["5", "5"],
-                        ]),
-                        name: "port",
+                        field: () =>
+                            new FieldDropdown([
+                                ['1', '1'],
+                                ['2', '2'],
+                                ['3', '3'],
+                                ['4', '4'],
+                                ['5', '5'],
+                            ]),
+                        name: 'port',
                     },
                     {
-                        text: "in direction",
+                        text: 'in direction',
                     },
                     {
-                        field: () => new FieldDropdown([
-                            ["clockwise ↻", "1"],
-                            ["counter-clockwise ↺", "-1"]
-                        ]),
-                        name: "direction",
+                        field: () =>
+                            new FieldDropdown([
+                                ['clockwise ↻', '1'],
+                                ['counter-clockwise ↺', '-1'],
+                            ]),
+                        name: 'direction',
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue("name"))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
 
-                    const port = block.getFieldValue("port")
-                    const direction = block.getFieldValue("direction")
+                    const port = block.getFieldValue('port')
+                    const direction = block.getFieldValue('direction')
 
-                    const directionSnippet = (direction == 1) ? "" : ", direction=-1"
+                    const directionSnippet =
+                        direction == 1 ? '' : ', direction=-1'
                     const code = `${name} = make.smallmotor(port=${port}${directionSnippet})\n`
                     return code
                 },
