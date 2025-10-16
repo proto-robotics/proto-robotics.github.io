@@ -148,7 +148,7 @@
 
         button {
             border: var(--rule-width) solid var(--text);
-            border-radius: 0;
+            border-radius: 8px 8px 0 0;
             border-bottom: none;
             background: var(--offset-grey);
             font-size: 0.8rem;
