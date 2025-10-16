@@ -102,7 +102,7 @@ export default (toolbox) => {
 
         const LoadPopUp = PopUp(
             'Find the zip file for the project in your downloads folder, and ',
-            'choose the file named "blocks.json"',
+            'choose the file inside it with the same name.',
             FileInput,
             LoadButton,
         )

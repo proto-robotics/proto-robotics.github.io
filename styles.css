@@ -22,6 +22,56 @@
         display: flex;
         align-items: center;
     }
+
+    button {
+        border: none;
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: var(--offset-grey);
+        display: block;
+        margin: 16px auto;
+
+        &:hover {
+            background: var(--primary-red);
+        }
+
+        &:active {
+            background: var(--offset-grey);
+        }
+    }
+
+    input[type='file'] {
+        border: none;
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: var(--offset-grey);
+        display: block;
+        margin: 16px auto;
+
+        &:hover {
+            background: var(--primary-red);
+        }
+    }
+
+    pop-up {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: fit-content;
+        height: fit-content;
+        background: var(--bg);
+        padding: 32px;
+        z-index: 1000;
+        border: var(--rule-width) solid var(--secondary-grey);
+        border-radius: 8px;
+
+        &::part(close-button) {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+    }
 }
 
 @layer layout {
@@ -98,11 +148,13 @@
 
         button {
             border: var(--rule-width) solid var(--text);
+            border-radius: 0;
             border-bottom: none;
             background: var(--offset-grey);
             font-size: 0.8rem;
             margin: 4px 4px 0 4px;
             padding: 2px 4px;
+            display: inline;
 
             &:hover {
                 background: rgb(from var(--primary-red) r g b / 0.3);
