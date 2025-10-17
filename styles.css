@@ -63,13 +63,25 @@
         background: var(--bg);
         padding: 32px;
         z-index: 1000;
-        border: var(--rule-width) solid var(--secondary-grey);
         border-radius: 8px;
+        border: var(--rule-width) solid var(--secondary-grey);
 
         &::part(close-button) {
             position: absolute;
-            top: 8px;
-            right: 8px;
+            top: 0px;
+            right: 0px;
+            font-size: 1.2rem;
+            background: none;
+            /* Top-right corner is extended to fill space with pop-up border */
+            border-radius: 8px calc(8px / sqrt(2)) 8px 8px;
+            border: none;
+            padding: 0px 8px 4px 8px;
+            color: var(--secondary-red);
+        }
+
+        &::part(close-button):hover {
+            background: var(--primary-red);
+            color: var(--bg);
         }
     }
 }
@@ -79,6 +91,7 @@
         --text: #333;
         --bg: #fff;
         --primary-red: #f2737b;
+        --secondary-red: #b2404b;
         --primary-blue: #6395cf;
         --secondary-blue: #325f94;
         --offset-grey: #d8d8d8;
@@ -183,10 +196,6 @@
         grid-template:
             'blockly code' 1fr
             / 2fr 1fr;
-
-        div.injectionDiv {
-            resize: horizontal;
-        }
 
         pre:has(code#block-code) {
             border-left: var(--rule-width) solid var(--text);
