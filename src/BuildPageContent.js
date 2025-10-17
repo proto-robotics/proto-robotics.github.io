@@ -1,10 +1,10 @@
 import { a, button, footer, header, img, on, span, tag, div, section } from "ellipsi"
-//import BuildBlockEditor from "./BuildBlockEditor"
-//import BuildLineEditor from "./BuildLineEditor"
 
 import buildBlockMode from './buildBlockMode'
 import buildLineMode from './buildLineMode'
 import { EditorMode } from './editorMode'
+
+import tooltipHelper from "./tooltipHelper"
 
 export default (toolbox, vocab) => {
     const customTooltip = tooltipHelper();
