@@ -1,11 +1,10 @@
-import { button, img, on, shadow, slot, tag } from 'ellipsi'
+import { button, on, shadow, slot, tag } from 'ellipsi'
 
 export const closePopUpEvent = 'close-pop-up'
 
 export const PopUp = (...children) => {
     const CloseButton = button(
         { part: 'close-button' },
-        // img({ src: '', alt: 'Pop-up close button', height: '32' }),
         'x',
         on('click', () => PopUp.dispatchEvent(new Event(closePopUpEvent))),
     )
@@ -16,6 +15,14 @@ export const PopUp = (...children) => {
         shadow(CloseButton, slot()),
         on(closePopUpEvent, () => PopUp.remove()),
     )
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return
+        }
+
+        PopUp.dispatchEvent(new Event(closePopUpEvent))
+    })
 
     return PopUp
 }
