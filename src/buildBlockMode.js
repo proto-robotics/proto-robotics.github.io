@@ -8,8 +8,8 @@ import { EditorMode } from './editorMode'
 import { saveFilesInZip } from './zipHelper'
 import { closePopUpEvent, PopUp } from './popUpHelper'
 
-import {claimTooltip, releaseTooltip} from './tooltipHelper'
-import blocks from "./blocks"
+import { claimTooltip, releaseTooltip } from './tooltipHelper'
+import blocks from './blocks'
 
 export default (toolbox) => {
     const BlocklyCanvas = div({ id: 'block-canvas' })
@@ -43,6 +43,8 @@ export default (toolbox) => {
         localStorage.setItem('blocklyState', JSON.stringify(state))
     })
 
+    // Redraw the canvas when it is rendered, and load the previous code the
+    // first time it is rendered
     let hasRendered = false
     const resizeObserver = new ResizeObserver(() => {
         svgResize(workspace)
@@ -59,7 +61,10 @@ export default (toolbox) => {
         if (previousState) {
             // Timeout prevents styles from breaking
             setTimeout(() => {
-                serialization.workspaces.load(JSON.parse(previousState), workspace)
+                serialization.workspaces.load(
+                    JSON.parse(previousState),
+                    workspace,
+                )
             })
         }
     })
@@ -84,32 +89,36 @@ export default (toolbox) => {
     }
 
     let blockDescriptionDictionary = getBlockDescriptionDictionary(blocks)
-    let hoverTimer = null;
-    let currentHoveredBlock = null;
+    let hoverTimer = null
+    let currentHoveredBlock = null
 
     function attachCustomTooltipHandlers(workspace) {
-      workspace.addChangeListener(() => {
-        for (const block of workspace.getAllBlocks(false)) {
-          const svgRoot = block.getSvgRoot();
-          if (svgRoot.customTooltipAttached) continue;
-          svgRoot.customTooltipAttached = true;
+        workspace.addChangeListener(() => {
+            for (const block of workspace.getAllBlocks(false)) {
+                const svgRoot = block.getSvgRoot()
+                if (svgRoot.customTooltipAttached) continue
+                svgRoot.customTooltipAttached = true
 
-          svgRoot.addEventListener('mouseenter', (e) => {
-            currentHoveredBlock = block;
-            hoverTimer = setTimeout(() => {
-              if (currentHoveredBlock === block) {
-                claimTooltip("Block",{x: e.pageX, y: e.pageY}, blockDescriptionDictionary[block.type]);
-              }
-            }, 1000);
-          });
+                svgRoot.addEventListener('mouseenter', (e) => {
+                    currentHoveredBlock = block
+                    hoverTimer = setTimeout(() => {
+                        if (currentHoveredBlock === block) {
+                            claimTooltip(
+                                'Block',
+                                { x: e.pageX, y: e.pageY },
+                                blockDescriptionDictionary[block.type],
+                            )
+                        }
+                    }, 1000)
+                })
 
-          svgRoot.addEventListener('mouseleave', () => {
-            clearTimeout(hoverTimer);
-            currentHoveredBlock = null;
-            releaseTooltip("Block");
-          });
-        }
-      });
+                svgRoot.addEventListener('mouseleave', () => {
+                    clearTimeout(hoverTimer)
+                    currentHoveredBlock = null
+                    releaseTooltip('Block')
+                })
+            }
+        })
     }
 
     attachCustomTooltipHandlers(workspace)
@@ -162,11 +171,11 @@ export default (toolbox) => {
 }
 
 function getBlockDescriptionDictionary(categories) {
-  const dictionary = {}
-  for (const category of categories) {
-    for (const entry of category.entries) {
-      dictionary[entry.name] = entry.description
+    const dictionary = {}
+    for (const category of categories) {
+        for (const entry of category.entries) {
+            dictionary[entry.name] = entry.description
+        }
     }
-  }
-  return dictionary
+    return dictionary
 }
