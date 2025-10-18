@@ -17,7 +17,7 @@
     "@protorobotics/jenga": "^1.1.1",
     "blockly": "^12.3.1",
     "codemirror": "^6.0.2",
-    "ellipsi": "^3.0.2",
+    "ellipsi": "^3.2.0",
     "jszip": "^3.10.1",
     "marked": "^16.4.0",
     "prismjs": "^1.30.0",
