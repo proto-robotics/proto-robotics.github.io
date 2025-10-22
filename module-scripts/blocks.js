@@ -7,7 +7,7 @@ export { toolbox };
 const smallmotor = {
     init: function () {
         this.appendDummyInput('name')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('smallmotor'), 'name')
             .appendField('is a smallmotor on port')
             .appendField(new Blockly.FieldDropdown([
                 ['1', '1'],
@@ -35,7 +35,7 @@ Blockly.common.defineBlocks({ smallmotor: smallmotor });
 const servo = {
     init: function () {
         this.appendDummyInput('name')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('servo'), 'name')
             .appendField('is a servo on port')
             .appendField(new Blockly.FieldDropdown([
                 ['1', '1'],
@@ -57,7 +57,7 @@ Blockly.common.defineBlocks({ servo: servo });
 const largemotor = {
     init: function () {
         this.appendDummyInput('name')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('largemotor'), 'name')
             .appendField('is a largemotor on port')
             .appendField(new Blockly.FieldDropdown([
                 ['6', '6'],
@@ -83,7 +83,7 @@ const spin = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Spin')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('motor'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power');
@@ -101,7 +101,7 @@ const spinBack = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Spin')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('motor'), 'name')
             .appendField('backwards at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power');
@@ -119,7 +119,7 @@ const spinForTime = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Spin')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('motor'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power for')
@@ -139,7 +139,7 @@ const spinBackForTime = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Spin')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('motor'), 'name')
             .appendField('backwards at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power for')
@@ -159,7 +159,7 @@ const stop = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Stop')
-            .appendField(new Blockly.FieldTextInput('name'), 'name');
+            .appendField(new Blockly.FieldTextInput('motor'), 'name');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setTooltip('Stops the motor/drivetrain.');
@@ -174,7 +174,7 @@ const moveto = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Move')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('servo'), 'name')
             .appendField('to')
             .appendField(new Blockly.FieldNumber(0, 0, 180, 0.1), 'angle')
             .appendField('degrees');
@@ -192,7 +192,7 @@ const movetoForTime = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Move')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('servo'), 'name')
             .appendField('to')
             .appendField(new Blockly.FieldNumber(0, 0, 180, 0.1), 'angle')
             .appendField('degrees for')
@@ -211,7 +211,7 @@ Blockly.common.defineBlocks({ movetoForTime: movetoForTime });
 const drivetrain = {
     init: function () {
         this.appendDummyInput('name')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('is a drivetrain from motors')
             .appendField(new Blockly.FieldTextInput('left'), 'left')
             .appendField('and')
@@ -236,7 +236,7 @@ const drive = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Drive')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power');
@@ -254,7 +254,7 @@ const driveForTime = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Drive')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power for')
@@ -274,7 +274,7 @@ const curve = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Curve')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'left')
             .appendField('left power and')
@@ -294,7 +294,7 @@ const curveForTime = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Curve')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'left')
             .appendField('left power and')
@@ -316,7 +316,7 @@ const turn = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Turn')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power');
@@ -334,7 +334,7 @@ const turnForTime = {
     init: function () {
         this.appendDummyInput('action')
             .appendField('Turn')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('drivetrain'), 'name')
             .appendField('at')
             .appendField(new Blockly.FieldNumber(100, -100, 100, 0.1), 'power')
             .appendField('power for')
@@ -353,7 +353,7 @@ Blockly.common.defineBlocks({ turnForTime: turnForTime });
 const button = {
     init: function () {
         this.appendDummyInput('name')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('button'), 'name')
             .appendField('is a button on port')
             .appendField(new Blockly.FieldDropdown([
                 ['8', '8'],
@@ -372,7 +372,7 @@ Blockly.common.defineBlocks({ button: button });
 const isPressed = {
     init: function () {
         this.appendDummyInput('name')
-            .appendField(new Blockly.FieldTextInput('name'), 'name')
+            .appendField(new Blockly.FieldTextInput('button'), 'name')
             .appendField('is pressed?');
         this.setOutput(true, 'Boolean');
         this.setTooltip('Returns whether or not the button is pressed.');
@@ -382,6 +382,20 @@ const isPressed = {
 };
 
 Blockly.common.defineBlocks({ isPressed: isPressed });
+
+const isHeld = {
+    init: function () {
+        this.appendDummyInput('name')
+            .appendField(new Blockly.FieldTextInput('button'), 'name')
+            .appendField('is held down?');
+        this.setOutput(true, 'Boolean');
+        this.setTooltip('Returns whether or not the button is being held down.');
+        this.setHelpUrl('');
+        this.setColour(120);
+    }
+};
+
+Blockly.common.defineBlocks({ isHeld: isHeld });
 
 const wait = {
     init: function () {
@@ -588,6 +602,13 @@ python.pythonGenerator.forBlock['isPressed'] = function (block) {
     return [code, python.Order.NONE];
 }
 
+python.pythonGenerator.forBlock['isHeld'] = function (block) {
+    const text_name = block.getFieldValue('name').replace(' ', '_');
+
+    const code = `${text_name}.held()`;
+    return [code, python.Order.NONE];
+}
+
 python.pythonGenerator.forBlock['wait'] = function (block) {
     const number_time = block.getFieldValue('time');
 
@@ -721,6 +742,10 @@ const toolbox = {
                 {
                     kind: 'block',
                     type: 'isPressed',
+                },
+                {
+                    kind: 'block',
+                    type: 'isHeld',
                 },
             ],
         },
