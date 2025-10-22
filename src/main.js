@@ -1,6 +1,6 @@
-import { processJengaTower } from "@protorobotics/jenga"
-import { pythonGenerator } from "blockly/python"
-import Prism from "prismjs"
+import { processJengaTower } from '@protorobotics/jenga'
+import { pythonGenerator } from 'blockly/python'
+import Prism from 'prismjs'
 
 import blocks from './blocks'
 import BuildPageContent from './BuildPageContent'

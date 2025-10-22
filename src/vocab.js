@@ -1,6 +1,6 @@
 export const functionVocab = {
-    "make.smallmotor": {
-        type: "function",
+    'make.smallmotor': {
+        type: 'function',
         description: `Here's our logo (hover to see the title text):
 
 Inline-style: 
@@ -11,8 +11,8 @@ Reference-style:
 
 [logo]: https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 2"`,
     },
-    "make.largemotor": {
-        type: "function",
-        description: `large motor description`
+    'make.largemotor': {
+        type: 'function',
+        description: `large motor description`,
     },
 }
