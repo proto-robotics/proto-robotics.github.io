@@ -4,11 +4,7 @@ import buildBlockMode from './buildBlockMode'
 import buildLineMode from './buildLineMode'
 import { EditorMode } from './editorMode'
 
-import tooltipHelper from './tooltipHelper'
-
 export default (toolbox, vocab) => {
-    const customTooltip = tooltipHelper()
-
     const blockMode = buildBlockMode(toolbox)
     const lineMode = buildLineMode(vocab)
 
@@ -97,7 +93,6 @@ export default (toolbox, vocab) => {
     const PageContent = [
         header(Navbar, Toolbar),
         EditorContainer,
-        customTooltip,
         footer(
             'PROTO Robotics | ',
             a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),
