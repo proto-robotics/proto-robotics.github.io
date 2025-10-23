@@ -12,7 +12,6 @@ import { defaultKeymap, indentWithTab } from '@codemirror/commands'
 import { hoverTooltip } from '@codemirror/view'
 import { lintGutter, linter } from '@codemirror/lint'
 
-import tooltipHelper from './tooltipHelper'
 import {
     claimTooltip,
     releaseTooltip,
@@ -212,13 +211,10 @@ export default (vocab) => {
         }),
     )
 
-    const CustomTooltip = tooltipHelper()  // TODO: rename to initTooltip?
-
     const LineEditor = tag(
         'line-editor',
         VerifyButton,
         view.dom,
-        CustomTooltip,
         on('click', () => view.focus()),
     )
 

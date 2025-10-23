@@ -3,6 +3,7 @@ import { a, button, footer, header, img, on, span, tag } from 'ellipsi'
 import buildBlockMode from './buildBlockMode'
 import buildLineMode from './buildLineMode'
 import { EditorMode } from './editorMode'
+import tooltipHelper from './tooltipHelper'
 
 export default (toolbox, vocab) => {
     const blockMode = buildBlockMode(toolbox)
@@ -90,6 +91,8 @@ export default (toolbox, vocab) => {
         a({ href: '/cheatsheet' }, 'Cheatsheet'),
     )
 
+    const CustomTooltip = tooltipHelper()  // TODO: rename to initTooltip?
+
     const PageContent = [
         header(Navbar, Toolbar),
         EditorContainer,
@@ -101,6 +104,7 @@ export default (toolbox, vocab) => {
                 href: 'https://github.com/proto-robotics/proto-robotics.github.io',
             }),
         ),
+        CustomTooltip,
     ]
 
     return PageContent
