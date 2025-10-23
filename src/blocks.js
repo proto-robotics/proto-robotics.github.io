@@ -55,6 +55,21 @@ export default [
             },
         ],
     },
+    {
+        name: "Drivetrain",
+        color: '#44cc44',
+        entries: [],
+    },
+    {
+        name: "Sensors",
+        color: '#4444cc',
+        entries: [],
+    },
+    {
+        name: "Time",
+        color: '#44cccc',
+        entries: [],
+    },
 ]
 
 const spacesToUnderscores = (str) => str.replace(/\s+/g, '_')
