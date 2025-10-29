@@ -2,7 +2,7 @@ import { tag, button, on } from 'ellipsi'
 import { EditorMode } from './editorMode'
 import { functionVocab } from './vocab'
 
-import { EditorState } from '@codemirror/state'
+import { EditorState, EditorSelection  } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { python } from '@codemirror/lang-python'
@@ -39,6 +39,15 @@ export default (vocab) => {
                     if (result.warnings?.length)
                         console.warn('Python Warnings:', result.warnings)
                     verifiedOutput = result
+                    const pos = view.state.selection.main.head;
+
+                    let storeCurrent = view.state.doc.toString()
+                    setEditorText(view, storeCurrent + " ")
+                    setEditorText(view, storeCurrent)
+
+                    view.dispatch({
+                        selection: EditorSelection.cursor(pos)
+                    });
                 })()
             }),
         ),
@@ -55,6 +64,34 @@ export default (vocab) => {
             },
         })
     }
+
+    const customLinter = linter((view) => {
+        let diagnostics = []
+        const verified = verifiedOutput
+
+        if (verified?.error) {
+            diagnostics.push({
+                from: view.state.doc.line(verified.error_line_num).from,
+                to:
+                    view.state.doc.line(verified.error_line_num).from +
+                    verified.error_line_offset,
+                severity: 'error',
+                message: verified.error,
+            })
+        }
+
+        if (verified?.warnings?.length) {
+            for (const warning of verified.warnings) {
+                diagnostics.push({
+                    from: 0,
+                    to: 0,
+                    severity: 'warning',
+                    message: warning,
+                })
+            }
+        }
+        return diagnostics
+    })
 
     const hoverExtension = hoverTooltip(functionInfoTooltip)
 
@@ -95,7 +132,6 @@ export default (vocab) => {
         releaseTooltip('FuncDescript')
     })
 
-    let code = view.state.doc.toString()
     function setEditorText(view, text) {
         view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: text },
