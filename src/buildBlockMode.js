@@ -19,9 +19,6 @@ export default (toolbox) => {
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
     })
-    // Render the workspace once the page loads.
-    document.addEventListener('DOMContentLoaded', () => svgResize(workspace))
-    // TODO: fix
 
     const supportedEvents = new Set([
         Events.BLOCK_CHANGE,
@@ -46,12 +43,27 @@ export default (toolbox) => {
         localStorage.setItem('blocklyState', JSON.stringify(state))
     })
 
-    // Load previous state if one exists
-    // TODO: delay until block editor is shown
-    // const previousState = localStorage.getItem('blocklyState')
-    // if (previousState) {
-    //     serialization.workspaces.load(JSON.parse(previousState), workspace)
-    // }
+    let hasRendered = false
+    const resizeObserver = new ResizeObserver(() => {
+        svgResize(workspace)
+
+        if (hasRendered || !BlockEditor.parentElement) {
+            return
+        }
+
+        // Only executed the first time the blockly editor is rendered
+        hasRendered = true
+
+        // Load previous state if one exists
+        const previousState = localStorage.getItem('blocklyState')
+        if (previousState) {
+            // Timeout prevents styles from breaking
+            setTimeout(() => {
+                serialization.workspaces.load(JSON.parse(previousState), workspace)
+            })
+        }
+    })
+    resizeObserver.observe(BlockEditor)
 
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
@@ -119,7 +131,9 @@ export default (toolbox) => {
                 const file = FileInput.files[0]
 
                 // Set project name to the file name
-                ProjectNameInput.value = file.name.replaceAll('.json', '')
+                const projectName = file.name.replaceAll('.json', '')
+                ProjectNameInput.value = projectName
+                localStorage.setItem('projectName', projectName)
 
                 // Load the contents of the file
                 const reader = new FileReader()
