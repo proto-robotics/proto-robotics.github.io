@@ -2,7 +2,7 @@ import { tag, button, on } from 'ellipsi'
 import { EditorMode } from './editorMode'
 import { functionVocab } from './vocab'
 
-import { EditorState } from '@codemirror/state'
+import { EditorState, EditorSelection  } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { python } from '@codemirror/lang-python'
@@ -33,6 +33,59 @@ export default (vocab) => {
             },
         })
     }
+
+    const LineEditor = tag(
+        'line-editor',
+        button(
+            'Verify',
+            on('click', async () => {
+                const result = await checkSyntax(view.state.doc.toString())
+                console.log('Result:', result)
+                if (result.error)
+                    console.error('Python Error:', result.error)
+                if (result.warnings?.length)
+                    console.warn('Python Warnings:', result.warnings)
+                verifiedOutput = result
+                const pos = view.state.selection.main.head;
+
+                let storeCurrent = view.state.doc.toString()
+                setEditorText(view, storeCurrent + " ")
+                setEditorText(view, storeCurrent)
+
+                view.dispatch({
+                    selection: EditorSelection.cursor(pos)
+                });
+            }),
+        ),
+    )
+
+    const customLinter = linter((view) => {
+        let diagnostics = []
+        const verified = verifiedOutput
+
+        if (verified?.error) {
+            diagnostics.push({
+                from: view.state.doc.line(verified.error_line_num).from,
+                to:
+                    view.state.doc.line(verified.error_line_num).from +
+                    verified.error_line_offset,
+                severity: 'error',
+                message: verified.error,
+            })
+        }
+
+        if (verified?.warnings?.length) {
+            for (const warning of verified.warnings) {
+                diagnostics.push({
+                    from: 0,
+                    to: 0,
+                    severity: 'warning',
+                    message: warning,
+                })
+            }
+        }
+        return diagnostics
+    })
 
     const hoverExtension = hoverTooltip((_, pos) => functionInfoTooltip(pos))
 
@@ -107,6 +160,10 @@ export default (vocab) => {
             { x: view.coordsAtPos(pos).left, y: view.coordsAtPos(pos).top },
             functionVocab[found.label].description,
         )
+    function setEditorText(view, text) {
+        view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: text },
+        })
     }
 
     setEditorText(
@@ -201,13 +258,20 @@ export default (vocab) => {
         on('click', async () => {
             const result = await checkSyntax(view.state.doc.toString())
             console.log('Result:', result)
-            if (result.error) {
+            if (result.error)
                 console.error('Python Error:', result.error)
-            }
-            if (result.warnings?.length) {
+            if (result.warnings?.length)
                 console.warn('Python Warnings:', result.warnings)
-            }
-            VerifiedOutput.replaceChildren(result)
+            verifiedOutput = result
+            const pos = view.state.selection.main.head;
+
+            let storeCurrent = view.state.doc.toString()
+            setEditorText(view, storeCurrent + " ")
+            setEditorText(view, storeCurrent)
+
+            view.dispatch({
+                selection: EditorSelection.cursor(pos)
+            });
         }),
     )
 
