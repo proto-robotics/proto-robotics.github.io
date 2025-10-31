@@ -12,12 +12,9 @@ import { defaultKeymap, indentWithTab } from '@codemirror/commands'
 import { hoverTooltip } from '@codemirror/view'
 import { lintGutter, linter } from '@codemirror/lint'
 
-import {
-    claimTooltip,
-    releaseTooltip,
-    updateTooltip,
-    getOwner,
-} from './tooltipHelper'
+import { claimTooltip, releaseTooltip, getOwner } from './tooltipHelper'
+import { saveFilesInZip } from './zipHelper'
+import { closePopUpEvent, PopUp } from './popUpHelper'
 
 let lastHoverRange = null
 let completions = []
@@ -26,33 +23,6 @@ let view
 let verifiedOutput
 
 export default (vocab) => {
-    const LineEditor = tag(
-        'line-editor',
-        button(
-            'Verify',
-            on('click', () => {
-                ;(async () => {
-                    const result = await checkSyntax(view.state.doc.toString())
-                    console.log('Result:', result)
-                    if (result.error)
-                        console.error('Python Error:', result.error)
-                    if (result.warnings?.length)
-                        console.warn('Python Warnings:', result.warnings)
-                    verifiedOutput = result
-                    const pos = view.state.selection.main.head
-
-                    let storeCurrent = view.state.doc.toString()
-                    setEditorText(view, storeCurrent + ' ')
-                    setEditorText(view, storeCurrent)
-
-                    view.dispatch({
-                        selection: EditorSelection.cursor(pos),
-                    })
-                })()
-            }),
-        ),
-    )
-
     for (const key in functionVocab) {
         const entry = functionVocab[key]
         completions.push({
@@ -93,6 +63,32 @@ export default (vocab) => {
         return diagnostics
     })
 
+    const functionInfoTooltip = (view, pos) => {
+        if (getOwner() != null) {
+            return null
+        }
+        const word = view.state.wordAt(pos)
+        if (!word) {
+            lastHoverRange = null
+            return null
+        }
+        const hoveredText = view.state.sliceDoc(word.from, word.to)
+        const found = completions.find(
+            (c) =>
+                c.label === hoveredText || c.label.endsWith('.' + hoveredText),
+        )
+        if (!found) {
+            lastHoverRange = null
+            return null
+        }
+        lastHoverRange = { from: word.from, to: word.to }
+        claimTooltip(
+            'FuncDescript',
+            { x: view.coordsAtPos(pos).left, y: view.coordsAtPos(pos).top },
+            functionVocab[found.label].description,
+        )
+    }
+
     const hoverExtension = hoverTooltip(functionInfoTooltip)
 
     view = new EditorView({
@@ -111,7 +107,6 @@ export default (vocab) => {
                 keymap.of([defaultKeymap, indentWithTab]),
             ],
         }),
-        parent: LineEditor,
     })
 
     view.dom.addEventListener('mousemove', (ev) => {
@@ -132,113 +127,17 @@ export default (vocab) => {
         releaseTooltip('FuncDescript')
     })
 
-    function setEditorText(view, text) {
+    const setEditorText = (view, text) => {
         view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: text },
         })
     }
 
-    setEditorText(
-        view,
-        'import make' +
-            '\n' +
-            '# name your motors!' +
-            '\n' +
-            'left = make.largemotor(6)' +
-            '\n' +
-            'right = make.largemotor(7)' +
-            '\n' +
-            '\n' +
-            '# spin both motors forwards' +
-            '\n' +
-            'left.spin(100)' +
-            '\n' +
-            'right.spin(100)' +
-            '\n' +
-            '# wait for 2 seconds' +
-            '\n' +
-            'make.wait(2)' +
-            '\n' +
-            '# stop both motors' +
-            '\n' +
-            'left.stop()' +
-            '\n' +
-            'right.stop()',
-    ) // TODO use this method to load the code from the python file
-    if (LineEditor) {
-        LineEditor.addEventListener('click', () => {
-            view.focus()
-        })
-    } else {
-        console.error('Could not find code editor container or input element.')
-    }
+    async function checkSyntax(code) {
+        const pyodide = await loadPyodide()
 
-    const targetNode = document.body
-    const selector = '.cm-tooltip-autocomplete.cm-tooltip.cm-tooltip-below'
-
-    const observer = new MutationObserver((mutationsList) => {
-        let tooltipFound = false
-
-        for (const mutation of mutationsList) {
-            for (const addedNode of mutation.addedNodes) {
-                if (addedNode.nodeType === 1) {
-                    setTimeout(() => {
-                        const matches = []
-                        if (addedNode.matches(selector)) {
-                            matches.push(addedNode)
-                        }
-                        matches.push(...addedNode.querySelectorAll(selector))
-
-                        for (const el of matches) {
-                            const rect = el.getBoundingClientRect()
-                            claimTooltip(
-                                'ListAuto',
-                                { x: rect.x + rect.width, y: rect.y },
-                                null,
-                            )
-                            tooltipFound = true
-                        }
-                    }, 0)
-                }
-            }
-
-            for (const removedNode of mutation.removedNodes) {
-                if (removedNode.nodeType === 1) {
-                    if (removedNode.matches?.(selector)) {
-                        releaseTooltip('ListAuto')
-                    }
-                }
-            }
-        }
-
-        if (!tooltipFound) {
-            setTimeout(() => {
-                document.querySelectorAll(selector).forEach((el) => {
-                    const rect = el.getBoundingClientRect()
-                })
-            }, 0)
-        }
-    })
-
-    observer.observe(targetNode, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-    })
-
-    return new EditorMode(
-        'line',
-        LineEditor,
-        () => {},
-        () => {},
-    )
-}
-
-async function checkSyntax(code) {
-    const pyodide = await loadPyodide()
-
-    try {
-        await pyodide.runPythonAsync(`
+        try {
+            await pyodide.runPythonAsync(`
 import ast
 import warnings
 
@@ -269,34 +168,168 @@ with warnings.catch_warnings(record=True) as w:
 result = {"error": error, "error_line_num": error_line_num, "error_line_offset": error_line_offset, "warnings": warnings_list, "warnings_linenum": warnings_linenum, "warnings_offset": warnings_offset}
 `)
 
-        const result = pyodide.globals.get('result').toJs()
-        return result
-    } catch (err) {
-        return { error: `Pyodide internal error: ${err.message}`, warnings: [] }
+            const result = pyodide.globals.get('result').toJs()
+            return result
+        } catch (err) {
+            return {
+                error: `Pyodide internal error: ${err.message}`,
+                warnings: [],
+            }
+        }
     }
-}
 
-function functionInfoTooltip(view, pos) {
-    if (getOwner() != null) {
-        return null
+    setEditorText(
+        view,
+        'import make' +
+            '\n' +
+            '# name your motors!' +
+            '\n' +
+            'left = make.largemotor(6)' +
+            '\n' +
+            'right = make.largemotor(7)' +
+            '\n' +
+            '\n' +
+            '# spin both motors forwards' +
+            '\n' +
+            'left.spin(100)' +
+            '\n' +
+            'right.spin(100)' +
+            '\n' +
+            '# wait for 2 seconds' +
+            '\n' +
+            'make.wait(2)' +
+            '\n' +
+            '# stop both motors' +
+            '\n' +
+            'left.stop()' +
+            '\n' +
+            'right.stop()',
+    ) // TODO use this method to load the code from the python file
+
+    const targetNode = document.body
+    const selector = '.cm-tooltip-autocomplete.cm-tooltip.cm-tooltip-below'
+
+    const observer = new MutationObserver((mutationsList) => {
+        let tooltipFound = false
+
+        for (const mutation of mutationsList) {
+            for (const addedNode of mutation.addedNodes) {
+                if (addedNode.nodeType === 1) {
+                    setTimeout(() => {
+                        const matches = []
+                        if (addedNode.matches(selector)) {
+                            matches.push(addedNode)
+                        }
+                        matches.push(...addedNode.querySelectorAll(selector))
+
+                        for (const el of matches) {
+                            const rect = el.getBoundingClientRect()
+                            claimTooltip(
+                                'ListAuto',
+                                { x: rect.x + rect.width, y: rect.y },
+                                null,
+                            )
+                            tooltipFound = true
+                        }
+                    })
+                }
+            }
+
+            for (const removedNode of mutation.removedNodes) {
+                if (removedNode.nodeType === 1) {
+                    if (removedNode.matches?.(selector)) {
+                        releaseTooltip('ListAuto')
+                    }
+                }
+            }
+        }
+    })
+
+    observer.observe(targetNode, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+    })
+
+    const saveCode = (ProjectNameInput) => {
+        const projectName = ProjectNameInput?.value || 'proto'
+
+        saveFilesInZip(projectName, [
+            {
+                name: 'main.py',
+                text: view.state.doc.toString(),
+            },
+        ])
     }
-    const word = view.state.wordAt(pos)
-    if (!word) {
-        lastHoverRange = null
-        return null
+
+    const loadCode = (ProjectNameInput) => {
+        const FileInput = tag('input', {
+            type: 'file',
+            accept: '.py',
+        })
+
+        const LoadButton = button(
+            'Load project',
+            on('click', () => {
+                if (FileInput.files.length < 1) {
+                    // Wait for them to add a file
+                    return
+                }
+
+                const file = FileInput.files[0]
+
+                // Set project name to the file name
+                const projectName = file.name.replaceAll('.json', '')
+                ProjectNameInput.value = projectName
+                localStorage.setItem('projectName', projectName)
+
+                // Load the contents of the file
+                const reader = new FileReader()
+                reader.readAsText(file, 'utf-8')
+                reader.onload = (event) => {
+                    setEditorText(view, event.target.result)
+                }
+
+                // Close the pop up
+                LoadPopUp.dispatchEvent(new Event(closePopUpEvent))
+            }),
+        )
+
+        const LoadPopUp = PopUp(
+            'Find the zip file for the project in your downloads folder, and ',
+            'choose the file inside it named main.py.',
+            FileInput,
+            LoadButton,
+        )
+
+        document.body.appendChild(LoadPopUp)
     }
-    const hoveredText = view.state.sliceDoc(word.from, word.to)
-    const found = completions.find(
-        (c) => c.label === hoveredText || c.label.endsWith('.' + hoveredText),
+
+    const LineEditor = tag(
+        'line-editor',
+        button(
+            'Verify',
+            on('click', async () => {
+                const result = await checkSyntax(view.state.doc.toString())
+                console.log('Result:', result)
+                if (result.error) console.error('Python Error:', result.error)
+                if (result.warnings?.length)
+                    console.warn('Python Warnings:', result.warnings)
+                verifiedOutput = result
+                const pos = view.state.selection.main.head
+
+                let storeCurrent = view.state.doc.toString()
+                setEditorText(view, storeCurrent + ' ')
+                setEditorText(view, storeCurrent)
+
+                view.dispatch({
+                    selection: EditorSelection.cursor(pos),
+                })
+            }),
+        ),
+        view.dom,
+        on('click', () => view.focus()),
     )
-    if (!found) {
-        lastHoverRange = null
-        return null
-    }
-    lastHoverRange = { from: word.from, to: word.to }
-    claimTooltip(
-        'FuncDescript',
-        { x: view.coordsAtPos(pos).left, y: view.coordsAtPos(pos).top },
-        functionVocab[found.label].description,
-    )
+
+    return new EditorMode('line', LineEditor, saveCode, loadCode)
 }
