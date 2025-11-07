@@ -2,8 +2,8 @@ import { a, button, footer, header, img, on, span, tag } from 'ellipsi'
 
 import buildBlockMode from './buildBlockMode'
 import buildLineMode from './buildLineMode'
-import { EditorMode } from './editorMode'
-import tooltipHelper from './tooltipHelper'
+import { EditorMode } from '../classes/editorMode'
+import tooltipHelper from '../helpers/tooltipHelper'
 
 export default (toolbox, vocab) => {
     const blockMode = buildBlockMode(toolbox)

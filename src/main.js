@@ -2,9 +2,9 @@ import { processJengaTower } from '@protorobotics/jenga'
 import { pythonGenerator } from 'blockly/python'
 import Prism from 'prismjs'
 
-import blocks from './blocks'
-import BuildPageContent from './BuildPageContent'
-import BuildCheatSheet from './BuildCheatSheet'
+import blocks from './data/blocks'
+import BuildPageContent from './builders/BuildPageContent'
+import BuildCheatSheet from './builders/BuildCheatSheet'
 
 const main = () => {
     Prism.manual = true

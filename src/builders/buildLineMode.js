@@ -1,6 +1,6 @@
 import { tag, button, on } from 'ellipsi'
-import { EditorMode } from './editorMode'
-import { functionVocab } from './vocab'
+import { EditorMode } from '../classes/editorMode'
+import { functionVocab } from '../data/vocab'
 
 import { EditorState, EditorSelection } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
@@ -12,9 +12,9 @@ import { defaultKeymap, indentWithTab } from '@codemirror/commands'
 import { hoverTooltip } from '@codemirror/view'
 import { lintGutter, linter } from '@codemirror/lint'
 
-import { claimTooltip, releaseTooltip, getOwner } from './tooltipHelper'
-import { saveFilesInZip } from './zipHelper'
-import { closePopUpEvent, PopUp } from './popUpHelper'
+import { claimTooltip, releaseTooltip, getOwner } from '../helpers/tooltipHelper'
+import { saveFilesInZip } from '../helpers/zipHelper'
+import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 
 let lastHoverRange = null
 let completions = []

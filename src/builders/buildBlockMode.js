@@ -4,12 +4,12 @@ import { button, code, div, on, pre, tag } from 'ellipsi'
 import { highlight, languages } from 'prismjs'
 import 'prismjs/components/prism-python'
 
-import { EditorMode } from './editorMode'
-import { saveFilesInZip } from './zipHelper'
-import { closePopUpEvent, PopUp } from './popUpHelper'
+import { EditorMode } from '../classes/editorMode'
+import { saveFilesInZip } from '../helpers/zipHelper'
+import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 
-import { claimTooltip, releaseTooltip } from './tooltipHelper'
-import blocks from './blocks'
+import { claimTooltip, releaseTooltip } from '../helpers/tooltipHelper'
+import blocks from '../data/blocks'
 
 export default (toolbox) => {
     const BlocklyCanvas = div({ id: 'block-canvas' })
