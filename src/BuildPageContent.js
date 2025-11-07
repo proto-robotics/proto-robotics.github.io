@@ -12,7 +12,7 @@ export default (toolbox, vocab) => {
     /** @type {EditorMode} The current editor mode. */
     let currentMode = null
     // Contains the current editor element.
-    const EditorContainer = span()
+    const EditorContainer = span({ id: 'editor-container' })
 
     /**
      * Swaps the current editor.
@@ -91,7 +91,7 @@ export default (toolbox, vocab) => {
         a({ href: '/cheatsheet' }, 'Cheatsheet'),
     )
 
-    const CustomTooltip = tooltipHelper()  // TODO: rename to initTooltip?
+    const CustomTooltip = tooltipHelper() // TODO: rename to initTooltip?
 
     const PageContent = [
         header(Navbar, Toolbar),

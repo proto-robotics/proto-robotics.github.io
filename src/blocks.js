@@ -56,17 +56,17 @@ export default [
         ],
     },
     {
-        name: "Drivetrain",
+        name: 'Drivetrain',
         color: '#44cc44',
         entries: [],
     },
     {
-        name: "Sensors",
+        name: 'Sensors',
         color: '#4444cc',
         entries: [],
     },
     {
-        name: "Time",
+        name: 'Time',
         color: '#44cccc',
         entries: [],
     },

@@ -188,6 +188,27 @@
     }
 }
 
+@layer line-editor {
+    line-editor {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    button#verify-button {
+        position: absolute;
+        top: 8px;
+        right: 16px;
+        z-index: 1000;
+    }
+
+    div#code-mirror-canvas {
+        width: 100%;
+        height: 100%;
+    }
+}
+
 @layer block-editor {
     block-editor {
         width: 100%;

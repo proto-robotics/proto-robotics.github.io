@@ -22,7 +22,8 @@
     "jszip": "^3.10.1",
     "marked": "^16.4.0",
     "prismjs": "^1.30.0",
-    "pyodide": "^0.28.3"
+    "pyodide": "^0.28.3",
+    "thememirror": "^2.0.1"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

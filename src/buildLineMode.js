@@ -6,7 +6,7 @@ import { EditorState, EditorSelection } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { python } from '@codemirror/lang-python'
-import { oneDark } from '@codemirror/theme-one-dark'
+import { tomorrow } from 'thememirror'
 import { autocompletion, completeFromList } from '@codemirror/autocomplete'
 import { defaultKeymap, indentWithTab } from '@codemirror/commands'
 import { hoverTooltip } from '@codemirror/view'
@@ -97,7 +97,7 @@ export default (vocab) => {
             extensions: [
                 basicSetup,
                 python(),
-                oneDark,
+                tomorrow,
                 customLinter,
                 lintGutter(),
                 autocompletion({
@@ -108,6 +108,8 @@ export default (vocab) => {
             ],
         }),
     })
+
+    view.dom.id = 'code-mirror-canvas'
 
     view.dom.addEventListener('mousemove', (ev) => {
         if (!lastHoverRange) return
@@ -309,6 +311,7 @@ result = {"error": error, "error_line_num": error_line_num, "error_line_offset":
         'line-editor',
         button(
             'Verify',
+            { id: 'verify-button' },
             on('click', async () => {
                 const result = await checkSyntax(view.state.doc.toString())
                 console.log('Result:', result)
