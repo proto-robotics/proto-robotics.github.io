@@ -1,8 +1,6 @@
 import { Events, inject, serialization, svgResize } from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { button, code, div, on, pre, tag } from 'ellipsi'
-import { highlight, languages } from 'prismjs'
-import 'prismjs/components/prism-python'
 
 import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
@@ -10,11 +8,12 @@ import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 
 import { claimTooltip, releaseTooltip } from '../helpers/tooltipHelper'
 import blocks from '../data/blocks'
+import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
+    const codePreview = newView({ readonly: true })
     const BlocklyCanvas = div({ id: 'block-canvas' })
-    const CodePreview = code({ id: 'block-code' })
-    const BlockEditor = tag('block-editor', BlocklyCanvas, pre(CodePreview))
+    const BlockEditor = tag('block-editor', BlocklyCanvas, codePreview.dom)
 
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
@@ -33,12 +32,7 @@ export default (toolbox) => {
         }
 
         const code = pythonGenerator.workspaceToCode(workspace)
-        CodePreview.innerHTML = highlight(
-            'import make\n\n' + code,
-            languages.python,
-            'python',
-        )
-
+        setViewText(codePreview, 'import make\n\n' + code)
         const state = serialization.workspaces.save(workspace)
         localStorage.setItem('blocklyState', JSON.stringify(state))
     })
@@ -79,7 +73,7 @@ export default (toolbox) => {
         saveFilesInZip(projectName, [
             {
                 name: 'main.py',
-                text: CodePreview.innerText,
+                text: getViewText(codePreview),
             },
             {
                 name: projectName + '.json',

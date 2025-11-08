@@ -1,27 +1,194 @@
 import { autocompletion, completeFromList } from '@codemirror/autocomplete'
 import { defaultKeymap, indentWithTab } from '@codemirror/commands'
 import { python } from '@codemirror/lang-python'
-import { lintGutter } from '@codemirror/lint'
-import { keymap } from '@codemirror/view'
+import { linter, lintGutter } from '@codemirror/lint'
+import { hoverTooltip, keymap } from '@codemirror/view'
 import { basicSetup, EditorView } from 'codemirror'
 import { tomorrow } from 'thememirror'
 
-export const new_base_view = () => {
+import { div } from 'ellipsi'
+
+import { functionVocab } from '../data/vocab'
+import { claimTooltip, getOwner, releaseTooltip } from './tooltipHelper'
+import { EditorSelection, EditorState } from '@codemirror/state'
+
+export const newView = ({ readonly } = { readonly: false }) => {
+    let verifiedOutput = null
+    let lastHoverRange = null
+    let completions = []
+
+    for (const [label, entry] of Object.entries(functionVocab)) {
+        completions.push({
+            label: label,
+            type: entry.type,
+            info: () => {
+                claimTooltip('ListAuto', null, entry.description)
+                return div()
+            },
+        })
+    }
+
+    const customLinter = linter((view) => {
+        let diagnostics = []
+        const verified = verifiedOutput
+
+        if (verified?.error) {
+            diagnostics.push({
+                from: view.state.doc.line(verified.error_line_num).from,
+                to:
+                    view.state.doc.line(verified.error_line_num).from +
+                    verified.error_line_offset,
+                severity: 'error',
+                message: verified.error,
+            })
+        }
+
+        if (verified?.warnings?.length) {
+            for (const warning of verified.warnings) {
+                diagnostics.push({
+                    from: 0,
+                    to: 0,
+                    severity: 'warning',
+                    message: warning,
+                })
+            }
+        }
+        return diagnostics
+    })
+
+    const functionInfoTooltip = (view, pos) => {
+        if (getOwner() != null) {
+            return null
+        }
+        const word = view.state.wordAt(pos)
+        if (!word) {
+            lastHoverRange = null
+            return null
+        }
+        const hoveredText = view.state.sliceDoc(word.from, word.to)
+        const found = completions.find(
+            (c) =>
+                c.label === hoveredText || c.label.endsWith('.' + hoveredText),
+        )
+        if (!found) {
+            lastHoverRange = null
+            return null
+        }
+        lastHoverRange = { from: word.from, to: word.to }
+        claimTooltip(
+            'FuncDescript',
+            { x: view.coordsAtPos(pos).left, y: view.coordsAtPos(pos).top },
+            functionVocab[found.label].description,
+        )
+    }
+
+    const extensions = [
+        basicSetup,
+        python(),
+        tomorrow,
+        customLinter,
+        lintGutter(),
+        autocompletion({
+            override: [completeFromList(completions)],
+        }),
+        hoverTooltip(functionInfoTooltip),
+        keymap.of([defaultKeymap, indentWithTab]),
+    ]
+
+    if (readonly) {
+        extensions.push(EditorState.readOnly.of(true))
+        extensions.push(EditorView.editable.of(false))
+    }
+
     const view = new EditorView({
         doc: 'import make\n\n',
-        extensions: [
-            basicSetup,
-            python(),
-            tomorrow,
-            customLinter,
-            lintGutter(),
-            autocompletion({
-                override: [completeFromList(completions)],
-            }),
-            hoverExtension,
-            keymap.of([defaultKeymap, indentWithTab]),
-        ],
+        extensions: extensions,
+    })
+
+    view.dom.addEventListener('mousemove', (ev) => {
+        if (!lastHoverRange) return
+        const coords = { x: ev.clientX, y: ev.clientY }
+        const pos = view.posAtCoords(coords)
+
+        const outsideRange =
+            pos === null || pos < lastHoverRange.from || pos > lastHoverRange.to
+
+        if (outsideRange) {
+            releaseTooltip('FuncDescript')
+            lastHoverRange = null
+        }
+    })
+
+    view.dom.addEventListener('keyup', (ev) => {
+        releaseTooltip('FuncDescript')
+    })
+
+    view.dom.addEventListener('perform-linting', (ev) => {
+        verifiedOutput = ev.detail
+
+        const pos = view.state.selection.main.head
+        // Add and remove a space to force linting
+        let storeCurrent = view.state.doc.toString()
+        setViewText(view, storeCurrent + ' ')
+        setViewText(view, storeCurrent)
+        // Refocus previous line
+        view.dispatch({
+            selection: EditorSelection.cursor(pos),
+        })
+    })
+
+    const selector = '.cm-tooltip-autocomplete.cm-tooltip.cm-tooltip-below'
+    const observer = new MutationObserver((mutationsList) => {
+        let tooltipFound = false
+
+        for (const mutation of mutationsList) {
+            for (const addedNode of mutation.addedNodes) {
+                if (addedNode.nodeType === 1) {
+                    setTimeout(() => {
+                        const matches = []
+                        if (addedNode.matches(selector)) {
+                            matches.push(addedNode)
+                        }
+                        matches.push(...addedNode.querySelectorAll(selector))
+
+                        for (const el of matches) {
+                            const rect = el.getBoundingClientRect()
+                            claimTooltip(
+                                'ListAuto',
+                                { x: rect.x + rect.width, y: rect.y },
+                                null,
+                            )
+                            tooltipFound = true
+                        }
+                    })
+                }
+            }
+
+            for (const removedNode of mutation.removedNodes) {
+                if (removedNode.nodeType === 1) {
+                    if (removedNode.matches?.(selector)) {
+                        releaseTooltip('ListAuto')
+                    }
+                }
+            }
+        }
+    })
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
     })
 
     return view
+}
+
+export const getViewText = (view) => {
+    return view.state.doc.toString()
+}
+
+export const setViewText = (view, text) => {
+    view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: text },
+    })
 }

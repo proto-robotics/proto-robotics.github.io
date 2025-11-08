@@ -1,25 +1,18 @@
 import { processJengaTower } from '@protorobotics/jenga'
 import { pythonGenerator } from 'blockly/python'
-import Prism from 'prismjs'
 
 import blocks from './data/blocks'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 
 const main = () => {
-    Prism.manual = true
-
     const { toolbox, vocab } = processJengaTower(blocks, pythonGenerator)
 
     const params = new URLSearchParams(window.location.search)
 
-    let PageContent
-
-    if (params.has("cheatsheet")) {
-        PageContent = BuildCheatSheet(toolbox, vocab)
-    } else {
-        PageContent = BuildPageContent(toolbox, vocab)
-    }
+    const PageContent = params.has('cheatsheet')
+        ? BuildCheatSheet(toolbox, vocab)
+        : BuildPageContent(toolbox, vocab)
 
     document.body.replaceChildren(...PageContent)
 }

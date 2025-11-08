@@ -96,6 +96,7 @@ export default (toolbox, vocab) => {
     const PageContent = [
         header(Navbar, Toolbar),
         EditorContainer,
+        CustomTooltip,
         footer(
             'PROTO Robotics | ',
             a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),
@@ -104,7 +105,6 @@ export default (toolbox, vocab) => {
                 href: 'https://github.com/proto-robotics/proto-robotics.github.io',
             }),
         ),
-        CustomTooltip,
     ]
 
     return PageContent
