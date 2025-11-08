@@ -15,6 +15,8 @@ export default (toolbox) => {
     const BlocklyCanvas = div({ id: 'block-canvas' })
     const BlockEditor = tag('block-editor', BlocklyCanvas, codePreview.dom)
 
+    codePreview.dom.id = 'code-preview'
+
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
     })

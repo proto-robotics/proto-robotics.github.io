@@ -218,14 +218,9 @@
             'blockly code' 1fr
             / 2fr 1fr;
 
-        pre:has(code#block-code) {
+        div#code-preview {
             border-left: var(--rule-width) solid var(--text);
             overflow: auto;
-        }
-
-        code#block-code {
-            display: block;
-            margin: 16px;
         }
     }
 }

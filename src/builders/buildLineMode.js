@@ -57,7 +57,7 @@ export default (vocab) => {
                 const reader = new FileReader()
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
-                    setEditorText(view, event.target.result)
+                    setViewText(view, event.target.result)
                 }
 
                 // Close the pop up
