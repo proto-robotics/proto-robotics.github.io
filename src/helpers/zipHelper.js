@@ -16,7 +16,7 @@ export const saveFilesInZip = (zipName, files) => {
 
     zip.generateAsync({ type: 'base64' }).then((encoding) => {
         const dummyLink = a({
-            download: zipName,
+            download: zipName + ".zip",
             href: 'data:application/zip;base64,' + encoding,
         })
         dummyLink.dispatchEvent(new MouseEvent('click'))

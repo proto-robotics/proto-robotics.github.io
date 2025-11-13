@@ -58,6 +58,7 @@ export default (vocab) => {
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
                     setViewText(view, event.target.result)
+                    saveState()
                 }
 
                 // Close the pop up
