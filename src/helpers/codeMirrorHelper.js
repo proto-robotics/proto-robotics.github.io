@@ -22,7 +22,11 @@ export const newView = ({ readonly } = { readonly: false }) => {
             label: label,
             type: entry.type,
             info: () => {
-                claimTooltip('ListAuto', null, entry.description)
+                if (getOwner() != 'ListAuto') {
+                    claimTooltip('ListAuto', { x: -999, y: -9999 }, entry.description)
+                } else {
+                    claimTooltip('ListAuto', null, entry.description)
+                }
                 return div()
             },
         })
@@ -137,36 +141,26 @@ export const newView = ({ readonly } = { readonly: false }) => {
         })
     })
 
-    const selector = '.cm-tooltip-autocomplete.cm-tooltip.cm-tooltip-below'
     const observer = new MutationObserver((mutationsList) => {
-        let tooltipFound = false
-
         for (const mutation of mutationsList) {
             for (const addedNode of mutation.addedNodes) {
                 if (addedNode.nodeType === 1) {
                     setTimeout(() => {
-                        const matches = []
-                        if (addedNode.matches(selector)) {
-                            matches.push(addedNode)
-                        }
-                        matches.push(...addedNode.querySelectorAll(selector))
-
-                        for (const el of matches) {
-                            const rect = el.getBoundingClientRect()
+                        if (addedNode.matches('div.cm-tooltip.cm-completionInfo')) {
+                            const rect = addedNode.getBoundingClientRect()
                             claimTooltip(
                                 'ListAuto',
                                 { x: rect.x + rect.width, y: rect.y },
                                 null,
                             )
-                            tooltipFound = true
                         }
-                    })
+                    },10)
                 }
             }
 
             for (const removedNode of mutation.removedNodes) {
                 if (removedNode.nodeType === 1) {
-                    if (removedNode.matches?.(selector)) {
+                    if (removedNode.matches?.("div.cm-tooltip-autocomplete.cm-tooltip")) {
                         releaseTooltip('ListAuto')
                     }
                 }
