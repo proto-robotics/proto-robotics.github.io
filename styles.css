@@ -1,5 +1,3 @@
-@import url('/prism.css');
-
 @layer reset {
     * {
         margin: 0;
