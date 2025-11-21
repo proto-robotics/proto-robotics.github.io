@@ -349,7 +349,7 @@ export default [
                 },
             },
             {
-                name: 'stop',
+                name: 'stopMotor',
                 description: 'Stops a motor or drivetrain',
                 blocklyTemplate: [
                     {
@@ -374,17 +374,514 @@ export default [
     {
         name: 'Drivetrain',
         color: '#44cc44',
-        entries: [],
+        entries: [
+            {
+                name: 'drivetrain',
+                description: 'Creates a drivetrain from two motors',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'is a drivetrain from motors',
+                    },
+                    {
+                        field: () => new FieldTextInput('left'),
+                        name: 'left',
+                    },
+                    {
+                        text: 'and',
+                    },
+                    {
+                        field: () => new FieldTextInput('right'),
+                        name: 'right',
+                    },
+                    {
+                        text: 'in direction',
+                    },
+                    {
+                        field: () =>
+                            new FieldDropdown([
+                                ['clockwise', '1'],
+                                ['counter-clockwise', '-1'],
+                            ]),
+                        name: 'direction',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+
+                    const text_left = block
+                        .getFieldValue('left')
+                        .replace(' ', '_')
+                    const text_right = block
+                        .getFieldValue('right')
+                        .replace(' ', '_')
+                    const dropdown_direction = block.getFieldValue('direction')
+
+                    const directionSnippet =
+                        dropdown_direction == 1 ? '' : ', direction=-1'
+                    const code = `${text_name} = make.drivetrain(${text_left}, ${text_right}${directionSnippet})\n`
+                    return code
+                },
+            },
+            {
+                name: 'drive',
+                description: 'Drives a drivetrain at a power until stopped',
+                blocklyTemplate: [
+                    {
+                        text: 'Drive',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'at',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'power',
+                    },
+                    {
+                        text: 'power',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+                    const number_power = block.getFieldValue('power')
+
+                    const code = `${text_name}.drive(power=${number_power})\n`
+                    return code
+                },
+            },
+            {
+                name: 'driveForTime',
+                description: 'Drives a drivetrain at a power for a time',
+                blocklyTemplate: [
+                    {
+                        text: 'Drive',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'at',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'power',
+                    },
+                    {
+                        text: 'power for',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
+                        name: 'time',
+                    },
+                    {
+                        text: 'seconds',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+                    const number_power = block.getFieldValue('power')
+                    const number_time = block.getFieldValue('time')
+
+                    const code = `${text_name}.drive(power=${number_power}, seconds=${number_time})\n`
+                    return code
+                },
+            },
+            {
+                name: 'curve',
+                description:
+                    'Curves a drivetrain at two different powers until stopped',
+                blocklyTemplate: [
+                    {
+                        text: 'Curve',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'at',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'left',
+                    },
+                    {
+                        text: 'left power and',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'right',
+                    },
+                    {
+                        text: 'right power',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+                    const number_left = block.getFieldValue('left')
+                    const number_right = block.getFieldValue('right')
+
+                    const code = `${text_name}.curve(left_power=${number_left}, right_power=${number_right})\n`
+                    return code
+                },
+            },
+            {
+                name: 'curveForTime',
+                description:
+                    'Curves a drivetrain at two different powers for a time',
+                blocklyTemplate: [
+                    {
+                        text: 'Curve',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'at',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'left',
+                    },
+                    {
+                        text: 'left power and',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'right',
+                    },
+                    {
+                        text: 'right power for',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
+                        name: 'time',
+                    },
+                    {
+                        text: 'seconds',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+                    const number_left = block.getFieldValue('left')
+                    const number_right = block.getFieldValue('right')
+                    const number_time = block.getFieldValue('time')
+
+                    const code = `${text_name}.curve(left_power=${number_left}, right_power=${number_right}, seconds=${number_time})\n`
+                    return code
+                },
+            },
+            {
+                name: 'turn',
+                description: 'Turn a drivetrain at a power until stopped',
+                blocklyTemplate: [
+                    {
+                        text: 'Turn',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'at',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'power',
+                    },
+                    {
+                        text: 'power for',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
+                        name: 'time',
+                    },
+                    {
+                        text: 'seconds',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+                    const number_power = block.getFieldValue('power')
+
+                    const code = `${text_name}.turn(power=${number_power})\n`
+                    return code
+                },
+            },
+            {
+                name: 'turnForTime',
+                description: 'Turn a drivetrain at a power until stopped',
+                blocklyTemplate: [
+                    {
+                        text: 'Turn',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'at',
+                    },
+                    {
+                        field: () => new FieldNumber(100, -100, 100, 0.1),
+                        name: 'power',
+                    },
+                    {
+                        text: 'power for',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
+                        name: 'time',
+                    },
+                    {
+                        text: 'seconds',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+                    const number_power = block.getFieldValue('power')
+                    const number_time = block.getFieldValue('time')
+
+                    const code = `${text_name}.turn(power=${number_power}, seconds=${number_time})\n`
+                    return code
+                },
+            },
+            {
+                name: 'stopDrivetrain',
+                description: 'Stops a motor or drivetrain',
+                blocklyTemplate: [
+                    {
+                        text: 'Stop',
+                    },
+                    {
+                        field: () => new FieldTextInput('drivetrain'),
+                        name: 'name',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+
+                    const code = `${text_name}.stop()\n`
+                    return code
+                },
+            },
+        ],
     },
     {
         name: 'Sensors',
         color: '#4444cc',
-        entries: [],
+        entries: [
+            {
+                name: 'button',
+                description: 'Creates a button',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldTextInput('button'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'is a button on port',
+                    },
+                    {
+                        field: () =>
+                            new FieldDropdown([
+                                ['8', '8'],
+                                ['9', '9'],
+                            ]),
+                        name: 'port',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+
+                    const dropdown_port = block.getFieldValue('port')
+
+                    const code = `${text_name} = make.button(port=${dropdown_port})\n`
+                    return code
+                },
+            },
+            {
+                name: 'isPressed',
+                description: 'Returns whether or not the button is pressed',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldTextInput('button'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'is pressed?',
+                    },
+                ],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                codeGenerator: (block, generator) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+
+                    const code = `${text_name}.pressed()`
+                    return [code, generator.ORDER_NONE]
+                },
+            },
+            {
+                name: 'isHeld',
+                description: 'Returns whether or not the button is held down',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldTextInput('button'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'is held down?',
+                    },
+                ],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                codeGenerator: (block, generator) => {
+                    const text_name = block
+                        .getFieldValue('name')
+                        .replace(' ', '_')
+
+                    const code = `${text_name}.held()`
+                    return [code, generator.ORDER_NONE]
+                },
+            },
+        ],
     },
     {
         name: 'Time',
         color: '#44cccc',
-        entries: [],
+        entries: [
+            {
+                name: 'wait',
+                description: 'Waits for a number of seconds',
+                blocklyTemplate: [
+                    {
+                        text: 'Wait',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
+                        name: 'time',
+                    },
+                    {
+                        text: 'seconds',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const number_time = block.getFieldValue('time')
+
+                    const code = `make.wait(seconds=${number_time})\n`
+                    return code
+                },
+            },
+            {
+                name: 'until',
+                description: 'Waits until a action returns true',
+                blocklyTemplate: [
+                    {
+                        text: 'Wait until',
+                    },
+                ],
+                blocklyInput: {
+                    name: 'function',
+                    type: 'Boolean',
+                },
+                codeGenerator: (block, generator) => {
+                    const value_function =
+                        generator.valueToCode(
+                            block,
+                            'function',
+                            generator.ORDER_ATOMIC,
+                        )
+
+                    const len = value_function.length
+                    let functionText
+
+                    if (len < 4) {
+                        functionText = '()'
+                    } else if (
+                        value_function[len - 3] == '(' &&
+                        value_function[len - 2] == ')'
+                    ) {
+                        functionText = value_function.replace('()', '')
+                    } else {
+                        functionText = `(lambda: ${value_function})`
+                    }
+
+                    const code = `make.wait_until${functionText}\n`
+                    return code
+                },
+            },
+            {
+                name: 'while',
+                description: 'Waits while a action returns true',
+                blocklyTemplate: [
+                    {
+                        text: 'Wait while',
+                    },
+                ],
+                blocklyInput: {
+                    name: 'function',
+                    type: 'Boolean',
+                },
+                codeGenerator: (block, generator) => {
+                    const value_function =
+                        generator.valueToCode(
+                            block,
+                            'function',
+                            generator.ORDER_ATOMIC,
+                        )
+
+                    const len = value_function.length
+                    let functionText
+
+                    if (len < 4) {
+                        functionText = '()'
+                    } else if (
+                        value_function[len - 3] == '(' &&
+                        value_function[len - 2] == ')'
+                    ) {
+                        functionText = value_function.replace('()', '')
+                    } else {
+                        functionText = `(lambda: ${value_function})`
+                    }
+
+                    const code = `make.wait_while${functionText}\n`
+                    return code
+                },
+            },
+        ],
     },
 ]
 
