@@ -1,4 +1,4 @@
-import { Events, inject, serialization, svgResize } from 'blockly'
+import { Events, getFocusManager, inject, serialization, svgResize } from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { button, code, div, on, pre, tag } from 'ellipsi'
 
@@ -65,6 +65,13 @@ export default (toolbox) => {
         }
     })
     resizeObserver.observe(BlockEditor)
+
+    // TODO: for debug only
+    const focusManager = getFocusManager()
+    BlocklyCanvas.addEventListener("click", () => {
+        const node = focusManager.getFocusedNode()
+        console.log(node)
+    })
 
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
