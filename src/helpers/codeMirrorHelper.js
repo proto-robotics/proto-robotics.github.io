@@ -1,9 +1,31 @@
-import { autocompletion, completeFromList } from '@codemirror/autocomplete'
-import { defaultKeymap, indentWithTab } from '@codemirror/commands'
+import {
+    autocompletion,
+    closeBrackets,
+    closeBracketsKeymap,
+    completeFromList,
+    completionKeymap,
+} from '@codemirror/autocomplete'
+import {
+    defaultKeymap,
+    history,
+    historyKeymap,
+    indentWithTab,
+} from '@codemirror/commands'
 import { python } from '@codemirror/lang-python'
-import { linter, lintGutter } from '@codemirror/lint'
-import { hoverTooltip, keymap } from '@codemirror/view'
-import { basicSetup, EditorView } from 'codemirror'
+import { linter, lintGutter, lintKeymap } from '@codemirror/lint'
+import {
+    crosshairCursor,
+    drawSelection,
+    dropCursor,
+    highlightActiveLine,
+    highlightActiveLineGutter,
+    highlightSpecialChars,
+    hoverTooltip,
+    keymap,
+    lineNumbers,
+    rectangularSelection,
+} from '@codemirror/view'
+import { EditorView } from 'codemirror'
 import { tomorrow } from 'thememirror'
 
 import { div } from 'ellipsi'
@@ -11,8 +33,19 @@ import { div } from 'ellipsi'
 import { functionVocab } from '../data/vocab'
 import { claimTooltip, getOwner, releaseTooltip } from './tooltipHelper'
 import { EditorSelection, EditorState } from '@codemirror/state'
+import {
+    bracketMatching,
+    defaultHighlightStyle,
+    foldGutter,
+    foldKeymap,
+    indentOnInput,
+    syntaxHighlighting,
+} from '@codemirror/language'
+import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 
-export const newView = ({ readonly } = { readonly: false }) => {
+export const newView = (
+    { readonly, noGutter } = { readonly: false, noGutter: false },
+) => {
     let verifiedOutput = null
     let lastHoverRange = null
     let completions = []
@@ -23,7 +56,11 @@ export const newView = ({ readonly } = { readonly: false }) => {
             type: entry.type,
             info: () => {
                 if (getOwner() != 'ListAuto') {
-                    claimTooltip('ListAuto', { x: -999, y: -9999 }, entry.description)
+                    claimTooltip(
+                        'ListAuto',
+                        { x: -999, y: -9999 },
+                        entry.description,
+                    )
                 } else {
                     claimTooltip('ListAuto', null, entry.description)
                 }
@@ -87,17 +124,44 @@ export const newView = ({ readonly } = { readonly: false }) => {
     }
 
     const extensions = [
-        basicSetup,
+        highlightSpecialChars(),
+        history(),
+        drawSelection(),
+        dropCursor(),
+        EditorState.allowMultipleSelections.of(true),
+        indentOnInput(),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion(),
+        rectangularSelection(),
+        crosshairCursor(),
+        highlightActiveLine(),
+        highlightSelectionMatches(),
+        keymap.of([
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...searchKeymap,
+            ...historyKeymap,
+            ...foldKeymap,
+            ...completionKeymap,
+            ...lintKeymap,
+            indentWithTab,
+        ]),
         python(),
         tomorrow,
         customLinter,
-        lintGutter(),
         autocompletion({
             override: [completeFromList(completions)],
         }),
         hoverTooltip(functionInfoTooltip),
-        keymap.of([defaultKeymap, indentWithTab]),
     ]
+
+    if (!noGutter) {
+        extensions.push(lineNumbers())
+        extensions.push(highlightActiveLineGutter())
+        extensions.push(lintGutter())
+    }
 
     if (readonly) {
         extensions.push(EditorState.readOnly.of(true))
@@ -146,7 +210,11 @@ export const newView = ({ readonly } = { readonly: false }) => {
             for (const addedNode of mutation.addedNodes) {
                 if (addedNode.nodeType === 1) {
                     setTimeout(() => {
-                        if (addedNode.matches('div.cm-tooltip.cm-completionInfo')) {
+                        if (
+                            addedNode.matches(
+                                'div.cm-tooltip.cm-completionInfo',
+                            )
+                        ) {
                             const rect = addedNode.getBoundingClientRect()
                             claimTooltip(
                                 'ListAuto',
@@ -154,13 +222,17 @@ export const newView = ({ readonly } = { readonly: false }) => {
                                 null,
                             )
                         }
-                    },10)
+                    }, 10)
                 }
             }
 
             for (const removedNode of mutation.removedNodes) {
                 if (removedNode.nodeType === 1) {
-                    if (removedNode.matches?.("div.cm-tooltip-autocomplete.cm-tooltip")) {
+                    if (
+                        removedNode.matches?.(
+                            'div.cm-tooltip-autocomplete.cm-tooltip',
+                        )
+                    ) {
                         releaseTooltip('ListAuto')
                     }
                 }

@@ -87,7 +87,9 @@
 @layer layout {
     html {
         --text: #333;
+        --text-faded: #999;
         --bg: #fff;
+        --bg-faded: #eee;
         --primary-red: #f2737b;
         --secondary-red: #b2404b;
         --primary-blue: #6395cf;
@@ -95,7 +97,7 @@
         --offset-grey: #d8d8d8;
         --secondary-grey: #4e4e4e;
 
-        --rule-width: 2px;
+        --rule-width: 1px;
 
         font:
             14pt / 1.5 Monteserrat,
@@ -125,7 +127,7 @@
     }
 
     nav {
-        padding: 8px;
+        padding: 12px 8px;
         background: var(--secondary-grey);
         display: flex;
         flex-direction: row;
@@ -146,10 +148,10 @@
         background: var(--offset-grey);
         display: block;
         width: 100%;
-        border-bottom: var(--rule-width) solid var(--text);
+        border-bottom: var(--rule-width) solid var(--text-faded);
 
         input[type='text'] {
-            border: var(--rule-width) solid var(--text);
+            border: var(--rule-width) solid var(--text-faded);
             border-bottom: none;
             background: var(--bg);
             font-size: 0.8rem;
@@ -158,13 +160,13 @@
         }
 
         button {
-            border: var(--rule-width) solid var(--text);
+            border: var(--rule-width) solid var(--text-faded);
             border-radius: 8px 8px 0 0;
             border-bottom: none;
-            background: var(--offset-grey);
+            background: var(--bg-faded);
             font-size: 0.8rem;
             margin: 4px 4px 0 4px;
-            padding: 2px 4px;
+            padding: 2px 8px;
             display: inline;
 
             &:hover {
@@ -217,8 +219,9 @@
             / 2fr 1fr;
 
         div#code-preview {
-            border-left: var(--rule-width) solid var(--text);
+            border-left: var(--rule-width) solid var(--text-faded);
             overflow: auto;
+            padding: 8px;
         }
     }
 }
@@ -247,9 +250,6 @@
     font-weight: bold;
 }
 
-/* -------------------------------------------------
-   Tooltip styling – matches the JavaScript you had
-   ------------------------------------------------- */
 custom-tooltip {
     position: absolute;
     pointer-events: none;

@@ -11,7 +11,7 @@ import blocks from '../data/blocks'
 import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
-    const codePreview = newView({ readonly: true })
+    const codePreview = newView({ readonly: true, noGutter: true })
     const BlocklyCanvas = div({ id: 'block-canvas' })
     const BlockEditor = tag('block-editor', BlocklyCanvas, codePreview.dom)
 
