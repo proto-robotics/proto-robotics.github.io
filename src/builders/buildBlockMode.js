@@ -12,7 +12,20 @@ import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
     const codePreview = newView({ readonly: true })
-    const BlocklyCanvas = div({ id: 'block-canvas' })
+
+    const CopyToLineEditorButton = button(
+        'Copy to Line Editor',
+        { id: 'copy-to-line-editor-button' },
+        on('click', async () => {
+            localStorage.setItem('codeMirrorState', getViewText(codePreview))
+            const editorContainer = document.getElementById('editor-container');
+            const copyToLineEditorEvent = new CustomEvent('switch-editor')
+            editorContainer.dispatchEvent(copyToLineEditorEvent)
+        }),
+    )
+
+
+    const BlocklyCanvas = div(CopyToLineEditorButton,{ id: 'block-canvas' })
     const BlockEditor = tag('block-editor', BlocklyCanvas, codePreview.dom)
 
     codePreview.dom.id = 'code-preview'
@@ -28,6 +41,24 @@ export default (toolbox) => {
         Events.BLOCK_MOVE,
     ])
 
+    const saveState = () => {
+        const state = serialization.workspaces.save(workspace)
+        localStorage.setItem('blocklyState', JSON.stringify(state))
+    }
+
+    const loadState = () => {
+        const previousState = localStorage.getItem('blocklyState')
+        if (previousState) {
+            // Timeout prevents styles from breaking
+            setTimeout(() => {
+                serialization.workspaces.load(
+                    JSON.parse(previousState),
+                    workspace,
+                )
+            })
+        }
+    }
+
     workspace.addChangeListener((event) => {
         if (workspace.isDragging() || !supportedEvents.has(event.type)) {
             return
@@ -35,8 +66,7 @@ export default (toolbox) => {
 
         const code = pythonGenerator.workspaceToCode(workspace)
         setViewText(codePreview, 'import make\n\n' + code)
-        const state = serialization.workspaces.save(workspace)
-        localStorage.setItem('blocklyState', JSON.stringify(state))
+        saveState()
     })
 
     // Redraw the canvas when it is rendered, and load the previous code the
@@ -53,16 +83,7 @@ export default (toolbox) => {
         hasRendered = true
 
         // Load previous state if one exists
-        const previousState = localStorage.getItem('blocklyState')
-        if (previousState) {
-            // Timeout prevents styles from breaking
-            setTimeout(() => {
-                serialization.workspaces.load(
-                    JSON.parse(previousState),
-                    workspace,
-                )
-            })
-        }
+        loadState()
     })
     resizeObserver.observe(BlockEditor)
 

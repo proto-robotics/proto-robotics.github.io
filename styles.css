@@ -221,6 +221,13 @@
             overflow: auto;
         }
     }
+
+    button#copy-to-line-editor-button {
+        position: absolute;
+        bottom: 8px;
+        right: 16px;
+        z-index: 1000;
+    }
 }
 
 @font-face {
