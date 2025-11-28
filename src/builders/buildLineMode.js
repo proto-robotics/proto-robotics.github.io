@@ -9,10 +9,13 @@ export default (vocab) => {
     const view = newView()
     view.dom.id = 'line-editor-canvas'
 
-    const previousState = localStorage.getItem('codeMirrorState')
-    if (previousState) {
-        setViewText(view, previousState)
+    const loadState = () => {
+        const savedState = localStorage.getItem('codeMirrorState')
+        if (savedState) {
+            setViewText(view, savedState)
+        }
     }
+    loadState()
 
     const saveState = () => {
         localStorage.setItem('codeMirrorState', getViewText(view))
@@ -93,5 +96,5 @@ export default (vocab) => {
         on('click', () => view.focus()),
     )
 
-    return new EditorMode('line', LineEditor, saveCode, loadCode)
+    return new EditorMode('line', LineEditor, saveCode, loadCode, saveState, loadState)
 }

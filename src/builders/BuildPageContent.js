@@ -33,7 +33,16 @@ export default (toolbox, vocab) => {
 
         // Store the current choice in local storage.
         localStorage.setItem('editorMode', currentMode.name)
+
+        // Load the previous state for the new editor.
+        if (currentMode.loadState) {
+            currentMode.loadState()
+        }
     }
+
+    EditorContainer.addEventListener('switch-editor', () => {
+        switchEditor()
+    })
 
     // Set the initial editor.
     const previousModeName = localStorage.getItem('editorMode')
