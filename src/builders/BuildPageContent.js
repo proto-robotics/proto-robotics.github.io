@@ -40,7 +40,7 @@ export default (toolbox, vocab) => {
         }
     }
 
-    EditorContainer.addEventListener('switch-editor', () => {
+    document.addEventListener('switch-editor', () => {
         switchEditor()
     })
 
