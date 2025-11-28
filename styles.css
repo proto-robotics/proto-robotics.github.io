@@ -211,6 +211,7 @@
 
 @layer block-editor {
     block-editor {
+        position: relative;
         width: 100%;
         height: 100%;
         display: grid;
