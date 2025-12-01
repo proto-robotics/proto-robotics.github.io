@@ -4,6 +4,7 @@ import {
     closeBracketsKeymap,
     completeFromList,
     completionKeymap,
+    acceptCompletion,
 } from '@codemirror/autocomplete'
 import {
     defaultKeymap,
@@ -139,6 +140,7 @@ export const newView = (
         highlightActiveLine(),
         highlightSelectionMatches(),
         keymap.of([
+            { key: "Tab", run: acceptCompletion },
             ...closeBracketsKeymap,
             ...defaultKeymap,
             ...searchKeymap,
