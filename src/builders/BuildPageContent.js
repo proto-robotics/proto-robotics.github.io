@@ -97,7 +97,7 @@ export default (toolbox, vocab) => {
                 height: '32',
             }),
         ),
-        a({ href: 'https://protorobotics.org' }, 'Info'),
+        a({ href: 'https://protorobotics.org' }, 'Home'),
         a({ href: '/cheatsheet' }, 'Cheatsheet'),
     )
 

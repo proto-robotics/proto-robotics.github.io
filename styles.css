@@ -6,6 +6,39 @@
     }
 }
 
+@layer base {
+    html {
+        --text: #333;
+        --text-faded: #999;
+        --bg: #fff;
+        --bg-faded: #eee;
+        --primary-red: #f2737b;
+        --secondary-red: #b2404b;
+        --primary-blue: #6395cf;
+        --secondary-red: #b2404b;
+        --secondary-blue: #325f94;
+        --offset-grey: #d8d8d8;
+        --secondary-grey: #4e4e4e;
+
+        --rule-width: 1px;
+
+        font:
+            14pt / 1.5 Monteserrat,
+            sans-serif;
+        hyphens: auto;
+        color: var(--text);
+        background: var(--bg);
+    }
+
+    button,
+    input {
+        font:
+            14pt / 1.5 Monteserrat,
+            sans-serif;
+        color: var(--text);
+    }
+}
+
 @layer elements {
     a {
         color: var(--primary-blue);
@@ -25,16 +58,18 @@
         border: none;
         border-radius: 8px;
         padding: 4px 8px;
-        background: var(--offset-grey);
+        background: var(--primary-red);
         display: block;
         margin: 16px auto;
 
         &:hover {
-            background: var(--primary-red);
+            background: var(--secondary-red);
+            color: var(--bg);
         }
 
         &:active {
             background: var(--offset-grey);
+            color: var(--text);
         }
     }
 
@@ -82,39 +117,25 @@
             color: var(--bg);
         }
     }
+
+    custom-tooltip {
+        position: absolute;
+        pointer-events: none;
+
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        border-radius: 3px;
+        padding: 3px 4px;
+
+        font-size: 10px;
+        line-height: 1.2;
+
+        max-width: 40%;
+        display: none;
+    }
 }
 
 @layer layout {
-    html {
-        --text: #333;
-        --text-faded: #999;
-        --bg: #fff;
-        --bg-faded: #eee;
-        --primary-red: #f2737b;
-        --secondary-red: #b2404b;
-        --primary-blue: #6395cf;
-        --secondary-blue: #325f94;
-        --offset-grey: #d8d8d8;
-        --secondary-grey: #4e4e4e;
-
-        --rule-width: 1px;
-
-        font:
-            14pt / 1.5 Monteserrat,
-            sans-serif;
-        hyphens: auto;
-        color: var(--text);
-        background: var(--bg);
-    }
-
-    button,
-    input {
-        font:
-            14pt / 1.5 Monteserrat,
-            sans-serif;
-        color: var(--text);
-    }
-
     body {
         width: 100vw;
         height: 100vh;
@@ -131,11 +152,11 @@
         background: var(--secondary-grey);
         display: flex;
         flex-direction: row;
-        gap: 16px;
+        gap: 20px;
         align-items: center;
 
         a:first-child:has(img) {
-            padding-right: 32px;
+            padding-right: 16px;
         }
 
         a {
@@ -171,6 +192,7 @@
 
             &:hover {
                 background: rgb(from var(--primary-red) r g b / 0.3);
+                color:var(--text);
             }
 
             &:active {
@@ -256,20 +278,4 @@
     src: url('/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
     font-style: italic;
     font-weight: bold;
-}
-
-custom-tooltip {
-    position: absolute;
-    pointer-events: none;
-
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    border-radius: 3px;
-    padding: 3px 4px;
-
-    font-size: 10px;
-    line-height: 1.2;
-
-    max-width: 40%;
-    display: none;
 }
