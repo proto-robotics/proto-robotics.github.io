@@ -1,4 +1,4 @@
-import { Events, getFocusManager, inject, serialization, svgResize } from 'blockly'
+import { Events, getFocusManager, inject, serialization, svgResize, setParentContainer } from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { button, code, div, on, pre, tag } from 'ellipsi'
 
@@ -31,6 +31,13 @@ export default (toolbox) => {
     )
 
     codePreview.dom.id = 'code-preview'
+
+    setParentContainer(BlockEditor); // fixes Blockly blocks stealing focus from text inputs and the right click context menu
+
+    setTimeout(() => {
+        const headerHeight = document.querySelector('header').getBoundingClientRect().height;
+        document.querySelector('.blocklyWidgetDiv').style.marginTop = `-${headerHeight}px`;
+    }, 0); // adds a offset to the blockly widgets to account for the header height
 
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
@@ -88,13 +95,6 @@ export default (toolbox) => {
         loadState()
     })
     resizeObserver.observe(BlockEditor)
-
-    // TODO: for debug only
-    const focusManager = getFocusManager()
-    BlocklyCanvas.addEventListener("click", () => {
-        const node = focusManager.getFocusedNode()
-        console.log(node)
-    })
 
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
