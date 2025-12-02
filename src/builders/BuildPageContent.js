@@ -83,10 +83,6 @@ export default (toolbox, vocab) => {
             'Switch editor',
             on('click', () => switchEditor()),
         ),
-        button(
-            'Load example',
-            on('click', () => {}),
-        ),
     )
 
     const Navbar = tag(
