@@ -818,12 +818,11 @@ export default [
                     type: 'Boolean',
                 },
                 codeGenerator: (block, generator) => {
-                    const value_function =
-                        generator.valueToCode(
-                            block,
-                            'function',
-                            generator.ORDER_ATOMIC,
-                        )
+                    const value_function = generator.valueToCode(
+                        block,
+                        'function',
+                        generator.ORDER_ATOMIC,
+                    )
 
                     const len = value_function.length
                     let functionText
@@ -856,12 +855,11 @@ export default [
                     type: 'Boolean',
                 },
                 codeGenerator: (block, generator) => {
-                    const value_function =
-                        generator.valueToCode(
-                            block,
-                            'function',
-                            generator.ORDER_ATOMIC,
-                        )
+                    const value_function = generator.valueToCode(
+                        block,
+                        'function',
+                        generator.ORDER_ATOMIC,
+                    )
 
                     const len = value_function.length
                     let functionText

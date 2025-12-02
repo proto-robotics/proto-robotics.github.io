@@ -1,6 +1,12 @@
-import { Events, getFocusManager, inject, serialization, svgResize, setParentContainer } from 'blockly'
+import {
+    Events,
+    inject,
+    serialization,
+    svgResize,
+    setParentContainer,
+} from 'blockly'
 import { pythonGenerator } from 'blockly/python'
-import { button, code, div, on, pre, tag } from 'ellipsi'
+import { button, div, on, tag } from 'ellipsi'
 
 import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
@@ -12,6 +18,8 @@ import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
     const codePreview = newView({ readonly: true, noGutter: true })
+    codePreview.dom.id = 'code-preview'
+
     const BlocklyCanvas = div({ id: 'block-canvas' })
     const CopyToLineEditorButton = button(
         'Open in Line Editor',
@@ -24,20 +32,12 @@ export default (toolbox) => {
     )
 
     const BlockEditor = tag(
-      'block-editor',
-      BlocklyCanvas,
-      codePreview.dom,
-      CopyToLineEditorButton
+        'block-editor',
+        BlocklyCanvas,
+        codePreview.dom,
+        CopyToLineEditorButton,
     )
-
-    codePreview.dom.id = 'code-preview'
-
-    setParentContainer(BlockEditor); // fixes Blockly blocks stealing focus from text inputs and the right click context menu
-
-    setTimeout(() => {
-        const headerHeight = document.querySelector('header').getBoundingClientRect().height;
-        document.querySelector('.blocklyWidgetDiv').style.marginTop = `-${headerHeight}px`;
-    }, 0); // adds a offset to the blockly widgets to account for the header height
+    setParentContainer(BlockEditor) // fixes Blockly blocks stealing focus from text inputs and the right click context menu
 
     const workspace = inject(BlocklyCanvas, {
         toolbox: toolbox,
@@ -193,7 +193,14 @@ export default (toolbox) => {
         document.body.appendChild(LoadPopUp)
     }
 
-    return new EditorMode('block', BlockEditor, saveCode, loadCode)
+    return new EditorMode(
+        'block',
+        BlockEditor,
+        saveCode,
+        loadCode,
+        saveState,
+        loadState,
+    )
 }
 
 function getBlockDescriptionDictionary(categories) {

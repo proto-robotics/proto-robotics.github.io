@@ -51,10 +51,11 @@ export default (vocab) => {
 
                 const file = FileInput.files[0]
 
-                // Set project name to the file name
-                const projectName = file.name.replaceAll('.json', '')
-                ProjectNameInput.value = projectName
-                localStorage.setItem('projectName', projectName)
+                // TODO: find some way to retreive proj name from .PY file.
+                // // Set project name to the file name
+                // const projectName = file.name.replaceAll('.py', '')
+                // ProjectNameInput.value = projectName
+                // localStorage.setItem('projectName', projectName)
 
                 // Load the contents of the file
                 const reader = new FileReader()
@@ -96,5 +97,12 @@ export default (vocab) => {
         on('click', () => view.focus()),
     )
 
-    return new EditorMode('line', LineEditor, saveCode, loadCode, saveState, loadState)
+    return new EditorMode(
+        'line',
+        LineEditor,
+        saveCode,
+        loadCode,
+        saveState,
+        loadState,
+    )
 }

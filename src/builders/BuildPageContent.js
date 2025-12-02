@@ -20,6 +20,10 @@ export default (toolbox, vocab) => {
      * editors.
      */
     const switchEditor = (targetMode = null) => {
+        if (currentMode) {
+            currentMode.saveState()
+        }
+
         if (targetMode !== null) {
             currentMode = targetMode
         } else if (currentMode === blockMode) {
@@ -35,9 +39,7 @@ export default (toolbox, vocab) => {
         localStorage.setItem('editorMode', currentMode.name)
 
         // Load the previous state for the new editor.
-        if (currentMode.loadState) {
-            currentMode.loadState()
-        }
+        currentMode.loadState()
     }
 
     document.addEventListener('switch-editor', () => {

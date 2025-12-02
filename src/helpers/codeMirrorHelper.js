@@ -37,7 +37,6 @@ import { EditorSelection, EditorState } from '@codemirror/state'
 import {
     bracketMatching,
     defaultHighlightStyle,
-    foldGutter,
     foldKeymap,
     indentOnInput,
     syntaxHighlighting,
@@ -140,7 +139,7 @@ export const newView = (
         highlightActiveLine(),
         highlightSelectionMatches(),
         keymap.of([
-            { key: "Tab", run: acceptCompletion },
+            { key: 'Tab', run: acceptCompletion },
             ...closeBracketsKeymap,
             ...defaultKeymap,
             ...searchKeymap,
