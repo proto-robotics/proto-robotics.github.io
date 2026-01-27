@@ -171,22 +171,22 @@
         width: 100%;
         border-bottom: var(--rule-width) solid var(--text-faded);
 
-        input[type='text'] {
+        input[type='text'], button {
             border: var(--rule-width) solid var(--text-faded);
             border-bottom: none;
-            background: var(--bg);
             font-size: 0.8rem;
             margin: 4px 4px 0 4px;
+            box-shadow: 1px -0.5px 2px var(--text-faded);
+        }
+
+        input[type='text'] {
+            background: var(--bg);
             padding: 2px 4px;
         }
 
         button {
-            border: var(--rule-width) solid var(--text-faded);
             border-radius: 8px 8px 0 0;
-            border-bottom: none;
             background: var(--bg-faded);
-            font-size: 0.8rem;
-            margin: 4px 4px 0 4px;
             padding: 2px 8px;
             display: inline;
 

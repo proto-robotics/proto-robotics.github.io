@@ -1,5 +1,9 @@
+let pyodide = null
+
 export const checkSyntax = async (code) => {
-    const pyodide = await loadPyodide()
+    if (!pyodide) {
+        pyodide = await loadPyodide()
+    }
 
     try {
         await pyodide.runPythonAsync(`
