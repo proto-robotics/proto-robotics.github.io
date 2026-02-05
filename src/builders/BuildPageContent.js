@@ -96,7 +96,7 @@ export default (toolbox, vocab) => {
             }),
         ),
         a({ href: 'https://protorobotics.org' }, 'Home'),
-        a({ href: '/cheatsheet' }, 'Cheatsheet'),
+        a({ href: `${window.location.href}?cheatsheet` }, 'Cheatsheet'),
     )
 
     const CustomTooltip = tooltipHelper() // TODO: rename to initTooltip?
