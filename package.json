@@ -19,14 +19,18 @@
         "@codemirror/view": "^6.38.5",
         "@protorobotics/jenga": "^1.1.1",
         "blockly": "^12.3.1",
+        "@blockly/field-colour-hsv-sliders": "^6.0.5",
+        "@blockly/field-grid-dropdown": "^6.0.4",
         "codemirror": "^6.0.2",
         "ellipsi": "^3.2.0",
         "jszip": "^3.10.1",
         "marked": "^16.4.0",
         "pyodide": "^0.28.3",
-        "thememirror": "^2.0.1"
+        "thememirror": "^2.0.1",
+        "svg-path-editor-lib": "^1.0.3"
     },
     "devDependencies": {
+        "baseline-browser-mapping": "^2.9.19",
         "prettier": "^3.6.2",
         "webpack": "^5.102.1",
         "webpack-cli": "^6.0.1"
