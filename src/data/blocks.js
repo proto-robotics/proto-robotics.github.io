@@ -1,9 +1,12 @@
-import { FieldDropdown, FieldNumber, FieldTextInput } from 'blockly'
+import { FieldDropdown, FieldNumber, FieldTextInput, FieldCheckbox, FieldImage } from 'blockly'
+import {FieldColourHsvSliders} from '@blockly/field-colour-hsv-sliders';
+import {pythonGenerator, Order} from 'blockly/python';
+import {FieldGridDropdown} from '@blockly/field-grid-dropdown';
 
 export default [
     {
         name: 'Motor',
-        color: '#cc4444',
+        color: '#F2737B',
         entries: [
             {
                 name: 'smallmotor',
@@ -14,7 +17,7 @@ export default [
                         name: 'name',
                     },
                     {
-                        text: 'is a smallmotor on port',
+                        text: 'is a smallmotor \non port',
                     },
                     {
                         field: () =>
@@ -96,7 +99,7 @@ export default [
                         name: 'name',
                     },
                     {
-                        text: 'is a largemotor on port',
+                        text: 'is a largemotor \non port',
                     },
                     {
                         field: () =>
@@ -373,7 +376,7 @@ export default [
     },
     {
         name: 'Drivetrain',
-        color: '#44cc44',
+        color: '#00B8AA',
         entries: [
             {
                 name: 'drivetrain',
@@ -384,7 +387,7 @@ export default [
                         name: 'name',
                     },
                     {
-                        text: 'is a drivetrain from motors',
+                        text: 'is a drivetrain \nfrom motors',
                     },
                     {
                         field: () => new FieldTextInput('left'),
@@ -403,8 +406,8 @@ export default [
                     {
                         field: () =>
                             new FieldDropdown([
-                                ['clockwise', '1'],
-                                ['counter-clockwise', '-1'],
+                                ['clockwise ↻', '1'],
+                                ['counter-clockwise ↺', '-1'],
                             ]),
                         name: 'direction',
                     },
@@ -568,7 +571,7 @@ export default [
                         name: 'right',
                     },
                     {
-                        text: 'right power for',
+                        text: 'right power \nfor',
                     },
                     {
                         field: () => new FieldNumber(0, 0, Infinity, 0.01),
@@ -694,7 +697,7 @@ export default [
     },
     {
         name: 'Sensors',
-        color: '#4444cc',
+        color: '#6395CF',
         entries: [
             {
                 name: 'button',
@@ -781,7 +784,7 @@ export default [
     },
     {
         name: 'Time',
-        color: '#44cccc',
+        color: '#9970B1',
         entries: [
             {
                 name: 'wait',
@@ -812,11 +815,13 @@ export default [
                     {
                         text: 'Wait until',
                     },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Boolean',
+                        },
+                    }
                 ],
-                blocklyInput: {
-                    name: 'function',
-                    type: 'Boolean',
-                },
                 codeGenerator: (block, generator) => {
                     const value_function = generator.valueToCode(
                         block,
@@ -849,11 +854,13 @@ export default [
                     {
                         text: 'Wait while',
                     },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Boolean',
+                        },
+                    }
                 ],
-                blocklyInput: {
-                    name: 'function',
-                    type: 'Boolean',
-                },
                 codeGenerator: (block, generator) => {
                     const value_function = generator.valueToCode(
                         block,
@@ -881,6 +888,413 @@ export default [
             },
         ],
     },
+    {
+        name: 'Flow',
+        color: '#F8BF41',
+        entries: [ 
+            // {
+			// 	name: "section",
+			// 	description: "Returns whether or not the button is pressed.",
+			// 	blocklyTemplate: [
+            //         {
+            //             field: () => new FieldCheckbox('FALSE', function(newValue) {
+            //                 if(this.sourceBlock_){
+            //                     this.sourceBlock_.updateShape_(null, newValue)
+            //                 }
+            //             }),
+            //             name: 'collapsed',
+            //         },
+            //         {
+            //             field: () => new FieldTextInput('Section'),
+            //             name: 'section_name',
+            //         },
+            //         {
+            //             field: () => new FieldColourHsvSliders('#ff0000', function(newValue) {
+            //                 if(this.sourceBlock_){
+            //                     this.sourceBlock_.updateShape_(newValue, null)
+            //                 }
+            //             }),
+            //             name: 'color',
+            //         },
+            //         { 
+            //             blocklyInput: {
+            //                 name: 'input',
+            //                 type: 'Void',
+            //             },
+            //         },
+			// 	],
+			// 	save: function() {
+	  		// 		return {
+	    	// 			'collapsed': this.collapsed,
+			// 			'color': this.color,
+	  		// 		};
+			// 	},
+			// 	load: function(state) {
+	  		// 		var color = state['color'];
+	  		// 		var collapsed = state['collapsed'];
+	  		// 		this.updateShape_(color, collapsed);
+			// 	},
+			// 	update: function(color, collapsed) {
+			// 		if(color != null) {
+			// 			this.setColour(color == null ? "#ff0000" : color);
+			// 		}
+			// 		if (collapsed != null) {
+			// 			this.getInput("input").setVisible(collapsed === "FALSE")
+			// 			this.render()
+			// 		}
+			// 	},
+			// 	codeGenerator: (block) => {
+			// 		function dropOneTab(str) {
+    		// 			return str
+    		// 				.split('\n')
+    		// 				.map(line => {
+    		// 				return line.slice(2);
+    		// 				})
+    		// 			.join('\n');
+			// 		}
+			// 		var raw = pythonGenerator.statementToCode(block, 'input');
+			// 		var cleaned = dropOneTab(raw);
+			// 		const code = `${cleaned}`;
+			// 		return code;
+			// 	}
+			// },
+            {
+				name: "if",
+				description: "if statement help.",
+				blocklyTemplate: [
+                    {
+                        "text": "if      ",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Boolean',
+                        },
+                    },
+                    {
+                        "text": "do:",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input',
+                            type: 'Void',
+                        },
+                    },
+				],
+				codeGenerator: (block) => {
+					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
+					let len = value_function.length;
+					if (len == 0)
+						value_function = 'False';
+					else {
+						value_function = value_function.replace('(','');
+						value_function = value_function.slice(0,-1);
+					}
+					var input = pythonGenerator.statementToCode(block, 'input');
+					if (input.length == 0) {
+						input = '\tpass';
+					}
+
+					const code = `if ${value_function}:\n${input}\n`;
+					return code;
+				}
+			},
+            {
+				name: "ifElse",
+				description: "if_else statement help.",
+				blocklyTemplate: [
+                    {
+                        "text": "if      ",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Boolean',
+                        },
+                    },
+                    {
+                        "text": "do:",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input',
+                            type: 'Void',
+                        },
+                    },
+                    {
+                        "text": "\nelse:",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input_else',
+                            type: 'Void',
+                        },
+                    },
+				],
+				codeGenerator: (block) => {
+					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
+					let len = value_function.length;
+					if (len == 0)
+						value_function = 'False';
+					else {
+						value_function = value_function.replace('(','');
+						value_function = value_function.slice(0,-1);
+					}
+					var input = pythonGenerator.statementToCode(block, 'input');
+					if (input.length == 0) {
+						input = '\tpass';
+					}
+
+					const code = `if ${value_function}:\n${input}\nelse:\n${pythonGenerator.statementToCode(block, 'input_else') || '\tpass'}\n`;
+					return code;
+				}
+			},
+			// {
+			// 	name: "BetterCompare",
+			// 	description: "Returns whether or not the button is pressed.",
+			// 	blocklyTemplate: [
+            //         {
+            //             blocklyInput: {
+            //                 name: 'functionA',
+            //                 type: 'Any',
+            //             },
+            //         },
+            //         {
+            //             text: '\n',
+            //         },
+            //         {
+            //             field: () => new FieldGridDropdown([['=', '=='],['>', '>'],['<', '<'],['≠', '!='],['≥', '>='],['≤', '<=']]),
+            //             name: 'operation',
+            //         },
+            //         {
+            //             blocklyInput: {
+            //                 name: 'functionB',
+            //                 type: 'Any',
+            //             },
+            //         },
+			// 	],
+            //     blocklyOutput: {
+            //         type: 'Boolean',
+            //         name: 'value',
+            //     },
+            //     inputsInline: true,
+			// 	codeGenerator: (block) => {
+			// 		const operation = spacesToUnderscores(block.getFieldValue('operation'));
+			// 		var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
+			// 		var value_functionB_code = pythonGenerator.valueToCode(block, 'functionB', Order.ATOMIC);
+			// 		if (value_functionA_code.length == 0) {
+			// 			value_functionA_code = '0';
+			// 		}
+			// 		if (value_functionB_code.length == 0) {
+			// 			value_functionB_code = '0';
+			// 		}
+			// 		let code = `${value_functionA_code} ${operation} ${value_functionB_code}`
+			// 		return [code, Order.NONE];
+			// 	}
+			// },
+            {
+				name: "logicalCompare",
+				description: "Returns whether or not the button is pressed.",
+				blocklyTemplate: [
+                    {
+                        blocklyInput: {
+                            name: 'functionA',
+                            type: 'Boolean',
+                        },
+                    },
+                    {
+                        text: '\n',
+                    },
+                    {
+                        field: () => new FieldGridDropdown([['and', 'and'],['or', 'or']]),
+                        name: 'operation',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'functionB',
+                            type: 'Boolean',
+                        },
+                    },
+				],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                inputsInline: true,
+				codeGenerator: (block) => {
+					const operation = spacesToUnderscores(block.getFieldValue('operation'));
+					var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
+					var value_functionB_code = pythonGenerator.valueToCode(block, 'functionB', Order.ATOMIC);
+					if (value_functionA_code.length == 0) {
+						value_functionA_code = '0';
+					}
+					if (value_functionB_code.length == 0) {
+						value_functionB_code = '0';
+					}
+					let code = `${value_functionA_code} ${operation} ${value_functionB_code}`
+					return [code, Order.NONE];
+				}
+			},
+            {
+				name: "logicalNot",
+				description: "Returns whether or not the button is pressed.",
+				blocklyTemplate: [
+                    {
+                        text: 'not',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'functionA',
+                            type: 'Boolean',
+                        },
+                    },
+				],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                // inputsInline: false,
+				codeGenerator: (block) => {
+					var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
+					if (value_functionA_code.length == 0) {
+						value_functionA_code = '0';
+					}
+					let code = `not ${value_functionA_code}`
+					return [code, Order.NONE];
+				}
+			},
+            // {
+			// 	name: "BooleanInput",
+			// 	description: "Returns whether or not the button is pressed.",
+			// 	blocklyTemplate: [
+            //         {
+            //             field: () => new FieldGridDropdown([['true', 'True'],['false', 'False']]),
+            //             name: 'operation',
+            //         },
+			// 	],
+            //     blocklyOutput: {
+            //         type: 'Boolean',
+            //         name: 'value',
+            //     },
+            //     inputsInline: true,
+			// 	codeGenerator: (block) => {
+			// 		const operation = spacesToUnderscores(block.getFieldValue('operation'));
+			// 		let code = `${operation}`
+			// 		return [code, Order.NONE];
+			// 	}
+			// },
+            {
+				name: "numberInput",
+				description: "Returns whether or not the button is pressed.",
+				blocklyTemplate: [
+                    {
+                        field: () => new FieldNumber(0),
+                        name: 'operation',
+                    },
+				],
+                blocklyOutput: {
+                    type: 'Number',
+                    name: 'value',
+                },
+                inputsInline: true,
+				codeGenerator: (block) => {
+					const operation = block.getFieldValue('operation');
+					let code = `${operation}`
+					return [code, Order.NONE];
+				}
+			},
+            {
+				name: "repeatFor",
+				description: "if statement help.",
+				blocklyTemplate: [
+                    {
+                        "text": "repeat for",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Number',
+                            shadow: 'numberInput',
+                        },
+                    },
+                    {
+                        "text": "times do:",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input',
+                            type: 'Void',
+                        },
+                    },
+				],
+                //inputsInline: false,
+				codeGenerator: (block) => {
+					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
+					let len = value_function.length;
+					if (len == 0)
+						value_function = '0';
+					else {
+						value_function = value_function.replace('(','');
+						value_function = value_function.slice(0,-1);
+					}
+					var input = pythonGenerator.statementToCode(block, 'input');
+					if (input.length == 0) {
+						input = '\tpass';
+					}
+
+					const code = `for i in range(${value_function}):\n${input}\n`;
+					return code;
+				}
+			},
+            {
+				name: "repeatIf",
+				description: "if statement help.",
+				blocklyTemplate: [
+                    {
+                        "text": "repeat",
+                    },
+                    {
+                        field: () => new FieldGridDropdown([['while', 'While'],['until', 'Until']]),
+                        name: 'operation',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Boolean',
+                        },
+                    },
+                    {
+                        "text": "do:",
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input',
+                            type: 'Void',
+                        },
+                    },
+				],
+				codeGenerator: (block) => {
+					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
+                    const operation = block.getFieldValue('operation');
+					let len = value_function.length;
+					if (len == 0)
+						value_function = 'False';
+					else {
+						value_function = value_function.replace('(','');
+						value_function = value_function.slice(0,-1);
+					}
+					var input = pythonGenerator.statementToCode(block, 'input');
+					if (input.length == 0) {
+						input = '\tpass';
+					}
+                    const optional_not = operation == 'While' ? '' : 'not '
+                    const code = `while ${optional_not}${value_function}:\n${input}\n`;
+                    return code;
+                }
+			},
+            
+        ],
+    }
 ]
 
 const spacesToUnderscores = (str) => str.replace(/\s+/g, '_')

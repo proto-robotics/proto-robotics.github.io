@@ -258,6 +258,12 @@
         /* We have our own tooltip instead. */
         display: none !important;
     }
+
+    .blocklyToolboxCategoryLabel {
+        font:
+            10pt / 1.5 Monteserrat,
+            sans-serif !important;
+    }
 }
 
 @font-face {

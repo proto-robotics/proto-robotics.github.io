@@ -5,15 +5,15 @@ import {
     svgResize,
     setParentContainer,
 } from 'blockly'
+
 import { pythonGenerator } from 'blockly/python'
 import { button, div, on, tag } from 'ellipsi'
 
 import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
+import {injectMods} from '../mods/mods.js' 
 
-import { claimTooltip, releaseTooltip } from '../helpers/tooltipHelper'
-import blocks from '../data/blocks'
 import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
@@ -39,7 +39,24 @@ export default (toolbox) => {
     )
     setParentContainer(BlockEditor) // fixes Blockly blocks stealing focus from text inputs and the right click context menu
 
+    injectMods()
+
     const workspace = inject(BlocklyCanvas, {
+        renderer: 'proto_renderer',
+        grid:
+             {spacing: 20,
+              length: 3,
+              colour: '#e4e4e4ff',
+              snap: true},
+        zoom:
+             {controls: false,
+              wheel: false,
+              startScale: 0.8,
+              maxScale: 3,
+              minScale: 0.3,
+              scaleSpeed: 1.2,
+              pinch: false},
+        trashcan: true,
         toolbox: toolbox,
     })
 
@@ -114,40 +131,6 @@ export default (toolbox) => {
         ])
     }
 
-    let blockDescriptionDictionary = getBlockDescriptionDictionary(blocks)
-    let hoverTimer = null
-    let currentHoveredBlock = null
-
-    function attachCustomTooltipHandlers(workspace) {
-        workspace.addChangeListener(() => {
-            for (const block of workspace.getAllBlocks(false)) {
-                const svgRoot = block.getSvgRoot()
-                if (svgRoot.customTooltipAttached) continue
-                svgRoot.customTooltipAttached = true
-
-                svgRoot.addEventListener('mouseenter', (e) => {
-                    currentHoveredBlock = block
-                    hoverTimer = setTimeout(() => {
-                        if (currentHoveredBlock === block) {
-                            claimTooltip(
-                                'Block',
-                                { x: e.pageX, y: e.pageY },
-                                blockDescriptionDictionary[block.type],
-                            )
-                        }
-                    }, 1000)
-                })
-
-                svgRoot.addEventListener('mouseleave', () => {
-                    clearTimeout(hoverTimer)
-                    currentHoveredBlock = null
-                    releaseTooltip('Block')
-                })
-            }
-        })
-    }
-
-    attachCustomTooltipHandlers(workspace)
 
     const loadCode = (ProjectNameInput) => {
         const FileInput = tag('input', {
@@ -201,14 +184,4 @@ export default (toolbox) => {
         saveState,
         loadState,
     )
-}
-
-function getBlockDescriptionDictionary(categories) {
-    const dictionary = {}
-    for (const category of categories) {
-        for (const entry of category.entries) {
-            dictionary[entry.name] = entry.description
-        }
-    }
-    return dictionary
 }
