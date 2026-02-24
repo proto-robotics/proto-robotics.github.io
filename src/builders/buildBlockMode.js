@@ -1,26 +1,34 @@
 import {
     Events,
-    inject,
-    serialization,
-    svgResize,
-    setParentContainer,
 } from 'blockly'
 
-import { pythonGenerator } from 'blockly/python'
-import { button, div, on, tag } from 'ellipsi'
+import { button, on, tag } from 'ellipsi'
 
 import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
-import {injectMods} from '../mods/mods.js' 
+import {
+    addChangeListener,
+    draw as drawBlocklyCanvas,
+    getCode as getBlocklyCode,
+    getState as getBlocklyState,
+    isDragging as isBlocklyDragging,
+    newView as newBlocklyView,
+    setState as setBlocklyState,
+    setViewParentContainer,
+} from '../helpers/blocklyHelper'
 
-import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
+import {
+    getViewText,
+    newView as newCodeMirrorView,
+    setViewText,
+} from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
-    const codePreview = newView({ readonly: true, noGutter: true })
+    const codePreview = newCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
 
-    const BlocklyCanvas = div({ id: 'block-canvas' })
+    const BlocklyCanvas = newBlocklyView(toolbox)
     const CopyToLineEditorButton = button(
         'Open in Line Editor',
         { id: 'copy-to-line-editor-button' },
@@ -37,28 +45,7 @@ export default (toolbox) => {
         codePreview.dom,
         CopyToLineEditorButton,
     )
-    setParentContainer(BlockEditor) // fixes Blockly blocks stealing focus from text inputs and the right click context menu
-
-    injectMods()
-
-    const workspace = inject(BlocklyCanvas, {
-        renderer: 'proto_renderer',
-        grid:
-             {spacing: 20,
-              length: 3,
-              colour: '#e4e4e4ff',
-              snap: true},
-        zoom:
-             {controls: false,
-              wheel: false,
-              startScale: 0.8,
-              maxScale: 3,
-              minScale: 0.3,
-              scaleSpeed: 1.2,
-              pinch: false},
-        trashcan: true,
-        toolbox: toolbox,
-    })
+    setViewParentContainer(BlocklyCanvas, BlockEditor)
 
     const supportedEvents = new Set([
         Events.BLOCK_CHANGE,
@@ -68,7 +55,7 @@ export default (toolbox) => {
     ])
 
     const saveState = () => {
-        const state = serialization.workspaces.save(workspace)
+        const state = getBlocklyState(BlocklyCanvas)
         localStorage.setItem('blocklyState', JSON.stringify(state))
     }
 
@@ -77,20 +64,17 @@ export default (toolbox) => {
         if (previousState) {
             // Timeout prevents styles from breaking
             setTimeout(() => {
-                serialization.workspaces.load(
-                    JSON.parse(previousState),
-                    workspace,
-                )
+                setBlocklyState(BlocklyCanvas, JSON.parse(previousState))
             })
         }
     }
 
-    workspace.addChangeListener((event) => {
-        if (workspace.isDragging() || !supportedEvents.has(event.type)) {
+    addChangeListener(BlocklyCanvas, (event) => {
+        if (isBlocklyDragging(BlocklyCanvas) || !supportedEvents.has(event.type)) {
             return
         }
 
-        const code = pythonGenerator.workspaceToCode(workspace)
+        const code = getBlocklyCode(BlocklyCanvas)
         setViewText(codePreview, 'import make\n\n' + code)
         saveState()
     })
@@ -99,7 +83,7 @@ export default (toolbox) => {
     // first time it is rendered
     let hasRendered = false
     const resizeObserver = new ResizeObserver(() => {
-        svgResize(workspace)
+        drawBlocklyCanvas(BlocklyCanvas)
 
         if (hasRendered || !BlockEditor.parentElement) {
             return
@@ -117,7 +101,7 @@ export default (toolbox) => {
         const projectName = ProjectNameInput?.value || 'proto'
 
         // Save the blockly state.
-        const blocklyState = serialization.workspaces.save(workspace)
+        const blocklyState = getBlocklyState(BlocklyCanvas)
 
         saveFilesInZip(projectName, [
             {
@@ -158,7 +142,7 @@ export default (toolbox) => {
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
                     const state = JSON.parse(event.target.result)
-                    serialization.workspaces.load(state, workspace)
+                    setBlocklyState(BlocklyCanvas, state)
                 }
 
                 // Close the pop up
