@@ -8,30 +8,30 @@ import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import {
-    addChangeListener,
-    getCode as getBlocklyCode,
-    getState as getBlocklyState,
-    mountBlocklyInstance,
-    newBlocklyInstance,
-    setState as setBlocklyState,
+    addBlocklyChangeListener,
+    createBlocklyInstance,
+    getBlocklyCode,
+    getBlocklyState,
+    mountBlocklyWorkspace,
+    setBlocklyState,
 } from '../helpers/blocklyHelper'
 
 import {
-    getViewText,
-    newView as newCodeMirrorView,
-    setViewText,
+    createCodeMirrorView,
+    getCodeMirrorText,
+    setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
 
 export default (toolbox) => {
-    const codePreview = newCodeMirrorView({ readonly: true, noGutter: true })
+    const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
 
-    const blocklyInstance = newBlocklyInstance(toolbox)
+    const blocklyInstance = createBlocklyInstance(toolbox)
     const CopyToLineEditorButton = button(
         'Open in Line Editor',
         { id: 'copy-to-line-editor-button' },
         on('click', async () => {
-            localStorage.setItem('codeMirrorState', getViewText(codePreview))
+            localStorage.setItem('codeMirrorState', getCodeMirrorText(codePreview))
             const switchEvent = new CustomEvent('switch-editor')
             document.dispatchEvent(switchEvent)
         }),
@@ -43,7 +43,7 @@ export default (toolbox) => {
         codePreview.dom,
         CopyToLineEditorButton,
     )
-    mountBlocklyInstance(blocklyInstance, BlockEditor, {
+    mountBlocklyWorkspace(blocklyInstance, BlockEditor, {
         onReady: () => {
             if (!BlockEditor.parentElement) {
                 return false
@@ -74,7 +74,7 @@ export default (toolbox) => {
         }
     }
 
-    addChangeListener(blocklyInstance, (event) => {
+    addBlocklyChangeListener(blocklyInstance, (event) => {
         if (
             blocklyInstance.workspace.isDragging() ||
             !supportedEvents.has(event.type)
@@ -83,7 +83,7 @@ export default (toolbox) => {
         }
 
         const code = getBlocklyCode(blocklyInstance)
-        setViewText(codePreview, 'import make\n\n' + code)
+        setCodeMirrorText(codePreview, 'import make\n\n' + code)
         saveState()
     })
 
@@ -96,7 +96,7 @@ export default (toolbox) => {
         saveFilesInZip(projectName, [
             {
                 name: 'main.py',
-                text: getViewText(codePreview),
+                text: getCodeMirrorText(codePreview),
             },
             {
                 name: projectName + '.json',

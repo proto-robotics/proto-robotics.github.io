@@ -9,7 +9,7 @@ let modsInjected = false
  * Creates a Blockly workspace instance and returns the DOM canvas plus the
  * workspace handle used by the helper functions in this module.
  */
-export const newBlocklyInstance = (
+export const createBlocklyInstance = (
     toolbox,
     { id = 'block-canvas', readonly = false, hideToolbox = false } = {},
 ) => {
@@ -53,7 +53,7 @@ export const newBlocklyInstance = (
  * Mounts a Blockly workspace into a container, registers that container with
  * Blockly, and keeps the workspace resized as the container changes.
  */
-export const mountBlocklyInstance = (
+export const mountBlocklyWorkspace = (
     blocklyInstance,
     container,
     { onReady = null, resizeImmediately = false } = {},
@@ -68,28 +68,28 @@ export const mountBlocklyInstance = (
 /**
  * Adds a workspace change listener to the provided Blockly instance.
  */
-export const addChangeListener = (blocklyInstance, callback) => {
+export const addBlocklyChangeListener = (blocklyInstance, callback) => {
     blocklyInstance.workspace.addChangeListener(callback)
 }
 
 /**
  * Serializes the current Blockly workspace state into Blockly's JSON format.
  */
-export const getState = (blocklyInstance) => {
+export const getBlocklyState = (blocklyInstance) => {
     return serialization.workspaces.save(blocklyInstance.workspace)
 }
 
 /**
  * Loads a previously serialized Blockly JSON state into the workspace.
  */
-export const setState = (blocklyInstance, state) => {
+export const setBlocklyState = (blocklyInstance, state) => {
     serialization.workspaces.load(state, blocklyInstance.workspace)
 }
 
 /**
  * Generates Python code for the current Blockly workspace.
  */
-export const getCode = (blocklyInstance) => {
+export const getBlocklyCode = (blocklyInstance) => {
     return pythonGenerator.workspaceToCode(blocklyInstance.workspace)
 }
 

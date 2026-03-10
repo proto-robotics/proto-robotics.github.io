@@ -43,7 +43,7 @@ import {
 } from '@codemirror/language'
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 
-export const newView = (
+export const createCodeMirrorView = (
     { readonly, noGutter } = { readonly: false, noGutter: false },
 ) => {
     let verifiedOutput = null
@@ -198,8 +198,8 @@ export const newView = (
         const pos = view.state.selection.main.head
         // Add and remove a space to force linting
         let storeCurrent = view.state.doc.toString()
-        setViewText(view, storeCurrent + ' ')
-        setViewText(view, storeCurrent)
+        setCodeMirrorText(view, storeCurrent + ' ')
+        setCodeMirrorText(view, storeCurrent)
         // Refocus previous line
         view.dispatch({
             selection: EditorSelection.cursor(pos),
@@ -250,11 +250,11 @@ export const newView = (
     return view
 }
 
-export const getViewText = (view) => {
+export const getCodeMirrorText = (view) => {
     return view.state.doc.toString()
 }
 
-export const setViewText = (view, text) => {
+export const setCodeMirrorText = (view, text) => {
     view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: text },
     })
