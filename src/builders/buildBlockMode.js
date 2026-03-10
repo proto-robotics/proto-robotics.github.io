@@ -9,13 +9,11 @@ import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import {
     addChangeListener,
-    draw as drawBlocklyCanvas,
     getCode as getBlocklyCode,
     getState as getBlocklyState,
-    isDragging as isBlocklyDragging,
-    newView as newBlocklyView,
+    mountBlocklyInstance,
+    newBlocklyInstance,
     setState as setBlocklyState,
-    setViewParentContainer,
 } from '../helpers/blocklyHelper'
 
 import {
@@ -28,7 +26,7 @@ export default (toolbox) => {
     const codePreview = newCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
 
-    const BlocklyCanvas = newBlocklyView(toolbox)
+    const blocklyInstance = newBlocklyInstance(toolbox)
     const CopyToLineEditorButton = button(
         'Open in Line Editor',
         { id: 'copy-to-line-editor-button' },
@@ -41,11 +39,18 @@ export default (toolbox) => {
 
     const BlockEditor = tag(
         'block-editor',
-        BlocklyCanvas,
+        blocklyInstance.canvas,
         codePreview.dom,
         CopyToLineEditorButton,
     )
-    setViewParentContainer(BlocklyCanvas, BlockEditor)
+    mountBlocklyInstance(blocklyInstance, BlockEditor, {
+        onReady: () => {
+            if (!BlockEditor.parentElement) {
+                return false
+            }
+            loadState()
+        },
+    })
 
     const supportedEvents = new Set([
         Events.BLOCK_CHANGE,
@@ -55,7 +60,7 @@ export default (toolbox) => {
     ])
 
     const saveState = () => {
-        const state = getBlocklyState(BlocklyCanvas)
+        const state = getBlocklyState(blocklyInstance)
         localStorage.setItem('blocklyState', JSON.stringify(state))
     }
 
@@ -64,44 +69,29 @@ export default (toolbox) => {
         if (previousState) {
             // Timeout prevents styles from breaking
             setTimeout(() => {
-                setBlocklyState(BlocklyCanvas, JSON.parse(previousState))
+                setBlocklyState(blocklyInstance, JSON.parse(previousState))
             })
         }
     }
 
-    addChangeListener(BlocklyCanvas, (event) => {
-        if (isBlocklyDragging(BlocklyCanvas) || !supportedEvents.has(event.type)) {
+    addChangeListener(blocklyInstance, (event) => {
+        if (
+            blocklyInstance.workspace.isDragging() ||
+            !supportedEvents.has(event.type)
+        ) {
             return
         }
 
-        const code = getBlocklyCode(BlocklyCanvas)
+        const code = getBlocklyCode(blocklyInstance)
         setViewText(codePreview, 'import make\n\n' + code)
         saveState()
     })
-
-    // Redraw the canvas when it is rendered, and load the previous code the
-    // first time it is rendered
-    let hasRendered = false
-    const resizeObserver = new ResizeObserver(() => {
-        drawBlocklyCanvas(BlocklyCanvas)
-
-        if (hasRendered || !BlockEditor.parentElement) {
-            return
-        }
-
-        // Only executed the first time the blockly editor is rendered
-        hasRendered = true
-
-        // Load previous state if one exists
-        loadState()
-    })
-    resizeObserver.observe(BlockEditor)
 
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
 
         // Save the blockly state.
-        const blocklyState = getBlocklyState(BlocklyCanvas)
+        const blocklyState = getBlocklyState(blocklyInstance)
 
         saveFilesInZip(projectName, [
             {
@@ -142,7 +132,7 @@ export default (toolbox) => {
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
                     const state = JSON.parse(event.target.result)
-                    setBlocklyState(BlocklyCanvas, state)
+                    setBlocklyState(blocklyInstance, state)
                 }
 
                 // Close the pop up
