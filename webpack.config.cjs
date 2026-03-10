@@ -3,7 +3,6 @@ const path = require('path')
 module.exports = {
     entry: {
         bundled: './src/main.js',
-        test: './src/test.js',
     },
     resolve: {
       alias: {
