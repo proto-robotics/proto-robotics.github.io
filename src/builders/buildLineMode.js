@@ -2,23 +2,27 @@ import { tag, button, on } from 'ellipsi'
 import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
-import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
+import {
+    createCodeMirrorView,
+    getCodeMirrorText,
+    setCodeMirrorText,
+} from '../helpers/codeMirrorHelper'
 import { checkSyntax } from '../helpers/pyodideHelper'
 
 export default (vocab) => {
-    const view = newView()
+    const view = createCodeMirrorView()
     view.dom.id = 'line-editor-canvas'
 
     const loadState = () => {
         const savedState = localStorage.getItem('codeMirrorState')
         if (savedState) {
-            setViewText(view, savedState)
+            setCodeMirrorText(view, savedState)
         }
     }
     loadState()
 
     const saveState = () => {
-        localStorage.setItem('codeMirrorState', getViewText(view))
+        localStorage.setItem('codeMirrorState', getCodeMirrorText(view))
     }
     view.dom.addEventListener('keydown', saveState)
     view.dom.addEventListener('focus', saveState)
@@ -61,7 +65,7 @@ export default (vocab) => {
                 const reader = new FileReader()
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
-                    setViewText(view, event.target.result)
+                    setCodeMirrorText(view, event.target.result)
                     saveState()
                 }
 
@@ -86,7 +90,7 @@ export default (vocab) => {
             'Verify',
             { id: 'verify-button' },
             on('click', async () => {
-                const result = await checkSyntax(getViewText(view))
+                const result = await checkSyntax(getCodeMirrorText(view))
                 const lintingEvent = new CustomEvent('perform-linting', {
                     detail: result,
                 })

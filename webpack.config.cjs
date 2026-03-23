@@ -1,7 +1,9 @@
 const path = require('path')
 
 module.exports = {
-    entry: './src/main.js',
+    entry: {
+        bundled: './src/main.js',
+    },
     resolve: {
       alias: {
         // Force any import of "blockly" (including inside linked jenga)
@@ -12,7 +14,7 @@ module.exports = {
       symlinks: true,
     },
     output: {
-        filename: 'bundled.js',
+        filename: '[name].js',
         path: path.resolve(__dirname, '.'),
     },
     mode: 'development',
