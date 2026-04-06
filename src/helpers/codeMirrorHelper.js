@@ -136,7 +136,6 @@ export const newView = (
         autocompletion(),
         rectangularSelection(),
         crosshairCursor(),
-        highlightActiveLine(),
         highlightSelectionMatches(),
         keymap.of([
             { key: 'Tab', run: acceptCompletion },
@@ -167,6 +166,8 @@ export const newView = (
     if (readonly) {
         extensions.push(EditorState.readOnly.of(true))
         extensions.push(EditorView.editable.of(false))
+    } else {
+        extensions.push(highlightActiveLine())
     }
 
     const view = new EditorView({

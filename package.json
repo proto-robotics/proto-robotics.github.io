@@ -20,7 +20,7 @@
         "@protorobotics/jenga": "^1.1.1",
         "blockly": "^12.3.1",
         "codemirror": "^6.0.2",
-        "ellipsi": "^3.2.0",
+        "ellipsi": "^3.2.2",
         "jszip": "^3.10.1",
         "marked": "^16.4.0",
         "pyodide": "^0.28.3",
@@ -28,6 +28,7 @@
     },
     "devDependencies": {
         "prettier": "^3.6.2",
+        "vite": "^7.3.1",
         "webpack": "^5.102.1",
         "webpack-cli": "^6.0.1"
     },
@@ -36,5 +37,16 @@
         "tabWidth": 4,
         "semi": false,
         "singleQuote": true
-    }
+    },
+    "version": "1.0.0",
+    "main": "bundled.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/proto-robotics/proto-robotics.github.io.git"
+    },
+    "keywords": [],
+    "bugs": {
+        "url": "https://github.com/proto-robotics/proto-robotics.github.io/issues"
+    },
+    "homepage": "https://github.com/proto-robotics/proto-robotics.github.io#readme"
 }
