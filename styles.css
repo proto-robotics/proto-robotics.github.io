@@ -86,36 +86,57 @@
         }
     }
 
-    pop-up {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+    dialog.popup-dialog {
         width: fit-content;
         height: fit-content;
         background: var(--bg);
-        padding: 32px;
         z-index: 1000;
         border-radius: 8px;
         border: var(--rule-width) solid var(--secondary-grey);
+        padding: 0;
+        margin: auto;
 
-        &::part(close-button) {
-            position: absolute;
-            top: 0px;
-            right: 0px;
-            font-size: 1.2rem;
-            background: none;
-            /* Top-right corner is extended to fill space with pop-up border */
-            border-radius: 8px calc(8px / sqrt(2)) 8px 8px;
-            border: none;
-            padding: 0px 8px 4px 8px;
-            color: var(--secondary-red);
+        &::backdrop {
+            background: rgb(from var(--secondary-grey) r g b / 0.3);
         }
+    }
 
-        &::part(close-button):hover {
-            background: var(--primary-red);
-            color: var(--bg);
-        }
+    div.popup-content {
+        position: relative;
+        padding: 32px;
+    }
+
+    button.popup-close-button {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        background: rgb(from var(--offset-grey) r g b / 0.7);
+        border-radius: 8px calc(8px / sqrt(2)) 8px 8px;
+        border: none;
+        padding: 6px;
+        margin: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    button.popup-close-button:hover {
+        background: var(--primary-red);
+    }
+
+    button.popup-close-button img {
+        width: 16px;
+        height: 16px;
+        display: block;
+        opacity: 0.55;
+        filter: grayscale(1);
+    }
+
+    button.popup-close-button:hover img {
+        opacity: 1;
+        filter: none;
     }
 
     custom-tooltip {
