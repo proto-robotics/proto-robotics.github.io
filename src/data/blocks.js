@@ -1,5 +1,30 @@
 import { FieldDropdown, FieldNumber, FieldTextInput } from 'blockly'
 
+const simplePorts = [
+    ['0', '0'],
+    ['1', '1'],
+    ['2', '2'],
+    ['3', '3'],
+    ['4', '4'],
+    ['5', '5'],
+    ['6', '6'],
+    ['7', '7'],
+]
+
+const drivePorts = [
+    ['4', '4'],
+    ['5', '5'],
+    ['6', '6'],
+    ['7', '7'],
+]
+
+const buttonPorts = [
+    ['10', '10'],
+    ['11', '11'],
+    ['12', '12'],
+    ['13', '13'],
+]
+
 export default [
     {
         name: 'Motor',
@@ -18,13 +43,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['1', '1'],
-                                ['2', '2'],
-                                ['3', '3'],
-                                ['4', '4'],
-                                ['5', '5'],
-                            ]),
+                            new FieldDropdown(simplePorts),
                         name: 'port',
                     },
                     {
@@ -66,13 +85,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['1', '1'],
-                                ['2', '2'],
-                                ['3', '3'],
-                                ['4', '4'],
-                                ['5', '5'],
-                            ]),
+                            new FieldDropdown(simplePorts),
                         name: 'port',
                     },
                 ],
@@ -100,10 +113,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['6', '6'],
-                                ['7', '7'],
-                            ]),
+                            new FieldDropdown(drivePorts),
                         name: 'port',
                     },
                     {
@@ -709,10 +719,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['8', '8'],
-                                ['9', '9'],
-                            ]),
+                            new FieldDropdown(buttonPorts),
                         name: 'port',
                     },
                 ],
