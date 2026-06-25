@@ -147,6 +147,10 @@
             / 1fr;
     }
 
+    header {
+        grid-area: head;
+    }
+
     nav {
         padding: 12px 8px;
         background: var(--secondary-grey);
@@ -202,11 +206,16 @@
     }
 
     footer {
+        grid-area: foot;
         text-align: center;
         background-color: var(--secondary-grey);
         color: var(--bg);
         padding: 8px;
         font-size: 0.7rem;
+    }
+
+    #editor-container {
+        grid-area: edit;
     }
 }
 
