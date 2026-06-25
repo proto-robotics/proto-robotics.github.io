@@ -380,6 +380,85 @@ export default [
                 },
             },
         ],
+        examples: [
+            {
+                name: 'Basic Servo',
+                preamble: 'Creates a servo, moves it to 90 degrees, and moves it back.',
+                blocks: [
+                    {
+                        type: "servo", 
+                        fields: {
+                            name: "servo_sam",
+                            port: "1"
+                        }
+                    },
+                    {
+                        type: "movetoForTime",
+                        fields: {
+                            name: "servo_sam",
+                            angle: "90",
+                            time: "5"
+                        }
+                    },
+                    {
+                        type: "moveto",
+                        fields: {
+                            name: "servo_sam",
+                            angle: "0",
+                        }
+                    }
+                ]
+            },
+            {
+                name: 'Basic Small Motor',
+                preamble: 'Creates a small motor, spins it clockwise, and then spins it counterclockwise.',
+                blocks: [
+                    {
+                        type: "smallmotor", 
+                        fields: {
+                            name: "madison_motor",
+                            port: "1"
+                        }
+                    },
+                    {
+                        type: "spinForTime",
+                        fields: {
+                            name: "madison_motor",
+                            power: "100",
+                            time: "10"
+                        }
+                    },
+                    {
+                        type: "spinBackForTime",
+                        fields: {
+                            name: "madison_motor",
+                            power: "67",
+                            time: "20"
+                        }
+                    }
+                ]
+            },
+            {
+                name: 'Basic Large Motor',
+                preamble: 'Creates a large motor, and spins it clockwise forever.',
+                blocks: [
+                    {
+                        type: "largemotor", 
+                        fields: {
+                            name: "michael_motor",
+                            port: '6'
+                        }
+                    },
+                    {
+                        type: "spin",
+                        fields: {
+                            name: "michael_motor",
+                            power: "100",
+                        }
+                    }
+                ]
+            }
+        ]
     },
     {
         name: 'Drivetrain',
@@ -701,6 +780,49 @@ export default [
                 },
             },
         ],
+        examples: [
+            {
+                name: 'Basic drivetrain',
+                preamble: 'Creates a drivetrain, and drives it for 20 seconds.',
+                blocks: [
+                    {
+                        type: "drivetrain", 
+                        fields: {
+                            name: "daniela_drivetrain",
+                        }
+                    },
+                    {
+                        type: "driveForTime",
+                        fields: {
+                            name: "daniela_drivetrain",
+                            power: "100",
+                            time: "20"
+                        }
+                    }
+                ]
+            },
+            {
+                name: 'Adv drivetrain',
+                preamble: 'Creates a drivetrain, and drives it for 15 seconds at different power levels on each side.',
+                blocks: [
+                    {
+                        type: "drivetrain", 
+                        fields: {
+                            name: "dwayne_drivetrain",
+                        }
+                    },
+                    {
+                        type: "curveForTime",
+                        fields: {
+                            name: "dwayne_drivetrain",
+                            left: "50",
+                            right: "100",
+                            time: "15"
+                        }
+                    }
+                ]
+            },
+        ]
     },
     {
         name: 'Sensors',
