@@ -11,7 +11,13 @@ let modsInjected = false
  */
 export const createBlocklyInstance = (
     toolbox,
-    { id = 'block-canvas', readonly = false, hideToolbox = false } = {},
+    {
+        id = 'block-canvas',
+        readonly = false,
+        hideToolbox = false,
+        showGrid = true,
+        startScale = 0.8,
+    } = {},
 ) => {
     const canvas = div({ id })
 
@@ -23,16 +29,18 @@ export const createBlocklyInstance = (
     const workspace = inject(canvas, {
         readOnly: readonly,
         renderer: 'proto_renderer',
-        grid: {
-            spacing: 20,
-            length: 3,
-            colour: '#e4e4e4ff',
-            snap: true,
-        },
+        grid: showGrid
+            ? {
+                  spacing: 20,
+                  length: 3,
+                  colour: '#e4e4e4ff',
+                  snap: true,
+              }
+            : undefined,
         zoom: {
             controls: false,
             wheel: false,
-            startScale: 0.8,
+            startScale,
             maxScale: 3,
             minScale: 0.3,
             scaleSpeed: 1.2,

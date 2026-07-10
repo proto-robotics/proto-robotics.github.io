@@ -1,18 +1,18 @@
 import { processJengaTower } from '@protorobotics/jenga'
 import { pythonGenerator } from 'blockly/python'
 
-import blocks from './data/blocks'
+import { jengaBlocks } from './data/library'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 
 const main = () => {
-    const { toolbox, vocab } = processJengaTower(blocks, pythonGenerator)
+    const { toolbox } = processJengaTower(jengaBlocks, pythonGenerator)
 
     const params = new URLSearchParams(window.location.search)
 
     const PageContent = params.has('cheatsheet')
-        ? BuildCheatSheet(toolbox, vocab)
-        : BuildPageContent(toolbox, vocab)
+        ? BuildCheatSheet()
+        : BuildPageContent(toolbox)
 
     document.body.replaceChildren(...PageContent)
 }

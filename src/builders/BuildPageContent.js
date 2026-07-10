@@ -2,12 +2,16 @@ import { a, button, footer, header, img, on, span, tag } from 'ellipsi'
 
 import buildBlockMode from './buildBlockMode'
 import buildLineMode from './buildLineMode'
+import {
+    cheatSheetBlockElementNumbers,
+    createCheatSheetContent,
+} from './BuildCheatSheet'
 import { EditorMode } from '../classes/editorMode'
-import tooltipHelper from '../helpers/tooltipHelper'
+import cheatSheetDrawerHelper from '../helpers/cheatSheetDrawerHelper'
 
-export default (toolbox, vocab) => {
+export default (toolbox) => {
     const blockMode = buildBlockMode(toolbox)
-    const lineMode = buildLineMode(vocab)
+    const lineMode = buildLineMode()
 
     /** @type {EditorMode} The current editor mode. */
     let currentMode = null
@@ -83,32 +87,38 @@ export default (toolbox, vocab) => {
             'Switch editor',
             on('click', () => switchEditor()),
         ),
-        button(
-            'Load example',
-            on('click', () => {}),
-        ),
     )
 
     const Navbar = tag(
         'nav',
         a(
-            { href: 'https://protorobotics.org' },
+            { href: 'https://protorobotics.org/index.html', target: '_self' },
             img({
                 src: '/images/proto-logo.png',
                 alt: 'The PROTO logo',
                 height: '32',
             }),
         ),
-        a({ href: 'https://protorobotics.org' }, 'Home'),
-        a({ href: '/cheatsheet' }, 'Cheatsheet'),
+        a(
+            { href: `${window.location.pathname}?cheatsheet`, target: '_self' },
+            'Cheatsheet',
+        ),
     )
 
-    const CustomTooltip = tooltipHelper() // TODO: rename to initTooltip?
-
+    const CheatSheetDrawer = cheatSheetDrawerHelper(
+        () =>
+            createCheatSheetContent({
+                showPrint: false,
+                showOpenFullCheatSheet: true,
+            }),
+        {
+            blockLookup: cheatSheetBlockElementNumbers,
+        },
+    )
     const PageContent = [
         header(Navbar, Toolbar),
         EditorContainer,
-        CustomTooltip,
+        CheatSheetDrawer,
         footer(
             'PROTO Robotics | ',
             a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),

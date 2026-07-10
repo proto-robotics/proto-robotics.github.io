@@ -86,53 +86,59 @@
         }
     }
 
-    pop-up {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+    dialog.popup-dialog {
         width: fit-content;
         height: fit-content;
         background: var(--bg);
-        padding: 32px;
         z-index: 1000;
         border-radius: 8px;
         border: var(--rule-width) solid var(--secondary-grey);
+        padding: 0;
+        margin: auto;
 
-        &::part(close-button) {
-            position: absolute;
-            top: 0px;
-            right: 0px;
-            font-size: 1.2rem;
-            background: none;
-            /* Top-right corner is extended to fill space with pop-up border */
-            border-radius: 8px calc(8px / sqrt(2)) 8px 8px;
-            border: none;
-            padding: 0px 8px 4px 8px;
-            color: var(--secondary-red);
-        }
-
-        &::part(close-button):hover {
-            background: var(--primary-red);
-            color: var(--bg);
+        &::backdrop {
+            background: rgb(from var(--secondary-grey) r g b / 0.3);
         }
     }
 
-    custom-tooltip {
+    div.popup-content {
+        position: relative;
+        padding: 32px;
+    }
+
+    button.popup-close-button {
         position: absolute;
-        pointer-events: none;
-
-        background: rgba(0, 0, 0, 0.6);
-        color: #fff;
-        border-radius: 3px;
-        padding: 3px 4px;
-
-        font-size: 10px;
-        line-height: 1.2;
-
-        max-width: 40%;
-        display: none;
+        top: 0px;
+        right: 0px;
+        background: rgb(from var(--offset-grey) r g b / 0.7);
+        border-radius: 8px calc(8px / sqrt(2)) 8px 8px;
+        border: none;
+        padding: 6px;
+        margin: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
+
+    button.popup-close-button:hover {
+        background: var(--primary-red);
+    }
+
+    button.popup-close-button img {
+        width: 16px;
+        height: 16px;
+        display: block;
+        opacity: 0.55;
+        filter: grayscale(1);
+    }
+
+    button.popup-close-button:hover img {
+        opacity: 1;
+        filter: none;
+    }
+
 }
 
 @layer layout {
@@ -145,6 +151,10 @@
             'edit' 1fr
             'foot' min-content
             / 1fr;
+    }
+
+    header {
+        grid-area: head;
     }
 
     nav {
@@ -171,22 +181,22 @@
         width: 100%;
         border-bottom: var(--rule-width) solid var(--text-faded);
 
-        input[type='text'] {
+        input[type='text'], button {
             border: var(--rule-width) solid var(--text-faded);
             border-bottom: none;
-            background: var(--bg);
             font-size: 0.8rem;
             margin: 4px 4px 0 4px;
+            box-shadow: 1px -0.5px 2px var(--text-faded);
+        }
+
+        input[type='text'] {
+            background: var(--bg);
             padding: 2px 4px;
         }
 
         button {
-            border: var(--rule-width) solid var(--text-faded);
             border-radius: 8px 8px 0 0;
-            border-bottom: none;
             background: var(--bg-faded);
-            font-size: 0.8rem;
-            margin: 4px 4px 0 4px;
             padding: 2px 8px;
             display: inline;
 
@@ -202,11 +212,72 @@
     }
 
     footer {
+        grid-area: foot;
         text-align: center;
         background-color: var(--secondary-grey);
         color: var(--bg);
         padding: 8px;
         font-size: 0.7rem;
+    }
+
+    .cheatsheet-page-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    #editor-container {
+        grid-area: edit;
+    }
+
+    cheatsheet-drawer {
+        --cheatsheet-drawer-width: min(720px, calc(100vw - 56px));
+
+        position: fixed;
+        top: 116px;
+        right: calc(-1 * var(--cheatsheet-drawer-width));
+        bottom: 40px;
+        z-index: 900;
+        width: var(--cheatsheet-drawer-width);
+        display: block;
+        transition: right 180ms ease;
+    }
+
+    cheatsheet-drawer.open {
+        right: 0;
+    }
+
+    #cheatsheet-drawer-tab {
+        position: absolute;
+        top: 16px;
+        left: -48px;
+        width: 48px;
+        min-height: 88px;
+        margin: 0;
+        border: var(--rule-width) solid var(--text-faded);
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        box-shadow: -1px 1px 3px rgb(from var(--secondary-grey) r g b / 0.25);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        background: var(--bg-faded);
+    }
+
+    cheatsheet-drawer.open #cheatsheet-drawer-tab,
+    #cheatsheet-drawer-tab:hover {
+        background: var(--primary-red);
+        color: var(--bg);
+    }
+
+    #cheatsheet-drawer-panel {
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        border: var(--rule-width) solid var(--text-faded);
+        border-right: none;
+        background: var(--bg);
+        box-shadow: -2px 0 8px rgb(from var(--secondary-grey) r g b / 0.25);
+        padding: 0 16px 16px;
     }
 }
 
@@ -218,16 +289,194 @@
         height: 100%;
     }
 
-    button#verify-button {
+    issues-drawer {
+        --issues-drawer-width: min(360px, calc(100vw - 56px));
+
+        position: fixed;
+        top: 320px;
+        right: calc(-1 * var(--issues-drawer-width));
+        bottom: 40px;
+        z-index: 890;
+        width: var(--issues-drawer-width);
+        display: block;
+        transition: right 180ms ease;
+    }
+
+    issues-drawer.open {
+        right: 0;
+    }
+
+    #issues-drawer-tab {
         position: absolute;
-        top: 8px;
-        right: 16px;
-        z-index: 1000;
+        top: 16px;
+        left: -48px;
+        width: 48px;
+        margin: 0;
+        padding: 8px 4px;
+        border: var(--rule-width) solid var(--text-faded);
+        border-radius: 8px 0 0 8px;
+        background: var(--bg-faded);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        box-shadow: 0 1px 3px #00000022;
+    }
+
+    issues-drawer.open #issues-drawer-tab,
+    #issues-drawer-tab:hover,
+    issues-drawer[data-status='error'] #issues-drawer-tab {
+        background: var(--primary-red);
+        color: var(--bg);
+    }
+
+    issues-drawer[data-status='warning'] #issues-drawer-tab {
+        background: #f79009;
+        color: var(--bg);
+    }
+
+    issues-drawer[data-status='info'] #issues-drawer-tab {
+        background: #2f80ed;
+        color: var(--bg);
+    }
+
+    #issues-drawer-panel {
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        border: var(--rule-width) solid var(--text-faded);
+        border-right: none;
+        background: var(--bg);
+        box-shadow: 0 2px 10px #00000022;
+        padding: 8px;
+    }
+
+    #issues-drawer-panel h2 {
+        margin: 0 0 8px;
+        font-size: 1.1rem;
+    }
+
+    span#verify-status {
+        display: inline-block;
+        margin-bottom: 8px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #ffffffd9;
+        color: #555;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    span#verify-status[data-status='checking'] {
+        color: #8a5a00;
+    }
+
+    span#verify-status[data-status='success'] {
+        color: #16723a;
+    }
+
+    span#verify-status[data-status='error'] {
+        color: #b42318;
+    }
+
+    span#verify-status[data-status='warning'] {
+        color: #b54708;
+    }
+
+    span#verify-status[data-status='info'] {
+        color: #175cd3;
+    }
+
+    div#verify-issues {
+        display: grid;
+        gap: 4px;
+    }
+
+    .verify-issue {
+        padding: 4px 6px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px #00000022;
+        font-size: 12px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .verify-issue-error {
+        border-left: 3px solid #d92d20;
+        background: #fff2f0;
+        color: #7a271a;
+    }
+
+    .verify-issue-warning {
+        border-left: 3px solid #f79009;
+        background: #fffaeb;
+        color: #7a2e0e;
+    }
+
+    .verify-issue-info {
+        border-left: 3px solid #2f80ed;
+        background: #eff8ff;
+        color: #1849a9;
+    }
+
+    .verify-issue-more {
+        border-left-color: #b54708;
+        background: #fff7ed;
+        color: #7c2d12;
     }
 
     div#line-editor-canvas {
         width: 100%;
         height: 100%;
+    }
+
+    .cm-editor .cm-selectionBackground,
+    .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+        background-color: #2f80ed66 !important;
+    }
+
+    .cm-editor .cm-content ::selection {
+        background-color: #2f80ed66 !important;
+    }
+
+    .cm-editor .cm-lintRange-error {
+        background-image: none !important;
+        text-decoration-line: underline;
+        text-decoration-style: wavy;
+        text-decoration-color: #d92d20;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+        background-color: #fff2f066;
+    }
+
+    .cm-editor .cm-lintRange-warning {
+        background-image: none !important;
+        text-decoration-line: underline;
+        text-decoration-style: wavy;
+        text-decoration-color: #f79009;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+        background-color: #fffaeb66;
+    }
+
+    .cm-editor .cm-lintRange-info {
+        background-image: none !important;
+        text-decoration-line: underline;
+        text-decoration-style: wavy;
+        text-decoration-color: #2f80ed;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+        background-color: #eff8ff66;
+    }
+
+    .cm-editor .cm-lintPoint-error::after {
+        border-bottom-color: #d92d20 !important;
+    }
+
+    .cm-editor .cm-lintPoint-warning::after {
+        border-bottom-color: #f79009 !important;
+    }
+
+    .cm-editor .cm-lintPoint-info::after {
+        border-bottom-color: #2f80ed !important;
     }
 }
 
@@ -251,18 +500,447 @@
         position: absolute;
         bottom: 40px;
         right: 16px;
-        z-index: 1000;
-    }
-
-    .blocklyTooltipDiv {
-        /* We have our own tooltip instead. */
-        display: none !important;
+        z-index: 800;
     }
 
     .blocklyToolboxCategoryLabel {
         font:
             10pt / 1.5 Monteserrat,
             sans-serif !important;
+    }
+}
+
+@layer cheatsheet {
+    cheatsheet-content {
+        display: block;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 12px 16px;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+
+    cheatsheet-controls {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        padding: 8px;
+        background: rgb(from var(--bg) r g b / 0.92);
+        border-bottom: var(--rule-width) solid var(--offset-grey);
+    }
+
+    .cheatsheet-page > cheatsheet-content > cheatsheet-controls {
+        top: var(--cheatsheet-sticky-offset, 0px);
+        z-index: 19;
+    }
+
+    cheatsheet-section-tabs {
+        display: flex;
+        flex: 1 1 auto;
+        gap: 4px;
+        min-width: 0;
+        margin-right: auto;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    cheatsheet-controls button {
+        flex: 0 0 auto;
+        margin: 0;
+        border: var(--rule-width) solid var(--text-faded);
+        border-radius: 8px;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        background: var(--bg-faded);
+    }
+
+    cheatsheet-controls button[aria-pressed='true'] {
+        background: var(--primary-red);
+        color: var(--bg);
+    }
+
+    cheatsheet-section-tabs button {
+        border-color: var(--cheatsheet-section-color, var(--text-faded));
+        color: var(--cheatsheet-section-color, var(--text));
+    }
+
+    cheatsheet-section-tabs button:hover {
+        background: rgb(from var(--cheatsheet-section-color, var(--primary-red)) r g b / 0.14);
+    }
+
+    cheatsheet-section-tabs button[aria-current='true'] {
+        border-color: var(--cheatsheet-section-color, var(--primary-red));
+        background: var(--cheatsheet-section-color, var(--primary-red));
+        color: var(--bg);
+    }
+
+    cheatsheet-section {
+        display: block;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    cheatsheet-section h2 {
+        border-bottom: solid 1px;
+        text-align: center;
+        font-size: 1.25rem;
+        margin: 8px 0;
+    }
+
+    cheatsheet-section h3 {
+        font-size: 0.95rem;
+        margin-top: 4px;
+    }
+
+    cheatsheet-section p {
+        margin: 4px 0;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    cheatsheet-section-content {
+        --cheatsheet-column-gap: 12px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--cheatsheet-column-gap);
+    }
+
+    cheatsheet-code-section,
+    cheatsheet-example-section {
+        display: contents;
+    }
+
+    cheatsheet-item {
+        display: block;
+        min-width: 0;
+        padding: 4px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    cheatsheet-item.cheatsheet-item-wide {
+        grid-column: span 2;
+    }
+
+    cheatsheet-item.cheatsheet-item-wide > p {
+        max-width: calc((100% - var(--cheatsheet-column-gap)) / 2);
+    }
+
+    cheatsheet-item:target {
+        outline: 2px solid var(--primary-red);
+        outline-offset: 2px;
+    }
+
+    cheatsheet-code-section,
+    cheatsheet-example-section {
+        min-width: 0;
+    }
+
+    cheatsheet-example-section {
+        border-left: none;
+        padding-left: 0;
+    }
+
+    cheatsheet-preview {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    cheatsheet-content .cm-editor {
+        font-size: 0.72rem;
+    }
+
+    cheatsheet-content .cm-scroller {
+        overflow: visible;
+    }
+
+    cheatsheet-content .cm-line {
+        white-space: pre;
+    }
+
+    cheatsheet-drawer h2 {
+        font-size: 1.2rem;
+    }
+
+    cheatsheet-drawer h3 {
+        font-size: 1rem;
+    }
+
+    cheatsheet-drawer p {
+        font-size: 0.85rem;
+    }
+
+    cheatsheet-drawer .cm-editor {
+        font-size: 0.8rem;
+    }
+
+    cheatsheet-drawer cheatsheet-content {
+        max-width: none;
+        padding: 0 8px 8px;
+        font-size: 0.78rem;
+    }
+
+    cheatsheet-drawer cheatsheet-controls {
+        position: sticky;
+        top: 0;
+        flex-wrap: wrap;
+        margin: 0 -8px 8px;
+        padding: 8px;
+    }
+
+    cheatsheet-drawer cheatsheet-section-tabs {
+        flex-basis: 100%;
+        margin-right: 0;
+    }
+
+    cheatsheet-drawer cheatsheet-section-content {
+        --cheatsheet-column-gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--cheatsheet-column-gap);
+    }
+
+    cheatsheet-drawer cheatsheet-example-section {
+        border-top: none;
+        padding-left: 0;
+        padding-top: 0;
+    }
+
+    cheatsheet-drawer cheatsheet-item {
+        padding: 4px;
+    }
+
+    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide {
+        grid-column: span 2;
+    }
+
+    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide > p {
+        max-width: calc((100% - var(--cheatsheet-column-gap)) / 2);
+    }
+
+    cheatsheet-drawer blockly-preview {
+        max-width: 100%;
+    }
+
+    blockly-preview {
+        display: block;
+        max-width: 100%;
+        margin: 4px 0;
+        overflow: hidden;
+    }
+
+    blockly-preview > div {
+        width: 100%;
+        height: 100%;
+    }
+
+    blockly-preview .blocklyMainBackground {
+        fill: transparent;
+        stroke: none;
+    }
+
+    blockly-preview .blocklyGridPattern,
+    blockly-preview .blocklyScrollbarHorizontal,
+    blockly-preview .blocklyScrollbarVertical {
+        display: none;
+    }
+
+    cheatsheet-print-stage {
+        position: absolute;
+        top: 0;
+        left: -10000px;
+        display: block;
+        box-sizing: border-box;
+        width: 21cm;
+        padding: 1.4cm;
+        background: var(--bg);
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+        pointer-events: none;
+    }
+
+    cheatsheet-print-stage cheatsheet-content {
+        max-width: none;
+        padding: 0;
+        font-size: 8pt;
+        line-height: 1.2;
+    }
+
+    cheatsheet-print-stage cheatsheet-section h2 {
+        font-size: 12pt;
+        margin: 0 0 4pt;
+    }
+
+    cheatsheet-print-stage cheatsheet-section h3 {
+        font-size: 9pt;
+        margin: 2pt 0;
+    }
+
+    cheatsheet-print-stage cheatsheet-section p {
+        margin: 2pt 0;
+    }
+
+    cheatsheet-print-stage cheatsheet-section-content {
+        --cheatsheet-column-gap: 8pt;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--cheatsheet-column-gap);
+    }
+
+    cheatsheet-print-stage cheatsheet-item {
+        padding: 0;
+    }
+
+    cheatsheet-print-stage .cm-editor {
+        font-size: 6.5pt;
+    }
+
+    cheatsheet-print-stage blockly-preview {
+        margin: 2pt 0;
+    }
+
+    .cheatsheet-print-logo,
+    .cheatsheet-print-chrome-layer,
+    .cheatsheet-print-page-chrome {
+        display: none;
+    }
+}
+
+@media (max-width: 1050px) {
+    cheatsheet-section-content {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    cheatsheet-section-content,
+    cheatsheet-drawer cheatsheet-section-content {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 540px) {
+    cheatsheet-section-content,
+    cheatsheet-drawer cheatsheet-section-content {
+        grid-template-columns: 1fr;
+    }
+
+    cheatsheet-item.cheatsheet-item-wide,
+    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide {
+        grid-column: auto;
+    }
+
+    cheatsheet-item.cheatsheet-item-wide > p,
+    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide > p {
+        max-width: none;
+    }
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 1.4cm;
+
+        @bottom-right {
+            content: 'Page ' counter(page);
+            font-family: Monteserrat, sans-serif;
+            font-size: 8pt;
+            color: #000;
+        }
+    }
+
+    html,
+    body {
+        width: auto;
+        height: auto;
+        display: block;
+        font-size: 9pt;
+        background: #fff;
+        color: #000;
+    }
+
+    header,
+    nav,
+    footer,
+    cheatsheet-drawer,
+    cheatsheet-controls {
+        display: none !important;
+    }
+
+    body.printing-cheatsheet-stage > :not(cheatsheet-print-stage) {
+        display: none !important;
+    }
+
+    body.printing-cheatsheet-stage cheatsheet-print-stage {
+        position: static !important;
+        top: 0 !important;
+        left: 0 !important;
+        display: block !important;
+        width: auto !important;
+        min-height: 0;
+        padding: 0 !important;
+        pointer-events: auto;
+    }
+
+    cheatsheet-content {
+        max-width: none;
+        padding: 0;
+        font-size: 8pt;
+        line-height: 1.2;
+    }
+
+    cheatsheet-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 8pt;
+    }
+
+    cheatsheet-section h2 {
+        font-size: 12pt;
+        margin: 0 0 4pt;
+    }
+
+    cheatsheet-section h3 {
+        font-size: 9pt;
+        margin: 2pt 0;
+    }
+
+    cheatsheet-section p {
+        margin: 2pt 0;
+        overflow-wrap: break-word;
+    }
+
+    cheatsheet-section-content {
+        --cheatsheet-column-gap: 8pt;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--cheatsheet-column-gap);
+    }
+
+    cheatsheet-item {
+        padding: 0;
+    }
+
+    cheatsheet-item.cheatsheet-item-wide {
+        grid-column: span 2;
+    }
+
+    cheatsheet-item.cheatsheet-item-wide > p {
+        max-width: calc((100% - var(--cheatsheet-column-gap)) / 2);
+    }
+
+    cheatsheet-content .cm-editor {
+        font-size: 6.5pt;
+    }
+
+    blockly-preview {
+        margin: 2pt 0;
+    }
+
+    hr {
+        margin: 4pt 0;
     }
 }
 

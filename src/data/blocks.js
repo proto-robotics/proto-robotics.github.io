@@ -2,11 +2,73 @@ import { FieldDropdown, FieldNumber, FieldTextInput, FieldCheckbox, FieldImage }
 import {FieldColourHsvSliders} from '@blockly/field-colour-hsv-sliders';
 import {pythonGenerator, Order} from 'blockly/python';
 import {FieldGridDropdown} from '@blockly/field-grid-dropdown';
+import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 
-export default [
+const simplePorts = [
+    ['0', '0'],
+    ['1', '1'],
+    ['2', '2'],
+    ['3', '3'],
+    ['4', '4'],
+    ['5', '5'],
+    ['6', '6'],
+    ['7', '7'],
+]
+
+const drivePorts = [
+    ['0', '0'],
+    ['1', '1'],
+    ['2', '2'],
+    ['3', '3'],
+]
+
+const buttonPorts = [
+    ['10', '10'],
+    ['11', '11'],
+    ['12', '12'],
+    ['13', '13'],
+]
+
+const injectHelpButton = (blocks) => {
+    blocks.forEach(category => {
+        category.entries.forEach(block => {
+            const field =
+            {
+                field: () =>
+                    new FieldImage("./images/help.svg", 15, 15, "Info", () => {
+                        document.dispatchEvent(
+                            new CustomEvent(openCheatSheetDrawerEvent, {
+                                detail: { blockName: block.name },
+                            }),
+                        )
+                    }),
+                name: 'info_icon',
+            }
+            block.blocklyTemplate.push(field)
+        })
+    })
+
+    return blocks
+}
+
+export default injectHelpButton([
     {
         name: 'Motor',
         color: '#F2737B',
+        codeAutoComplete: {
+            'make.smallmotor': {
+                type: 'function',
+                description: 'Creates a small motor on a port.',
+            },
+            'make.servo': {
+                type: 'function',
+                description: 'Creates a servo on a port.',
+            },
+            'make.largemotor': {
+                type: 'function',
+                description: 'Creates a large motor on a drivetrain port.',
+            },
+        },
         entries: [
             {
                 name: 'smallmotor',
@@ -21,13 +83,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['1', '1'],
-                                ['2', '2'],
-                                ['3', '3'],
-                                ['4', '4'],
-                                ['5', '5'],
-                            ]),
+                            new FieldDropdown(simplePorts),
                         name: 'port',
                     },
                     {
@@ -69,13 +125,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['1', '1'],
-                                ['2', '2'],
-                                ['3', '3'],
-                                ['4', '4'],
-                                ['5', '5'],
-                            ]),
+                            new FieldDropdown(simplePorts),
                         name: 'port',
                     },
                 ],
@@ -103,10 +153,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['6', '6'],
-                                ['7', '7'],
-                            ]),
+                            new FieldDropdown(drivePorts),
                         name: 'port',
                     },
                     {
@@ -138,6 +185,13 @@ export default [
             {
                 name: 'spin',
                 description: 'Spins a motor at a power until stopped',
+                codeAutoComplete: [
+                    {
+                        label: 'motor.spin',
+                        type: 'method',
+                        description: 'Spins a motor at a power until it is stopped.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -170,6 +224,14 @@ export default [
             {
                 name: 'spinBack',
                 description: 'Spins a motor backwards at a power until stopped',
+                codeAutoComplete: [
+                    {
+                        label: 'motor.spin_back',
+                        type: 'method',
+                        description:
+                            'Spins a motor backwards at a power until it is stopped.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -202,6 +264,13 @@ export default [
             {
                 name: 'moveto',
                 description: 'Moves a servo to an angle',
+                codeAutoComplete: [
+                    {
+                        label: 'servo.moveto',
+                        type: 'method',
+                        description: 'Moves a servo to an angle.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Move',
@@ -234,6 +303,14 @@ export default [
             {
                 name: 'spinForTime',
                 description: 'Spins a motor at a power for a time',
+                codeAutoComplete: [
+                    {
+                        label: 'motor.spin',
+                        type: 'method',
+                        description:
+                            'Spins a motor at a power for a number of seconds.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -274,6 +351,14 @@ export default [
             {
                 name: 'spinBackForTime',
                 description: 'Spins a motor backwards at a power for a time',
+                codeAutoComplete: [
+                    {
+                        label: 'motor.spin_back',
+                        type: 'method',
+                        description:
+                            'Spins a motor backwards at a power for a number of seconds.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -314,6 +399,14 @@ export default [
             {
                 name: 'movetoForTime',
                 description: 'Moves a servo to an angle and waits for a time',
+                codeAutoComplete: [
+                    {
+                        label: 'servo.moveto',
+                        type: 'method',
+                        description:
+                            'Moves a servo to an angle and waits for a number of seconds.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Move',
@@ -354,6 +447,13 @@ export default [
             {
                 name: 'stopMotor',
                 description: 'Stops a motor or drivetrain',
+                codeAutoComplete: [
+                    {
+                        label: 'motor.stop',
+                        type: 'method',
+                        description: 'Stops a motor or drivetrain.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Stop',
@@ -373,10 +473,161 @@ export default [
                 },
             },
         ],
+        examples: [
+            {
+                name: 'Servo sweep',
+                preamble:
+                    'Creates a servo, moves it to the middle, waits briefly, then returns it to the start.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'servo',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'servo_sam',
+                                    port: '1',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'movetoForTime',
+                                        fields: {
+                                            name: 'servo_sam',
+                                            angle: '90',
+                                            time: '1',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'wait',
+                                                fields: {
+                                                    time: '0.5',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'moveto',
+                                                        fields: {
+                                                            name: 'servo_sam',
+                                                            angle: '0',
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Timed small motor',
+                preamble:
+                    'Runs a small motor forward, reverses it at a lower power, then stops it.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'smallmotor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'arm_motor',
+                                    port: '1',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'spinForTime',
+                                        fields: {
+                                            name: 'arm_motor',
+                                            power: '75',
+                                            time: '2',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'spinBackForTime',
+                                                fields: {
+                                                    name: 'arm_motor',
+                                                    power: '40',
+                                                    time: '1',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'stopMotor',
+                                                        fields: {
+                                                            name: 'arm_motor',
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Large motor launcher',
+                preamble:
+                    'Creates a large motor, spins it up, waits, and stops it.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'largemotor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'launcher',
+                                    port: '2',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'spin',
+                                        fields: {
+                                            name: 'launcher',
+                                            power: '100',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'wait',
+                                                fields: {
+                                                    time: '3',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'stopMotor',
+                                                        fields: {
+                                                            name: 'launcher',
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
     },
     {
         name: 'Drivetrain',
         color: '#00B8AA',
+        codeAutoComplete: {
+            'make.drivetrain': {
+                type: 'function',
+                description: 'Creates a drivetrain from left and right motors.',
+            },
+        },
         entries: [
             {
                 name: 'drivetrain',
@@ -434,6 +685,13 @@ export default [
             {
                 name: 'drive',
                 description: 'Drives a drivetrain at a power until stopped',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.drive',
+                        type: 'method',
+                        description: 'Drives forward or backward until stopped.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Drive',
@@ -466,6 +724,14 @@ export default [
             {
                 name: 'driveForTime',
                 description: 'Drives a drivetrain at a power for a time',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.drive',
+                        type: 'method',
+                        description:
+                            'Drives forward or backward for a number of seconds.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Drive',
@@ -507,6 +773,14 @@ export default [
                 name: 'curve',
                 description:
                     'Curves a drivetrain at two different powers until stopped',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.curve',
+                        type: 'method',
+                        description:
+                            'Runs the left and right sides of a drivetrain at different powers.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Curve',
@@ -548,6 +822,13 @@ export default [
                 name: 'curveForTime',
                 description:
                     'Curves a drivetrain at two different powers for a time',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.curve',
+                        type: 'method',
+                        description: 'Curves for a number of seconds.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Curve',
@@ -596,6 +877,13 @@ export default [
             {
                 name: 'turn',
                 description: 'Turn a drivetrain at a power until stopped',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.turn',
+                        type: 'method',
+                        description: 'Turns a drivetrain until stopped.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Turn',
@@ -635,6 +923,14 @@ export default [
             {
                 name: 'turnForTime',
                 description: 'Turn a drivetrain at a power until stopped',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.turn',
+                        type: 'method',
+                        description:
+                            'Turns a drivetrain for a number of seconds.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Turn',
@@ -675,6 +971,13 @@ export default [
             {
                 name: 'stopDrivetrain',
                 description: 'Stops a motor or drivetrain',
+                codeAutoComplete: [
+                    {
+                        label: 'drivetrain.stop',
+                        type: 'method',
+                        description: 'Stops a drivetrain.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         text: 'Stop',
@@ -694,10 +997,120 @@ export default [
                 },
             },
         ],
+        examples: [
+            {
+                name: 'Straight drive',
+                preamble:
+                    'Creates two motors, combines them into a drivetrain, then drives forward briefly.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'largemotor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'left_motor',
+                                    port: '0',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'largemotor',
+                                        fields: {
+                                            name: 'right_motor',
+                                            port: '1',
+                                            direction: '-1',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'drivetrain',
+                                                fields: {
+                                                    name: 'drivebase',
+                                                    left: 'left_motor',
+                                                    right: 'right_motor',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'driveForTime',
+                                                        fields: {
+                                                            name: 'drivebase',
+                                                            power: '60',
+                                                            time: '2',
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Curve and turn',
+                preamble:
+                    'Curves by running each side at a different power, then turns in place.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'drivetrain',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'drivebase',
+                                    left: 'left_motor',
+                                    right: 'right_motor',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'curveForTime',
+                                        fields: {
+                                            name: 'drivebase',
+                                            left: '50',
+                                            right: '100',
+                                            time: '1.5',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'turnForTime',
+                                                fields: {
+                                                    name: 'drivebase',
+                                                    power: '45',
+                                                    time: '0.75',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'stopDrivetrain',
+                                                        fields: {
+                                                            name: 'drivebase',
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
     },
     {
         name: 'Sensors',
         color: '#6395CF',
+        codeAutoComplete: {
+            'make.button': {
+                type: 'function',
+                description: 'Creates a button sensor on a port.',
+            },
+        },
         entries: [
             {
                 name: 'button',
@@ -712,10 +1125,7 @@ export default [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
-                                ['8', '8'],
-                                ['9', '9'],
-                            ]),
+                            new FieldDropdown(buttonPorts),
                         name: 'port',
                     },
                 ],
@@ -733,6 +1143,14 @@ export default [
             {
                 name: 'isPressed',
                 description: 'Returns whether or not the button is pressed',
+                codeAutoComplete: [
+                    {
+                        label: 'button.pressed',
+                        type: 'method',
+                        description:
+                            'Returns whether a button is currently pressed.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         field: () => new FieldTextInput('button'),
@@ -758,6 +1176,13 @@ export default [
             {
                 name: 'isHeld',
                 description: 'Returns whether or not the button is held down',
+                codeAutoComplete: [
+                    {
+                        label: 'button.held',
+                        type: 'method',
+                        description: 'Returns whether a button has been held.',
+                    },
+                ],
                 blocklyTemplate: [
                     {
                         field: () => new FieldTextInput('button'),
@@ -781,10 +1206,127 @@ export default [
                 },
             },
         ],
+        examples: [
+            {
+                name: 'Read a button',
+                preamble:
+                    'Creates a button on a digital port and checks whether it is pressed.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'start_button',
+                                    port: '10',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'until',
+                                        inputs: {
+                                            function: {
+                                                block: {
+                                                    type: 'isPressed',
+                                                    fields: {
+                                                        name: 'start_button',
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Hold to run',
+                preamble:
+                    'Runs a motor only while a button is being held down.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'run_button',
+                                    port: '11',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'smallmotor',
+                                        fields: {
+                                            name: 'intake',
+                                            port: '2',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'ifElse',
+                                                inputs: {
+                                                    function: {
+                                                        block: {
+                                                            type: 'isHeld',
+                                                            fields: {
+                                                                name: 'run_button',
+                                                            },
+                                                        },
+                                                    },
+                                                    input: {
+                                                        block: {
+                                                            type: 'spin',
+                                                            fields: {
+                                                                name: 'intake',
+                                                                power: '80',
+                                                            },
+                                                        },
+                                                    },
+                                                    input_else: {
+                                                        block: {
+                                                            type: 'stopMotor',
+                                                            fields: {
+                                                                name: 'intake',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
     },
     {
         name: 'Time',
         color: '#9970B1',
+        codeAutoComplete: [
+            {
+                label: 'make.wait',
+                type: 'function',
+                description: 'Waits for a number of seconds.',
+            },
+            {
+                label: 'make.wait_until',
+                type: 'function',
+                description: 'Waits until a condition becomes true.',
+            },
+            {
+                label: 'make.wait_while',
+                type: 'function',
+                description: 'Waits while a condition stays true.',
+            },
+        ],
         entries: [
             {
                 name: 'wait',
@@ -887,10 +1429,169 @@ export default [
                 },
             },
         ],
+        examples: [
+            {
+                name: 'Pause between actions',
+                preamble:
+                    'Waits between motor commands so each action has time to finish.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'smallmotor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'lift',
+                                    port: '3',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'spin',
+                                        fields: {
+                                            name: 'lift',
+                                            power: '50',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'wait',
+                                                fields: {
+                                                    time: '1.5',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'stopMotor',
+                                                        fields: {
+                                                            name: 'lift',
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Wait for a button',
+                preamble:
+                    'Pauses the program until a button is pressed, then starts driving.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'go_button',
+                                    port: '12',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'until',
+                                        inputs: {
+                                            function: {
+                                                block: {
+                                                    type: 'isPressed',
+                                                    fields: {
+                                                        name: 'go_button',
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'drive',
+                                                fields: {
+                                                    name: 'drivebase',
+                                                    power: '50',
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Wait while held',
+                preamble:
+                    'Keeps waiting while a button is held, then continues when it is released.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'pause_button',
+                                    port: '13',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'while',
+                                        inputs: {
+                                            function: {
+                                                block: {
+                                                    type: 'isHeld',
+                                                    fields: {
+                                                        name: 'pause_button',
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'wait',
+                                                fields: {
+                                                    time: '0.25',
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
     },
     {
         name: 'Flow',
         color: '#F8BF41',
+        codeAutoComplete: [
+            {
+                label: 'if',
+                type: 'keyword',
+                description: 'Starts a conditional block.',
+            },
+            {
+                label: 'while',
+                type: 'keyword',
+                description: 'Repeats code while a condition is true.',
+            },
+            {
+                label: 'for',
+                type: 'keyword',
+                description: 'Repeats code for a fixed range.',
+            },
+            {
+                label: 'range',
+                type: 'function',
+                description: 'Creates a range of numbers.',
+            },
+        ],
         entries: [ 
             // {
 			// 	name: "section",
@@ -1002,6 +1703,13 @@ export default [
             {
 				name: "ifElse",
 				description: "if_else statement help.",
+                codeAutoComplete: [
+                    {
+                        label: 'else',
+                        type: 'keyword',
+                        description: 'Adds an alternate branch to an if block.',
+                    },
+                ],
 				blocklyTemplate: [
                     {
                         "text": "if      ",
@@ -1138,6 +1846,13 @@ export default [
             {
 				name: "logicalNot",
 				description: "Returns whether or not the button is pressed.",
+                codeAutoComplete: [
+                    {
+                        label: 'not',
+                        type: 'keyword',
+                        description: 'Reverses a boolean condition.',
+                    },
+                ],
 				blocklyTemplate: [
                     {
                         text: 'not',
@@ -1294,7 +2009,176 @@ export default [
 			},
             
         ],
+        examples: [
+            {
+                name: 'Run code when pressed',
+                preamble:
+                    'Uses an if block to run a motor command only when the button is pressed.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'start_button',
+                                    port: '10',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'smallmotor',
+                                        fields: {
+                                            name: 'intake',
+                                            port: '2',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'if',
+                                                inputs: {
+                                                    function: {
+                                                        block: {
+                                                            type: 'isPressed',
+                                                            fields: {
+                                                                name: 'start_button',
+                                                            },
+                                                        },
+                                                    },
+                                                    input: {
+                                                        block: {
+                                                            type: 'spinForTime',
+                                                            fields: {
+                                                                name: 'intake',
+                                                                power: '70',
+                                                                time: '1',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Choose between actions',
+                preamble:
+                    'Uses if/else to run one motor action when a button is held and another when it is not.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'mode_button',
+                                    port: '11',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'ifElse',
+                                        inputs: {
+                                            function: {
+                                                block: {
+                                                    type: 'isHeld',
+                                                    fields: {
+                                                        name: 'mode_button',
+                                                    },
+                                                },
+                                            },
+                                            input: {
+                                                block: {
+                                                    type: 'driveForTime',
+                                                    fields: {
+                                                        name: 'drivebase',
+                                                        power: '40',
+                                                        time: '1',
+                                                    },
+                                                },
+                                            },
+                                            input_else: {
+                                                block: {
+                                                    type: 'turnForTime',
+                                                    fields: {
+                                                        name: 'drivebase',
+                                                        power: '35',
+                                                        time: '0.5',
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                name: 'Repeat a task',
+                preamble:
+                    'Repeats a short motor movement a set number of times.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'smallmotor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'indexer',
+                                    port: '3',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'repeatFor',
+                                        inputs: {
+                                            function: {
+                                                block: {
+                                                    type: 'numberInput',
+                                                    fields: {
+                                                        operation: '3',
+                                                    },
+                                                },
+                                            },
+                                            input: {
+                                                block: {
+                                                    type: 'spinForTime',
+                                                    fields: {
+                                                        name: 'indexer',
+                                                        power: '50',
+                                                        time: '0.5',
+                                                    },
+                                                    next: {
+                                                        block: {
+                                                            type: 'wait',
+                                                            fields: {
+                                                                time: '0.25',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
     }
-]
+])
+
+
 
 const spacesToUnderscores = (str) => str.replace(/\s+/g, '_')
