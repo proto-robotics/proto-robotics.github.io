@@ -1,1180 +1,437 @@
 {
-  "version": 1,
-  "modules": {
-    "make": {
-      "path": "make.py",
-      "imports": [
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "wait",
-            "wait_until",
-            "wait_while"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.motion.simple_motor",
-          "root": "proto",
-          "names": [
-            "simple_motor"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.motion.largemotor",
-          "root": "proto",
-          "names": [
-            "largemotor"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.motion.drivetrain",
-          "root": "proto",
-          "names": [
-            "drivetrain"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.motion.servo",
-          "root": "proto",
-          "names": [
-            "servo"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.input.button",
-          "root": "proto",
-          "names": [
-            "button"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.output.light",
-          "root": "proto",
-          "names": [
-            "light"
-          ]
-        },
-        {
-          "type": "import",
-          "module": null,
-          "root": "proto",
-          "names": [
-            "proto.system"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata",
-          "root": "proto",
-          "names": [
-            "board_schema",
-            "cservo_schema",
-            "servo_schema",
-            "motor_driver_schema"
-          ]
-        }
-      ],
-      "exports": [],
-      "functions": [],
-      "classes": []
-    },
-    "proto": {
-      "path": "proto/__init__.py",
-      "imports": [],
-      "exports": [],
-      "functions": [],
-      "classes": []
-    },
-    "proto.general": {
-      "path": "proto/general/__init__.py",
-      "imports": [],
-      "exports": [],
-      "functions": [],
-      "classes": []
-    },
-    "proto.general.functions": {
-      "path": "proto/general/functions.py",
-      "imports": [
-        {
-          "type": "from",
-          "module": "math",
-          "root": "math",
-          "names": [
-            "copysign"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "time",
-          "root": "time",
-          "names": [
-            "sleep"
-          ]
-        }
-      ],
-      "exports": [
-        "wait",
-        "wait_until",
-        "wait_while",
-        "sig_int",
-        "clamp",
-        "bound_power"
-      ],
-      "functions": [
-        {
-          "name": "wait",
-          "signature": "wait(seconds=0.05)",
-          "description": "Wait the given number of seconds before moving on. If no time is given,\n    waits for 0.05 seconds.",
-          "line": 5
-        },
-        {
-          "name": "wait_until",
-          "signature": "wait_until(condition)",
-          "description": "Wait until the given condition (type: () -> bool) is satisfied.",
-          "line": 13
-        },
-        {
-          "name": "wait_while",
-          "signature": "wait_while(condition)",
-          "description": "Wait while the given condition (type: () -> bool) is satisfied.",
-          "line": 19
-        },
-        {
-          "name": "sig_int",
-          "signature": "sig_int(number)",
-          "description": "Returns the sign of the given number; either 1 or -1.",
-          "line": 24
-        },
-        {
-          "name": "clamp",
-          "signature": "clamp(min_bound, x, max_bound)",
-          "description": "Bounds the given number between the given minimium and maximium bounds.",
-          "line": 29
-        },
-        {
-          "name": "bound_power",
-          "signature": "bound_power(power, interval)",
-          "description": "Bounds the given power between the given interval.",
-          "line": 34
-        }
-      ],
-      "classes": []
-    },
-    "proto.input": {
-      "path": "proto/input/__init__.py",
-      "imports": [],
-      "exports": [],
-      "functions": [],
-      "classes": []
-    },
-    "proto.input.button": {
-      "path": "proto/input/button.py",
-      "imports": [
-        {
-          "type": "import",
-          "module": null,
-          "root": "digitalio",
-          "names": [
-            "digitalio"
-          ]
-        },
-        {
-          "type": "import",
-          "module": null,
-          "root": "proto",
-          "names": [
-            "proto.system"
-          ]
-        }
-      ],
-      "exports": [
-        "button"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "button",
-          "signature": "button(port)",
-          "description": "A button, either built into the board or plugged into a GROVE port.",
-          "methods": [
-            {
-              "name": "pressed",
-              "signature": "pressed(debounce=True)",
-              "description": "Returns true if the button is pressed, false otherwise.",
-              "line": 21
-            },
-            {
-              "name": "held",
-              "signature": "held()",
-              "description": "Returns true if the button is held, false otherwise.",
-              "line": 28
-            },
-            {
-              "name": "free_port",
-              "signature": "free_port()",
-              "description": "Frees the port for use by other buttons, disabling this one.",
-              "line": 32
-            }
-          ],
-          "line": 5
-        }
-      ]
-    },
-    "proto.motion": {
-      "path": "proto/motion/__init__.py",
-      "imports": [],
-      "exports": [],
-      "functions": [],
-      "classes": []
-    },
-    "proto.motion.drivetrain": {
-      "path": "proto/motion/drivetrain.py",
-      "imports": [
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "sig_int",
-            "wait"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.motion.simple_motor",
-          "root": "proto",
-          "names": [
-            "simple_motor"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.motion.largemotor",
-          "root": "proto",
-          "names": [
-            "largemotor"
-          ]
-        }
-      ],
-      "exports": [
-        "calc_mods",
-        "drivetrain"
-      ],
-      "functions": [
-        {
-          "name": "calc_mods",
-          "signature": "calc_mods(direction, drift)",
-          "description": "Calculates the constants that will be applied to the drivetrain's left\n    and right motors to modify their power levels, so that they can drive\n    straight despite drift.",
-          "line": 6
-        }
-      ],
-      "classes": [
-        {
-          "name": "drivetrain",
-          "signature": "drivetrain(left_motor, right_motor, drift=1)",
-          "description": "A drivetrain made from 2 DC motors or continous servos.",
-          "methods": [
-            {
-              "name": "curve",
-              "signature": "curve(left_power, right_power, seconds=None)",
-              "description": "Spins both motors at different powers. If a time is given, stops after\n        the time has elapsed.",
-              "line": 34
-            },
-            {
-              "name": "drive",
-              "signature": "drive(power, seconds=None)",
-              "description": "Spins both motors at the same power. If a time is given, stops after\n        the time has elapsed.",
-              "line": 51
-            },
-            {
-              "name": "turn",
-              "signature": "turn(power, seconds=None)",
-              "description": "Rotates on the spot at the given power. If a time is given, stops\n        after that time has elapsed.",
-              "line": 58
-            },
-            {
-              "name": "curve_back",
-              "signature": "curve_back(left_power, right_power, seconds=None)",
-              "description": "Spins both motors at different powers. If a time is given, stops after\n        the time has elapsed.",
-              "line": 65
-            },
-            {
-              "name": "drive_back",
-              "signature": "drive_back(power, seconds=None)",
-              "description": "Spins both motors back at the same power. If a time is given, stops\n        after the time has elapsed.",
-              "line": 77
-            },
-            {
-              "name": "turn_back",
-              "signature": "turn_back(power, seconds=None)",
-              "description": "Rotates on the spot at the given power. If a time is given, stops\n        after that time has elapsed.",
-              "line": 84
-            },
-            {
-              "name": "stop",
-              "signature": "stop()",
-              "description": "Stops both motors.",
-              "line": 91
-            }
-          ],
-          "line": 18
-        }
-      ]
-    },
-    "proto.motion.largemotor": {
-      "path": "proto/motion/largemotor.py",
-      "imports": [
-        {
-          "type": "import",
-          "module": null,
-          "root": "pwmio",
-          "names": [
-            "pwmio"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "adafruit_motor",
-          "root": "adafruit_motor",
-          "names": [
-            "motor"
-          ]
-        },
-        {
-          "type": "import",
-          "module": null,
-          "root": "proto",
-          "names": [
-            "proto.system"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata.motor_driver_schema",
-          "root": "proto",
-          "names": [
-            "motor_driver_schema"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "wait",
-            "sig_int"
-          ]
-        }
-      ],
-      "exports": [
-        "largemotor"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "largemotor",
-          "signature": "largemotor(port, direction=1, schema=system.driver)",
-          "description": "A DC motor plugged in to a drive port.",
-          "methods": [
-            {
-              "name": "spin",
-              "signature": "spin(power, seconds=None)",
-              "description": "Spin the motor at the given power for the given time period; if\n        no period is given then it spins until stopped.",
-              "line": 24
-            },
-            {
-              "name": "spin_back",
-              "signature": "spin_back(power, seconds=None)",
-              "description": "Spin the motor backwards at the given power for the given time\n        period; if no period is given then it spins until stopped.",
-              "line": 37
-            },
-            {
-              "name": "stop",
-              "signature": "stop()",
-              "description": "Stops the motor.",
-              "line": 44
-            }
-          ],
-          "line": 8
-        }
-      ]
-    },
-    "proto.motion.servo": {
-      "path": "proto/motion/servo.py",
-      "imports": [
-        {
-          "type": "import",
-          "module": null,
-          "root": "pwmio",
-          "names": [
-            "pwmio"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "adafruit_motor",
-          "root": "adafruit_motor",
-          "names": [
-            "servo"
-          ]
-        },
-        {
-          "type": "import",
-          "module": null,
-          "root": "proto",
-          "names": [
-            "proto.system"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata.servo_schema",
-          "root": "proto",
-          "names": [
-            "servo_schema"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "clamp",
-            "wait"
-          ]
-        }
-      ],
-      "exports": [
-        "servo"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "servo",
-          "signature": "servo(port, schema=system.servo)",
-          "description": "A servo motor plugged into a small motor port or GROVE port.",
-          "methods": [
-            {
-              "name": "moveto",
-              "signature": "moveto(angle, seconds=None)",
-              "description": "Rotates the servo to the given angle.",
-              "line": 24
-            }
-          ],
-          "line": 8
-        }
-      ]
-    },
-    "proto.motion.simple_motor": {
-      "path": "proto/motion/simple_motor.py",
-      "imports": [
-        {
-          "type": "import",
-          "module": null,
-          "root": "pwmio",
-          "names": [
-            "pwmio"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "adafruit_motor",
-          "root": "adafruit_motor",
-          "names": [
-            "servo"
-          ]
-        },
-        {
-          "type": "import",
-          "module": null,
-          "root": "proto",
-          "names": [
-            "proto.system"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata.cservo_schema",
-          "root": "proto",
-          "names": [
-            "cservo_schema"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "wait",
-            "sig_int"
-          ]
-        }
-      ],
-      "exports": [
-        "simple_motor"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "simple_motor",
-          "signature": "simple_motor(port, direction=1, schema=system.cservo)",
-          "description": "A continuous servo plugged into a general port.",
-          "methods": [
-            {
-              "name": "spin",
-              "signature": "spin(power, seconds=None)",
-              "description": "Spin the servo at the given power for the given time period; if\n        no period is given then it spins until stopped.",
-              "line": 26
-            },
-            {
-              "name": "spin_back",
-              "signature": "spin_back(power, seconds=None)",
-              "description": "Spin the servo backwards at the given power for the given time\n        period; if no period is given then it spins until stopped.",
-              "line": 39
-            },
-            {
-              "name": "stop",
-              "signature": "stop()",
-              "description": "Stops the servo.",
-              "line": 46
-            }
-          ],
-          "line": 8
-        }
-      ]
-    },
-    "proto.output.light": {
-      "path": "proto/output/light.py",
-      "imports": [
-        {
-          "type": "import",
-          "module": null,
-          "root": "digitalio",
-          "names": [
-            "digitalio"
-          ]
-        },
-        {
-          "type": "import",
-          "module": null,
-          "root": "proto",
-          "names": [
-            "proto.system"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "wait"
-          ]
-        }
-      ],
-      "exports": [
-        "light"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "light",
-          "signature": "light(port)",
-          "description": "A single LED.",
-          "methods": [
-            {
-              "name": "on",
-              "signature": "on(seconds=None)",
-              "description": "Turns the LED on.",
-              "line": 20
-            },
-            {
-              "name": "off",
-              "signature": "off(seconds=None)",
-              "description": "Turns the LED off.",
-              "line": 28
-            },
-            {
-              "name": "toggle",
-              "signature": "toggle()",
-              "description": "Toggles the LED on or off, whichever it currently isn't.",
-              "line": 36
-            },
-            {
-              "name": "free_port",
-              "signature": "free_port()",
-              "description": "Frees the port for use by other LEDs, disabling this one.",
-              "line": 43
-            }
-          ],
-          "line": 5
-        }
-      ]
-    },
-    "proto.schemata": {
-      "path": "proto/schemata/__init__.py",
-      "imports": [],
-      "exports": [],
-      "functions": [],
-      "classes": []
-    },
-    "proto.schemata.board_schema": {
-      "path": "proto/schemata/board_schema.py",
-      "imports": [
-        {
-          "type": "import",
-          "module": null,
-          "root": "board",
-          "names": [
-            "board"
-          ]
-        }
-      ],
-      "exports": [
-        "port",
-        "board_schema"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "port",
-          "signature": "port(pin1, pin2=None, dc1=None, dc2=None)",
-          "description": "Represents a port on a board with at least one pin.",
-          "methods": [],
-          "line": 4
-        },
-        {
-          "name": "board_schema",
-          "signature": "board_schema(ports, start_button_port=None, builtin_light_port=None)",
-          "description": "A board schema that details available ports.  A port is a pair of pins\n    or single pin that corresponds to a\n    numbered port -- thus, the `ports` argument should be a dict of ports.\n\n    The ports should be set up so the defined pin is the 'primary' pin that\n    will always be used, while the second pin is only for components (such as\n    DCs) that require two pins be grouped in the same 'port' -- for buttons and\n    servos, only the first pin in the set will be used.\n    \n    The start button is the button that needs to be pressed for the user's\n    program to start running.  Its value should be the index of the button's\n    port on the board.\n    \n    The built-in light is an LED on the board that turns on once the user's\n    program is ready to start, and turns off once it has started.  Its value\n    should be the index of the LED's port on the board.",
-          "methods": [],
-          "line": 14
-        }
-      ]
-    },
-    "proto.schemata.cservo_schema": {
-      "path": "proto/schemata/cservo_schema.py",
-      "imports": [
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "bound_power"
-          ]
-        }
-      ],
-      "exports": [
-        "cservo_schema"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "cservo_schema",
-          "signature": "cservo_schema(frequency, power_scaler)",
-          "description": "A continuous servo schema that details the motor frequency and a power\n    scaler that takes one argument -- power -- and scales it to a valid\n    throttle.\n\n    The power scaler should intake a power in the range [-100,100] and return\n    a throttle in the range [-1,1], along with whatever other modifications\n    are necessary.",
-          "methods": [],
-          "line": 4
-        }
-      ]
-    },
-    "proto.schemata.motor_driver_schema": {
-      "path": "proto/schemata/motor_driver_schema.py",
-      "imports": [
-        {
-          "type": "from",
-          "module": "proto.general.functions",
-          "root": "proto",
-          "names": [
-            "bound_power"
-          ]
-        }
-      ],
-      "exports": [
-        "motor_driver_schema"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "motor_driver_schema",
-          "signature": "motor_driver_schema(frequency, power_scaler)",
-          "description": "A motor driver schema that details the driver frequency and a power scaler\n    that takes one argument -- power -- and scales it to a valid throttle.\n\n    The power scaler should intake a power in the range [-100,100] and return\n    a throttle in the range [-1,1], along with whatever other modifications\n    are necessary to make the motor speed scale as expected.",
-          "methods": [],
-          "line": 4
-        }
-      ]
-    },
-    "proto.schemata.servo_schema": {
-      "path": "proto/schemata/servo_schema.py",
-      "imports": [],
-      "exports": [
-        "servo_schema"
-      ],
-      "functions": [],
-      "classes": [
-        {
-          "name": "servo_schema",
-          "signature": "servo_schema(duty_cycle, frequency)",
-          "description": "A servo schema that details the duty cycle and frequency.",
-          "methods": [],
-          "line": 1
-        }
-      ]
-    },
-    "proto.system": {
-      "path": "proto/system.py",
-      "imports": [
-        {
-          "type": "from",
-          "module": "proto.schemata.board_schema",
-          "root": "proto",
-          "names": [
-            "MAKERPI_RP2040",
-            "PROTOBOARD_V1",
-            "PI_PICO"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata.cservo_schema",
-          "root": "proto",
-          "names": [
-            "FS90R"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata.motor_driver_schema",
-          "root": "proto",
-          "names": [
-            "MX1508",
-            "DRV8833"
-          ]
-        },
-        {
-          "type": "from",
-          "module": "proto.schemata.servo_schema",
-          "root": "proto",
-          "names": [
-            "SMRAZA_S51",
-            "MG90S"
-          ]
-        }
-      ],
-      "exports": [],
-      "functions": [],
-      "classes": []
+  "version": 2,
+  "module": "make",
+  "lint": {
+    "pythonVersion": "3.12",
+    "files": {
+      "make.pyi": "\"\"\"The learner-facing PROTO Robotics API.\n\nThis stub intentionally describes only the supported ``make`` API. Hardware\nconfiguration and schema internals remain implementation details in make.py.\n\"\"\"\n\nfrom typing import Callable\n\n\ndef wait(seconds: float = 0.05) -> None:\n    \"\"\"Wait the given number of seconds before moving on.\"\"\"\n    ...\n\n\ndef wait_until(condition: Callable[[], bool]) -> None:\n    \"\"\"Wait until a condition is true.\"\"\"\n    ...\n\n\ndef wait_while(condition: Callable[[], bool]) -> None:\n    \"\"\"Wait while a condition is true.\"\"\"\n    ...\n\n\nclass simple_motor:\n    \"\"\"A continuous servo connected to a general port.\"\"\"\n\n    def __init__(self, port: int, direction: int = 1) -> None:\n        \"\"\"Create a motor on a port; use -1 to reverse its direction.\"\"\"\n        ...\n\n    def spin(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin at a power from -100 to 100, optionally for a duration.\"\"\"\n        ...\n\n    def spin_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin backward at a power from -100 to 100.\"\"\"\n        ...\n\n    def stop(self) -> None:\n        \"\"\"Stop the motor.\"\"\"\n        ...\n\n\nclass drivemotor:\n    \"\"\"A DC motor connected to a drivetrain port.\"\"\"\n\n    def __init__(self, port: int, direction: int = 1) -> None:\n        \"\"\"Create a motor on a port; use -1 to reverse its direction.\"\"\"\n        ...\n\n    def spin(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin at a power from -100 to 100, optionally for a duration.\"\"\"\n        ...\n\n    def spin_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin backward at a power from -100 to 100.\"\"\"\n        ...\n\n    def stop(self) -> None:\n        \"\"\"Stop the motor.\"\"\"\n        ...\n\n\nclass drivetrain:\n    \"\"\"A paired drivetrain made from two DC motors or continuous servos.\"\"\"\n\n    def __init__(\n        self,\n        left_motor: simple_motor | drivemotor,\n        right_motor: simple_motor | drivemotor,\n        drift: float = 1,\n    ) -> None:\n        \"\"\"Create a drivetrain from its left and right motors.\"\"\"\n        ...\n\n    def curve(\n        self,\n        left_power: float,\n        right_power: float,\n        seconds: float | None = None,\n    ) -> None:\n        \"\"\"Drive the two motors at different powers.\"\"\"\n        ...\n\n    def drive(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Drive both motors at the same power.\"\"\"\n        ...\n\n    def turn(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Turn in place at the given power.\"\"\"\n        ...\n\n    def curve_back(\n        self,\n        left_power: float,\n        right_power: float,\n        seconds: float | None = None,\n    ) -> None:\n        \"\"\"Drive backward with different motor powers.\"\"\"\n        ...\n\n    def drive_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Drive backward at the same power.\"\"\"\n        ...\n\n    def turn_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Turn backward in place at the given power.\"\"\"\n        ...\n\n    def stop(self) -> None:\n        \"\"\"Stop both motors.\"\"\"\n        ...\n\n\nclass servo:\n    \"\"\"A positional servo connected to a small motor or GROVE port.\"\"\"\n\n    def __init__(self, port: int) -> None:\n        \"\"\"Create a servo on a port.\"\"\"\n        ...\n\n    def moveto(self, angle: float, seconds: float | None = None) -> None:\n        \"\"\"Rotate the servo to an angle from 0 to 180 degrees.\"\"\"\n        ...\n\n\nclass button:\n    \"\"\"A button connected to a built-in or GROVE port.\"\"\"\n\n    def __init__(self, port: int) -> None:\n        \"\"\"Create a button on a port.\"\"\"\n        ...\n\n    def pressed(self, debounce: bool = True) -> bool:\n        \"\"\"Return whether the button is pressed.\"\"\"\n        ...\n\n    def held(self) -> bool:\n        \"\"\"Return whether the button is held down.\"\"\"\n        ...\n\n    def free_port(self) -> None:\n        \"\"\"Disable this button and free its port.\"\"\"\n        ...\n\n\nclass light:\n    \"\"\"A single LED connected to a port.\"\"\"\n\n    def __init__(self, port: int) -> None:\n        \"\"\"Create a light on a port.\"\"\"\n        ...\n\n    def on(self, seconds: float | None = None) -> None:\n        \"\"\"Turn the LED on, optionally for a duration.\"\"\"\n        ...\n\n    def off(self, seconds: float | None = None) -> None:\n        \"\"\"Turn the LED off, optionally for a duration.\"\"\"\n        ...\n\n    def toggle(self) -> None:\n        \"\"\"Toggle the LED.\"\"\"\n        ...\n\n    def free_port(self) -> None:\n        \"\"\"Disable this light and free its port.\"\"\"\n        ...\n"
     }
   },
-  "externalImports": [
-    "adafruit_motor",
-    "board",
-    "digitalio",
-    "pwmio"
-  ],
-  "completions": [
-    {
-      "label": "make.wait(seconds=0.05)",
-      "type": "function",
-      "description": "Wait the given number of seconds before moving on. If no time is given,\n    waits for 0.05 seconds.",
-      "source": {
-        "module": "proto.general.functions",
-        "line": 5
+  "autocomplete": {
+    "members": [
+      {
+        "path": "make.wait",
+        "name": "wait",
+        "kind": "function",
+        "description": "Wait the given number of seconds before moving on.",
+        "parameters": [
+          {
+            "name": "seconds",
+            "default": "0.05",
+            "required": false
+          }
+        ],
+        "resultType": null,
+        "category": "Time"
+      },
+      {
+        "path": "make.wait_until",
+        "name": "wait_until",
+        "kind": "function",
+        "description": "Wait until a condition is true.",
+        "parameters": [
+          {
+            "name": "condition",
+            "default": null,
+            "required": true
+          }
+        ],
+        "resultType": null,
+        "category": "Time"
+      },
+      {
+        "path": "make.wait_while",
+        "name": "wait_while",
+        "kind": "function",
+        "description": "Wait while a condition is true.",
+        "parameters": [
+          {
+            "name": "condition",
+            "default": null,
+            "required": true
+          }
+        ],
+        "resultType": null,
+        "category": "Time"
+      },
+      {
+        "path": "make.simple_motor",
+        "name": "simple_motor",
+        "kind": "constructor",
+        "description": "A continuous servo connected to a general port.",
+        "parameters": [
+          {
+            "name": "port",
+            "default": null,
+            "required": true
+          },
+          {
+            "name": "direction",
+            "default": "1",
+            "required": false
+          }
+        ],
+        "resultType": "simple_motor",
+        "category": "Motor"
+      },
+      {
+        "path": "make.drivemotor",
+        "name": "drivemotor",
+        "kind": "constructor",
+        "description": "A DC motor connected to a drivetrain port.",
+        "parameters": [
+          {
+            "name": "port",
+            "default": null,
+            "required": true
+          },
+          {
+            "name": "direction",
+            "default": "1",
+            "required": false
+          }
+        ],
+        "resultType": "drivemotor",
+        "category": "Motor"
+      },
+      {
+        "path": "make.drivetrain",
+        "name": "drivetrain",
+        "kind": "constructor",
+        "description": "A paired drivetrain made from two DC motors or continuous servos.",
+        "parameters": [
+          {
+            "name": "left_motor",
+            "default": null,
+            "required": true
+          },
+          {
+            "name": "right_motor",
+            "default": null,
+            "required": true
+          },
+          {
+            "name": "drift",
+            "default": "1",
+            "required": false
+          }
+        ],
+        "resultType": "drivetrain",
+        "category": "Motor"
+      },
+      {
+        "path": "make.servo",
+        "name": "servo",
+        "kind": "constructor",
+        "description": "A positional servo connected to a small motor or GROVE port.",
+        "parameters": [
+          {
+            "name": "port",
+            "default": null,
+            "required": true
+          }
+        ],
+        "resultType": "servo",
+        "category": "Motor"
+      },
+      {
+        "path": "make.button",
+        "name": "button",
+        "kind": "constructor",
+        "description": "A button connected to a built-in or GROVE port.",
+        "parameters": [
+          {
+            "name": "port",
+            "default": null,
+            "required": true
+          }
+        ],
+        "resultType": "button",
+        "category": "Input"
+      },
+      {
+        "path": "make.light",
+        "name": "light",
+        "kind": "constructor",
+        "description": "A single LED connected to a port.",
+        "parameters": [
+          {
+            "name": "port",
+            "default": null,
+            "required": true
+          }
+        ],
+        "resultType": "light",
+        "category": "Output"
       }
-    },
-    {
-      "label": "wait(seconds=0.05)",
-      "type": "function",
-      "description": "Wait the given number of seconds before moving on. If no time is given,\n    waits for 0.05 seconds.",
-      "source": {
-        "module": "proto.general.functions",
-        "line": 5
-      }
-    },
-    {
-      "label": "make.wait_until(condition)",
-      "type": "function",
-      "description": "Wait until the given condition (type: () -> bool) is satisfied.",
-      "source": {
-        "module": "proto.general.functions",
-        "line": 13
-      }
-    },
-    {
-      "label": "wait_until(condition)",
-      "type": "function",
-      "description": "Wait until the given condition (type: () -> bool) is satisfied.",
-      "source": {
-        "module": "proto.general.functions",
-        "line": 13
-      }
-    },
-    {
-      "label": "make.wait_while(condition)",
-      "type": "function",
-      "description": "Wait while the given condition (type: () -> bool) is satisfied.",
-      "source": {
-        "module": "proto.general.functions",
-        "line": 19
-      }
-    },
-    {
-      "label": "wait_while(condition)",
-      "type": "function",
-      "description": "Wait while the given condition (type: () -> bool) is satisfied.",
-      "source": {
-        "module": "proto.general.functions",
-        "line": 19
-      }
-    },
-    {
-      "label": "make.simple_motor(port, direction=1, schema=system.cservo)",
-      "type": "class",
-      "description": "A continuous servo plugged into a general port.",
-      "source": {
-        "module": "proto.motion.simple_motor",
-        "line": 8
-      }
-    },
-    {
-      "label": "simple_motor(port, direction=1, schema=system.cservo)",
-      "type": "class",
-      "description": "A continuous servo plugged into a general port.",
-      "source": {
-        "module": "proto.motion.simple_motor",
-        "line": 8
-      }
-    },
-    {
-      "label": "make.largemotor(port, direction=1, schema=system.driver)",
-      "type": "class",
-      "description": "A DC motor plugged in to a drive port.",
-      "source": {
-        "module": "proto.motion.largemotor",
-        "line": 8
-      }
-    },
-    {
-      "label": "largemotor(port, direction=1, schema=system.driver)",
-      "type": "class",
-      "description": "A DC motor plugged in to a drive port.",
-      "source": {
-        "module": "proto.motion.largemotor",
-        "line": 8
-      }
-    },
-    {
-      "label": "make.drivetrain(left_motor, right_motor, drift=1)",
-      "type": "class",
-      "description": "A drivetrain made from 2 DC motors or continous servos.",
-      "source": {
-        "module": "proto.motion.drivetrain",
-        "line": 18
-      }
-    },
-    {
-      "label": "drivetrain(left_motor, right_motor, drift=1)",
-      "type": "class",
-      "description": "A drivetrain made from 2 DC motors or continous servos.",
-      "source": {
-        "module": "proto.motion.drivetrain",
-        "line": 18
-      }
-    },
-    {
-      "label": "make.servo(port, schema=system.servo)",
-      "type": "class",
-      "description": "A servo motor plugged into a small motor port or GROVE port.",
-      "source": {
-        "module": "proto.motion.servo",
-        "line": 8
-      }
-    },
-    {
-      "label": "servo(port, schema=system.servo)",
-      "type": "class",
-      "description": "A servo motor plugged into a small motor port or GROVE port.",
-      "source": {
-        "module": "proto.motion.servo",
-        "line": 8
-      }
-    },
-    {
-      "label": "make.button(port)",
-      "type": "class",
-      "description": "A button, either built into the board or plugged into a GROVE port.",
-      "source": {
-        "module": "proto.input.button",
-        "line": 5
-      }
-    },
-    {
-      "label": "button(port)",
-      "type": "class",
-      "description": "A button, either built into the board or plugged into a GROVE port.",
-      "source": {
-        "module": "proto.input.button",
-        "line": 5
-      }
-    },
-    {
-      "label": "make.light(port)",
-      "type": "class",
-      "description": "A single LED.",
-      "source": {
-        "module": "proto.output.light",
-        "line": 5
-      }
-    },
-    {
-      "label": "light(port)",
-      "type": "class",
-      "description": "A single LED.",
-      "source": {
-        "module": "proto.output.light",
-        "line": 5
-      }
+    ],
+    "methodsByType": {
+      "simple_motor": [
+        {
+          "name": "spin",
+          "description": "Spin at a power from -100 to 100, optionally for a duration.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "spin_back",
+          "description": "Spin backward at a power from -100 to 100.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "stop",
+          "description": "Stop the motor.",
+          "parameters": []
+        }
+      ],
+      "drivemotor": [
+        {
+          "name": "spin",
+          "description": "Spin at a power from -100 to 100, optionally for a duration.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "spin_back",
+          "description": "Spin backward at a power from -100 to 100.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "stop",
+          "description": "Stop the motor.",
+          "parameters": []
+        }
+      ],
+      "drivetrain": [
+        {
+          "name": "curve",
+          "description": "Drive the two motors at different powers.",
+          "parameters": [
+            {
+              "name": "left_power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "drive",
+          "description": "Drive both motors at the same power.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "turn",
+          "description": "Turn in place at the given power.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "curve_back",
+          "description": "Drive backward with different motor powers.",
+          "parameters": [
+            {
+              "name": "left_power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "drive_back",
+          "description": "Drive backward at the same power.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "turn_back",
+          "description": "Turn backward in place at the given power.",
+          "parameters": [
+            {
+              "name": "power",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "stop",
+          "description": "Stop both motors.",
+          "parameters": []
+        }
+      ],
+      "servo": [
+        {
+          "name": "moveto",
+          "description": "Rotate the servo to an angle from 0 to 180 degrees.",
+          "parameters": [
+            {
+              "name": "angle",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "button": [
+        {
+          "name": "pressed",
+          "description": "Return whether the button is pressed.",
+          "parameters": [
+            {
+              "name": "debounce",
+              "default": "True",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "held",
+          "description": "Return whether the button is held down.",
+          "parameters": []
+        },
+        {
+          "name": "free_port",
+          "description": "Disable this button and free its port.",
+          "parameters": []
+        }
+      ],
+      "light": [
+        {
+          "name": "on",
+          "description": "Turn the LED on, optionally for a duration.",
+          "parameters": [
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "off",
+          "description": "Turn the LED off, optionally for a duration.",
+          "parameters": [
+            {
+              "name": "seconds",
+              "default": "None",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "toggle",
+          "description": "Toggle the LED.",
+          "parameters": []
+        },
+        {
+          "name": "free_port",
+          "description": "Disable this light and free its port.",
+          "parameters": []
+        }
+      ]
     }
-  ],
-  "methodCompletionsByClass": {
-    "button": [
-      {
-        "label": "pressed(debounce=True)",
-        "type": "method",
-        "description": "Returns true if the button is pressed, false otherwise.",
-        "source": {
-          "module": "proto.input.button",
-          "line": 21
-        }
-      },
-      {
-        "label": "held()",
-        "type": "method",
-        "description": "Returns true if the button is held, false otherwise.",
-        "source": {
-          "module": "proto.input.button",
-          "line": 28
-        }
-      },
-      {
-        "label": "free_port()",
-        "type": "method",
-        "description": "Frees the port for use by other buttons, disabling this one.",
-        "source": {
-          "module": "proto.input.button",
-          "line": 32
-        }
-      }
-    ],
-    "drivetrain": [
-      {
-        "label": "curve(left_power, right_power, seconds=None)",
-        "type": "method",
-        "description": "Spins both motors at different powers. If a time is given, stops after\n        the time has elapsed.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 34
-        }
-      },
-      {
-        "label": "drive(power, seconds=None)",
-        "type": "method",
-        "description": "Spins both motors at the same power. If a time is given, stops after\n        the time has elapsed.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 51
-        }
-      },
-      {
-        "label": "turn(power, seconds=None)",
-        "type": "method",
-        "description": "Rotates on the spot at the given power. If a time is given, stops\n        after that time has elapsed.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 58
-        }
-      },
-      {
-        "label": "curve_back(left_power, right_power, seconds=None)",
-        "type": "method",
-        "description": "Spins both motors at different powers. If a time is given, stops after\n        the time has elapsed.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 65
-        }
-      },
-      {
-        "label": "drive_back(power, seconds=None)",
-        "type": "method",
-        "description": "Spins both motors back at the same power. If a time is given, stops\n        after the time has elapsed.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 77
-        }
-      },
-      {
-        "label": "turn_back(power, seconds=None)",
-        "type": "method",
-        "description": "Rotates on the spot at the given power. If a time is given, stops\n        after that time has elapsed.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 84
-        }
-      },
-      {
-        "label": "stop()",
-        "type": "method",
-        "description": "Stops both motors.",
-        "source": {
-          "module": "proto.motion.drivetrain",
-          "line": 91
-        }
-      }
-    ],
-    "largemotor": [
-      {
-        "label": "spin(power, seconds=None)",
-        "type": "method",
-        "description": "Spin the motor at the given power for the given time period; if\n        no period is given then it spins until stopped.",
-        "source": {
-          "module": "proto.motion.largemotor",
-          "line": 24
-        }
-      },
-      {
-        "label": "spin_back(power, seconds=None)",
-        "type": "method",
-        "description": "Spin the motor backwards at the given power for the given time\n        period; if no period is given then it spins until stopped.",
-        "source": {
-          "module": "proto.motion.largemotor",
-          "line": 37
-        }
-      },
-      {
-        "label": "stop()",
-        "type": "method",
-        "description": "Stops the motor.",
-        "source": {
-          "module": "proto.motion.largemotor",
-          "line": 44
-        }
-      }
-    ],
-    "servo": [
-      {
-        "label": "moveto(angle, seconds=None)",
-        "type": "method",
-        "description": "Rotates the servo to the given angle.",
-        "source": {
-          "module": "proto.motion.servo",
-          "line": 24
-        }
-      }
-    ],
-    "simple_motor": [
-      {
-        "label": "spin(power, seconds=None)",
-        "type": "method",
-        "description": "Spin the servo at the given power for the given time period; if\n        no period is given then it spins until stopped.",
-        "source": {
-          "module": "proto.motion.simple_motor",
-          "line": 26
-        }
-      },
-      {
-        "label": "spin_back(power, seconds=None)",
-        "type": "method",
-        "description": "Spin the servo backwards at the given power for the given time\n        period; if no period is given then it spins until stopped.",
-        "source": {
-          "module": "proto.motion.simple_motor",
-          "line": 39
-        }
-      },
-      {
-        "label": "stop()",
-        "type": "method",
-        "description": "Stops the servo.",
-        "source": {
-          "module": "proto.motion.simple_motor",
-          "line": 46
-        }
-      }
-    ],
-    "light": [
-      {
-        "label": "on(seconds=None)",
-        "type": "method",
-        "description": "Turns the LED on.",
-        "source": {
-          "module": "proto.output.light",
-          "line": 20
-        }
-      },
-      {
-        "label": "off(seconds=None)",
-        "type": "method",
-        "description": "Turns the LED off.",
-        "source": {
-          "module": "proto.output.light",
-          "line": 28
-        }
-      },
-      {
-        "label": "toggle()",
-        "type": "method",
-        "description": "Toggles the LED on or off, whichever it currently isn't.",
-        "source": {
-          "module": "proto.output.light",
-          "line": 36
-        }
-      },
-      {
-        "label": "free_port()",
-        "type": "method",
-        "description": "Frees the port for use by other LEDs, disabling this one.",
-        "source": {
-          "module": "proto.output.light",
-          "line": 43
-        }
-      }
-    ],
-    "port": [],
-    "board_schema": [],
-    "cservo_schema": [],
-    "motor_driver_schema": [],
-    "servo_schema": []
-  },
-  "runtimeFiles": {
-    "/lib/make.py": "from proto.general.functions import wait, wait_until, wait_while\nfrom proto.motion.simple_motor import simple_motor\nfrom proto.motion.largemotor import largemotor\nfrom proto.motion.drivetrain import drivetrain\nfrom proto.motion.servo import servo\nfrom proto.input.button import button\nfrom proto.output.light import light\nimport proto.system as system\nfrom proto.schemata import board_schema, cservo_schema, servo_schema, motor_driver_schema\n\n# Editor-safe make.py generated for static verification.\n# Robot startup behavior from the real make.py is intentionally omitted.\nbuiltin_light = None\n",
-    "/lib/proto/__init__.py": "",
-    "/lib/proto/general/__init__.py": "",
-    "/lib/proto/general/functions.py": "from math import copysign\nfrom time import sleep\n\n\ndef wait(seconds: float = 0.05) -> None:\n    \"\"\"\n    Wait the given number of seconds before moving on. If no time is given,\n    waits for 0.05 seconds.\n    \"\"\"\n    sleep(seconds)\n\n\ndef wait_until(condition) -> None:\n    \"Wait until the given condition (type: () -> bool) is satisfied.\"\n    while not condition():\n        wait()\n\n\ndef wait_while(condition) -> None:\n    \"Wait while the given condition (type: () -> bool) is satisfied.\"\n    wait_until(lambda: not condition())\n\n\ndef sig_int(number: float) -> int:\n    \"Returns the sign of the given number; either 1 or -1.\"\n    return copysign(1, number)\n\n\ndef clamp(min_bound: float, x: float, max_bound: float) -> float:\n    \"Bounds the given number between the given minimium and maximium bounds.\"\n    return max(min_bound, min(x, max_bound))\n\n\ndef bound_power(power: float, interval: tuple[float, float]) -> float:\n    \"Bounds the given power between the given interval.\"\n    if power == 0:\n        return 0\n\n    power = clamp(-100, power, 100)\n    range = interval[1] - (offset := interval[0])\n    ratio = range / 100\n\n    return (power * ratio) + (offset * sig_int(power))\n",
-    "/lib/proto/input/__init__.py": "",
-    "/lib/proto/input/button.py": "import digitalio\nimport proto.system as system\n\n\nclass button:\n    \"A button, either built into the board or plugged into a GROVE port.\"\n\n    def __init__(self, port: int):\n        self.__pin = system.board[port].pin1\n        self.__io = digitalio.DigitalInOut(self.__pin)\n        self.__io.direction = digitalio.Direction.INPUT\n        self.__io.pull = digitalio.Pull.UP\n        self.__curr_value = False\n\n    def __enter__(self):\n        return self\n\n    def __exit__(self, exc_type, exc_value, exc_tb):\n        self.free_port()\n\n    def pressed(self, debounce: bool = True) -> bool:\n        \"Returns true if the button is pressed, false otherwise.\"\n        prev_value = self.__curr_value  # for debouncing\n        self.__curr_value = not self.__io.value\n\n        return self.__curr_value and (not prev_value or not debounce)\n\n    def held(self) -> bool:\n        \"Returns true if the button is held, false otherwise.\"\n        return self.pressed(debounce=False)\n\n    def free_port(self) -> None:\n        \"Frees the port for use by other buttons, disabling this one.\"\n        self.__io.deinit()\n",
-    "/lib/proto/motion/__init__.py": "",
-    "/lib/proto/motion/drivetrain.py": "from proto.general.functions import sig_int, wait\nfrom proto.motion.simple_motor import simple_motor\nfrom proto.motion.largemotor import largemotor\n\n\ndef calc_mods(direction: int, drift: float) -> tuple[float, float]:\n    \"\"\"\n    Calculates the constants that will be applied to the drivetrain's left\n    and right motors to modify their power levels, so that they can drive\n    straight despite drift.\n    \"\"\"\n    if drift < 1:\n        return (drift * direction, direction)\n    else:\n        return (direction, (1 / drift * direction))\n\n\nclass drivetrain:\n    \"A drivetrain made from 2 DC motors or continous servos.\"\n\n    def __init__(\n        self,\n        left_motor: simple_motor | largemotor,\n        right_motor: simple_motor | largemotor,\n        drift: float = 1,\n    ):\n        self.__left_motor = left_motor\n        self.__right_motor = right_motor\n        (self.__left_mod, self.__right_mod) = calc_mods(\n            sig_int(drift),\n            abs(drift),\n        )\n\n    def curve(\n        self,\n        left_power: float,\n        right_power: float,\n        seconds: float = None,\n    ) -> None:\n        \"\"\"\n        Spins both motors at different powers. If a time is given, stops after\n        the time has elapsed.\n        \"\"\"\n        self.__left_motor.spin(left_power * self.__left_mod)\n        self.__right_motor.spin(right_power * self.__right_mod)\n\n        if seconds != None:\n            wait(seconds)\n            self.stop()\n\n    def drive(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Spins both motors at the same power. If a time is given, stops after\n        the time has elapsed.\n        \"\"\"\n        self.curve(power, power, seconds)\n\n    def turn(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Rotates on the spot at the given power. If a time is given, stops\n        after that time has elapsed.\n        \"\"\"\n        self.curve(power, -power, seconds)\n\n    def curve_back(\n        self,\n        left_power: float,\n        right_power: float,\n        seconds: float = None,\n    ) -> None:\n        \"\"\"\n        Spins both motors at different powers. If a time is given, stops after\n        the time has elapsed.\n        \"\"\"\n        self.curve(-left_power, -right_power, seconds)\n\n    def drive_back(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Spins both motors back at the same power. If a time is given, stops\n        after the time has elapsed.\n        \"\"\"\n        self.drive(-power, seconds)\n\n    def turn_back(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Rotates on the spot at the given power. If a time is given, stops\n        after that time has elapsed.\n        \"\"\"\n        self.turn(-power, seconds)\n\n    def stop(self) -> None:\n        \"Stops both motors.\"\n        self.__left_motor.stop()\n        self.__right_motor.stop()\n",
-    "/lib/proto/motion/largemotor.py": "import pwmio\nfrom adafruit_motor import motor\nimport proto.system as system\nfrom proto.schemata.motor_driver_schema import motor_driver_schema\nfrom proto.general.functions import wait, sig_int\n\n\nclass largemotor:\n    \"A DC motor plugged in to a drive port.\"\n\n    def __init__(\n        self, port: int, direction: int = 1, schema: motor_driver_schema = system.driver\n    ):\n        self.__schema = schema\n        forward = pwmio.PWMOut(\n            system.board[port].dc1, frequency=self.__schema.frequency\n        )\n        backward = pwmio.PWMOut(\n            system.board[port].dc2, frequency=self.__schema.frequency\n        )\n        self.__io = motor.DCMotor(forward, backward)\n        self.__direction = sig_int(direction)\n\n    def spin(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Spin the motor at the given power for the given time period; if\n        no period is given then it spins until stopped.\n        \"\"\"\n        self.__io.throttle = self.__direction * self.__schema.power_scaler(\n            power\n        )\n\n        if seconds != None:\n            wait(seconds)\n            self.stop()\n\n    def spin_back(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Spin the motor backwards at the given power for the given time\n        period; if no period is given then it spins until stopped.\n        \"\"\"\n        self.spin(-power, seconds)\n\n    def stop(self) -> None:\n        \"Stops the motor.\"\n        self.spin(0)\n",
-    "/lib/proto/motion/servo.py": "import pwmio\nfrom adafruit_motor import servo as adafruit_servo\nimport proto.system as system\nfrom proto.schemata.servo_schema import servo_schema\nfrom proto.general.functions import clamp, wait\n\n\nclass servo:\n    \"A servo motor plugged into a small motor port or GROVE port.\"\n\n    def __init__(self, port: int, schema: servo_schema = system.servo):\n        self.__schema = schema\n        self.__io = adafruit_servo.Servo(\n            pwmio.PWMOut(\n                system.board[port].pin1,\n                duty_cycle=self.__schema.duty_cycle,\n                frequency=self.__schema.frequency,\n            ),\n            min_pulse=500,     # µs (adjust if needed)\n            max_pulse=2500,    # µs (adjust if needed)\n            actuation_range=180\n        )\n\n    def moveto(self, angle: float, seconds: float = None) -> None:\n        \"Rotates the servo to the given angle.\"\n        self.__io.angle = clamp(0, angle, 180)\n\n        if seconds != None:\n            wait(seconds)\n",
-    "/lib/proto/motion/simple_motor.py": "import pwmio\nfrom adafruit_motor import servo\nimport proto.system as system\nfrom proto.schemata.cservo_schema import cservo_schema\nfrom proto.general.functions import wait, sig_int\n\n\nclass simple_motor:\n    \"A continuous servo plugged into a general port.\"\n\n    def __init__(\n        self,\n        port: int,\n        direction: int = 1,\n        schema: cservo_schema = system.cservo,\n    ):\n        self.__schema = schema\n        self.__io = servo.ContinuousServo(\n            pwmio.PWMOut(\n                system.board[port].pin1,\n                frequency=self.__schema.frequency,\n            )\n        )\n        self.__direction = sig_int(direction)\n\n    def spin(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Spin the servo at the given power for the given time period; if\n        no period is given then it spins until stopped.\n        \"\"\"\n        self.__io.throttle = self.__direction * self.__schema.power_scaler(\n            power\n        )\n\n        if seconds != None:\n            wait(seconds)\n            self.stop()\n\n    def spin_back(self, power: float, seconds: float = None) -> None:\n        \"\"\"\n        Spin the servo backwards at the given power for the given time\n        period; if no period is given then it spins until stopped.\n        \"\"\"\n        self.spin(-power, seconds)\n\n    def stop(self) -> None:\n        \"Stops the servo.\"\n        self.spin(0)\n",
-    "/lib/proto/output/light.py": "import digitalio\nimport proto.system as system\nfrom proto.general.functions import wait\n\nclass light:\n    \"A single LED.\"\n\n    def __init__(self, port: int):\n        self.__pin = system.board[port].pin1\n        self.__io = digitalio.DigitalInOut(self.__pin)\n        self.__io.direction = digitalio.Direction.OUTPUT\n        self.__io.value = False\n\n    def __enter__(self):\n        return self\n\n    def __exit__(self, exc_type, exc_value, exc_tb):\n        self.free_port()\n\n    def on(self, seconds: float = None):\n        \"Turns the LED on.\"\n        self.__io.value = True\n\n        if seconds != None:\n            wait(seconds)\n            self.off()\n\n    def off(self, seconds: float = None):\n        \"Turns the LED off.\"\n        self.__io.value = False\n\n        if seconds != None:\n            wait(seconds)\n            self.on()\n\n    def toggle(self):\n        \"Toggles the LED on or off, whichever it currently isn't.\"\n        if self.__io.value:\n            self.__io.value = False\n        else:\n            self.__io.value = True\n\n    def free_port(self) -> None:\n        \"Frees the port for use by other LEDs, disabling this one.\"\n        self.__io.deinit()\n",
-    "/lib/proto/schemata/__init__.py": "",
-    "/lib/proto/schemata/board_schema.py": "import board\n\n\nclass port:\n    \"Represents a port on a board with at least one pin.\"\n\n    def __init__(self, pin1: any, pin2: any = None, dc1: any = None, dc2: any = None):\n        self.pin1 = pin1\n        self.pin2 = pin2\n        self.dc1 = dc1\n        self.dc2 = dc2\n\n\nclass board_schema:\n    \"\"\"\n    A board schema that details available ports.  A port is a pair of pins\n    or single pin that corresponds to a\n    numbered port -- thus, the `ports` argument should be a dict of ports.\n\n    The ports should be set up so the defined pin is the 'primary' pin that\n    will always be used, while the second pin is only for components (such as\n    DCs) that require two pins be grouped in the same 'port' -- for buttons and\n    servos, only the first pin in the set will be used.\n    \n    The start button is the button that needs to be pressed for the user's\n    program to start running.  Its value should be the index of the button's\n    port on the board.\n    \n    The built-in light is an LED on the board that turns on once the user's\n    program is ready to start, and turns off once it has started.  Its value\n    should be the index of the LED's port on the board.\n    \"\"\"\n\n    def __init__(self, ports: dict[int, port], start_button_port: int = None, builtin_light_port: int = None):\n        self.ports = ports\n        self.start_button_port = start_button_port\n        self.builtin_light_port = builtin_light_port\n\n    def __getitem__(self, index):\n        return self.ports[index]\n\n\n# =============================================================================#\n# PRESETS\n# =============================================================================#\n\nMAKERPI_RP2040: board_schema = board_schema(\n    ports={\n        1: port(board.GP2, board.GP3),\n        2: port(board.GP4, board.GP5),\n        3: port(board.GP16, board.GP17),\n        4: port(board.GP6, board.GP26),\n        5: port(board.GP26, board.GP27),\n        6: port(None, None, board.GP8, board.GP9),\n        7: port(None, None, board.GP10, board.GP11),\n        8: port(board.GP20),\n        9: port(board.GP21),\n        10: port(board.GP12),\n        11: port(board.GP13),\n        12: port(board.GP14),\n        13: port(board.GP15),\n        14: port(board.GP7, board.GP28),\n        15: port(board.GP0, board.GP1),\n    },\n    start_button_port=8,\n    builtin_light_port=1\n)\n\nPROTOBOARD_V1: board_schema = board_schema(\n    ports={\n        7:  port(board.GP26, board.GP11),\n        6:  port(board.GP28, board.GP12),\n        5:  port(board.GP29, board.GP13),  # requires custom uf2 file\n        4:  port(board.GP27, board.GP10),\n        3:  port(board.GP14, board.GP15, board.GP5, board.GP4),\n        2:  port(board.GP16, board.GP17, board.GP3, board.GP2),\n        1:  port(board.GP20, board.GP21, board.GP8, board.GP9),\n        0:  port(board.GP18, board.GP19, board.GP6, board.GP7),\n        8:  port(board.GP0),\n        9:  port(board.GP1),\n        10: port(board.GP23),\n        11: port(board.GP22),\n        12: port(board.GP25),\n        13: port(board.GP24),\n    },\n    # start_button_port=10,\n    builtin_light_port=8,\n)\n\nPI_PICO: board_schema = board_schema(\n    ports={\n        25: port(board.GP25),\n    }\n)\n",
-    "/lib/proto/schemata/cservo_schema.py": "from proto.general.functions import bound_power\n\n\nclass cservo_schema:\n    \"\"\"\n    A continuous servo schema that details the motor frequency and a power\n    scaler that takes one argument -- power -- and scales it to a valid\n    throttle.\n\n    The power scaler should intake a power in the range [-100,100] and return\n    a throttle in the range [-1,1], along with whatever other modifications\n    are necessary.\n    \"\"\"\n\n    def __init__(self, frequency: int, power_scaler):\n        self.frequency = frequency\n        self.power_scaler = power_scaler\n\n\n# =============================================================================#\n# PRESETS\n# =============================================================================#\n\nFS90R: cservo_schema = cservo_schema(\n    frequency=50,\n    power_scaler=lambda power: -0.05 if power == 0 else 0.8 if power > 0 else -1,\n)\n",
-    "/lib/proto/schemata/motor_driver_schema.py": "from proto.general.functions import bound_power\n\n\nclass motor_driver_schema:\n    \"\"\"\n    A motor driver schema that details the driver frequency and a power scaler\n    that takes one argument -- power -- and scales it to a valid throttle.\n\n    The power scaler should intake a power in the range [-100,100] and return\n    a throttle in the range [-1,1], along with whatever other modifications\n    are necessary to make the motor speed scale as expected.\n    \"\"\"\n\n    def __init__(self, frequency: float, power_scaler):\n        self.frequency = frequency\n        self.power_scaler = power_scaler\n\n\n# =============================================================================#\n# PRESETS\n# =============================================================================#\n\nMX1508: motor_driver_schema = motor_driver_schema(\n    frequency=50,\n    power_scaler=lambda power: bound_power(power, (0.3, 1)),\n)\n\nDRV8833: motor_driver_schema = motor_driver_schema(\n    frequency=50,\n    power_scaler=lambda power: bound_power(power, (0, 1)),\n)\n",
-    "/lib/proto/schemata/servo_schema.py": "class servo_schema:\n    \"\"\"\n    A servo schema that details the duty cycle and frequency.\n    \"\"\"\n\n    def __init__(self, duty_cycle: int, frequency: int):\n        self.duty_cycle = duty_cycle\n        self.frequency = frequency\n\n\n# =============================================================================#\n# PRESETS\n# =============================================================================#\n\nSMRAZA_S51: servo_schema = servo_schema(\n    duty_cycle=2**15,\n    frequency=50,\n)\n\nMG90S: servo_schema = servo_schema (\n    duty_cycle=2**15,\n    frequency=50,\n)\n",
-    "/lib/proto/system.py": "from proto.schemata.board_schema import MAKERPI_RP2040, PROTOBOARD_V1, PI_PICO\nfrom proto.schemata.cservo_schema import FS90R\nfrom proto.schemata.motor_driver_schema import MX1508, DRV8833\nfrom proto.schemata.servo_schema import SMRAZA_S51, MG90S\n\nboard = PROTOBOARD_V1\ncservo = FS90R\ndriver = DRV8833\nservo = MG90S\n",
-    "/lib/board.py": "class _Pin:\n    def __init__(self, name):\n        self.name = name\n    def __repr__(self):\n        return self.name\n\ndef __getattr__(name):\n    pin = _Pin(name)\n    globals()[name] = pin\n    return pin\n",
-    "/lib/digitalio.py": "class Direction:\n    INPUT = 'INPUT'\n    OUTPUT = 'OUTPUT'\n\nclass Pull:\n    UP = 'UP'\n    DOWN = 'DOWN'\n\nclass DigitalInOut:\n    def __init__(self, pin):\n        self.pin = pin\n        self.direction = None\n        self.pull = None\n        self.value = False\n    def deinit(self):\n        pass\n",
-    "/lib/pwmio.py": "class PWMOut:\n    def __init__(self, *args, **kwargs):\n        self.args = args\n        self.kwargs = kwargs\n    def deinit(self):\n        pass\n",
-    "/lib/adafruit_motor/__init__.py": "",
-    "/lib/adafruit_motor/servo.py": "class ContinuousServo:\n    def __init__(self, *args, **kwargs):\n        self.throttle = 0\n\nclass Servo:\n    def __init__(self, *args, **kwargs):\n        self.angle = 0\n",
-    "/lib/adafruit_motor/motor.py": "class DCMotor:\n    def __init__(self, *args, **kwargs):\n        self.throttle = 0\n"
   }
 }

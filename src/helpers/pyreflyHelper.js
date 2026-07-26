@@ -4,9 +4,9 @@ import * as pyrefly from '../pyrefly/pyrefly_wasm'
 let pyreflyState = null
 
 const mainFileName = 'main.py'
-const pythonVersion = '3.12'
+const pythonVersion = pythonLibraryVocab.lint?.pythonVersion ?? '3.12'
 
-const runtimeFilesForPyrefly = () => {
+const lintFilesForPyrefly = () => {
     const files = {
         [mainFileName]: '',
         'pyrefly.toml': [
@@ -17,9 +17,9 @@ const runtimeFilesForPyrefly = () => {
     }
 
     for (const [path, source] of Object.entries(
-        pythonLibraryVocab.runtimeFiles ?? {},
+        pythonLibraryVocab.lint?.files ?? {},
     )) {
-        files[path.replace(/^\/lib\//, '')] = source
+        files[path] = source
     }
 
     return files
@@ -36,7 +36,7 @@ const ensurePyreflyState = async () => {
         }
 
         pyreflyState = new pyrefly.State(pythonVersion)
-        pyreflyState.updateSandboxFiles(runtimeFilesForPyrefly(), true)
+        pyreflyState.updateSandboxFiles(lintFilesForPyrefly(), true)
         pyreflyState.setActiveFile(mainFileName)
     }
 
@@ -122,7 +122,7 @@ export const checkWithPyrefly = async (code) => {
         return null
     }
 
-    const files = runtimeFilesForPyrefly()
+    const files = lintFilesForPyrefly()
     files[mainFileName] = code
 
     state.updateSandboxFiles(files, false)

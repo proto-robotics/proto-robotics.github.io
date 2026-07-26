@@ -1,7 +1,6 @@
 import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
 
 let pyodide = null
-let runtimeLoaded = false
 
 const pythonKeywords = new Set([
     'False',
@@ -62,20 +61,20 @@ const pythonBuiltins = new Set([
 ])
 
 const makeMembers = new Set(
-    (pythonLibraryVocab.completions ?? [])
-        .map((completion) => completion.label.match(/^make\.([A-Za-z_]\w*)/)?.[1])
+    (pythonLibraryVocab.autocomplete?.members ?? [])
+        .map((member) => member.path.match(/^make\.([A-Za-z_]\w*)/)?.[1])
         .filter(Boolean),
 )
 
 const classNames = new Set(
-    Object.keys(pythonLibraryVocab.methodCompletionsByClass ?? {}),
+    Object.keys(pythonLibraryVocab.autocomplete?.methodsByType ?? {}),
 )
 
 const methodsByClass = Object.fromEntries(
-    Object.entries(pythonLibraryVocab.methodCompletionsByClass ?? {}).map(
+    Object.entries(pythonLibraryVocab.autocomplete?.methodsByType ?? {}).map(
         ([className, methods]) => [
             className,
-            new Set(methods.map((method) => method.label.split('(')[0])),
+            new Set(methods.map((method) => method.name)),
         ],
     ),
 )
@@ -338,59 +337,15 @@ const checkStaticApiUsage = (code) => {
     return diagnostics.length ? { diagnostics } : null
 }
 
-const ensureDirectory = (path) => {
-    const parts = path.split('/').filter(Boolean)
-    let current = ''
-
-    for (const part of parts) {
-        current += `/${part}`
-        const analyzedPath = pyodide.FS.analyzePath(current)
-
-        if (analyzedPath.exists) {
-            if (!pyodide.FS.isDir(analyzedPath.object.mode)) {
-                throw new Error(`${current} exists but is not a directory`)
-            }
-            continue
-        }
-
-        pyodide.FS.mkdir(current)
-    }
-}
-
-const loadRuntimeFiles = () => {
-    if (runtimeLoaded) {
-        return
-    }
-
-    for (const [path, source] of Object.entries(
-        pythonLibraryVocab.runtimeFiles ?? {},
-    )) {
-        const directory = path.split('/').slice(0, -1).join('/')
-        ensureDirectory(directory)
-        pyodide.FS.writeFile(path, source)
-    }
-
-    pyodide.runPython(`
-import sys
-
-if "/lib" not in sys.path:
-    sys.path.insert(0, "/lib")
-`)
-
-    runtimeLoaded = true
-}
-
 export const checkSyntax = async (code) => {
     if (!pyodide) {
         pyodide = await loadPyodide()
     }
 
     try {
-        loadRuntimeFiles()
         pyodide.globals.set('code_str', code)
         await pyodide.runPythonAsync(`
 import ast
-import importlib
 
 error = None
 error_line_num = None
@@ -406,39 +361,6 @@ except SyntaxError as e:
     error = e.msg
     error_line_num = e.lineno
     error_line_offset = e.offset
-
-if error is None:
-    for node in ast.walk(tree):
-        module_name = None
-        imported_names = []
-
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                try:
-                    importlib.import_module(alias.name)
-                except Exception as e:
-                    error = f"Could not import {alias.name}: {e}"
-                    error_line_num = node.lineno
-                    error_line_offset = node.col_offset + 1
-                    break
-        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            module_name = node.module
-            imported_names = [alias.name for alias in node.names if alias.name != "*"]
-            try:
-                imported_module = importlib.import_module(module_name)
-                for imported_name in imported_names:
-                    if not hasattr(imported_module, imported_name):
-                        error = f"Could not import {imported_name} from {module_name}"
-                        error_line_num = node.lineno
-                        error_line_offset = node.col_offset + 1
-                        break
-            except Exception as e:
-                error = f"Could not import {module_name}: {e}"
-                error_line_num = node.lineno
-                error_line_offset = node.col_offset + 1
-
-        if error is not None:
-            break
 
 result = {"error": error, "error_line_num": error_line_num, "error_line_offset": error_line_offset, "warnings": warnings_list, "warnings_linenum": warnings_linenum, "warnings_offset": warnings_offset}
 `)

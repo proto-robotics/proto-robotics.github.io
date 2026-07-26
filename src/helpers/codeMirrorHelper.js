@@ -4,6 +4,7 @@ import {
     closeBracketsKeymap,
     completionKeymap,
     acceptCompletion,
+    snippetCompletion,
 } from '@codemirror/autocomplete'
 import {
     defaultKeymap,
@@ -32,7 +33,6 @@ import { EditorView } from 'codemirror'
 import { marked } from 'marked'
 import { tomorrow } from 'thememirror'
 
-import { library } from '../data/library'
 import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
 import { EditorState } from '@codemirror/state'
 import {
@@ -44,71 +44,103 @@ import {
 } from '@codemirror/language'
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 
+const editorApi = pythonLibraryVocab.autocomplete
+
 const createCompletionInfo = (description) => {
     const info = document.createElement('div')
     info.innerHTML = marked.parse(description ?? '')
     return info
 }
 
-const createCodeMirrorCompletion = (entry) => ({
-    label: entry.label,
-    type: entry.type,
-    info: () => createCompletionInfo(entry.description),
-})
-
-const collectCodeAutoCompleteEntries = () => {
-    const entries = new Map()
-    const addEntries = (codeAutoComplete) => {
-        const normalizedEntries = Array.isArray(codeAutoComplete)
-            ? codeAutoComplete.map((entry) => [entry.label, entry])
-            : Object.entries(codeAutoComplete ?? {})
-
-        for (const [label, entry] of normalizedEntries) {
-            if (!label) {
-                continue
-            }
-
-            entries.set(label, {
-                label,
-                type: entry.type,
-                info: () => createCompletionInfo(entry.description),
-            })
+const createCallTemplate = (path, parameters) => {
+    let placeholder = 1
+    const args = parameters.map((parameter) => {
+        if (parameter.required) {
+            return `${parameter.name}=\${${placeholder++}}`
         }
-    }
-
-    addEntries(pythonLibraryVocab.completions)
-
-    const categories = Array.isArray(library) ? library : [library]
-
-    for (const category of categories) {
-        addEntries(category.codeAutoComplete)
-
-        for (const block of category.entries) {
-            addEntries(block.codeAutoComplete)
-            addEntries(block.autocompletions)
-        }
-    }
-
-    return Array.from(entries.values())
+        return `${parameter.name}=${parameter.default}`
+    })
+    return `${path}(${args.join(', ')})`
 }
+
+const createCallLabel = (path, parameters) =>
+    `${path}(${parameters
+        .map((parameter) =>
+            parameter.required
+                ? `${parameter.name}=`
+                : `${parameter.name}=${parameter.default}`,
+        )
+        .join(', ')})`
+
+const createCallCompletions = (entry) => {
+    const required = entry.parameters.filter((parameter) => parameter.required)
+    const optional = entry.parameters.filter((parameter) => !parameter.required)
+    return Array.from({ length: optional.length + 1 }, (_, index) => {
+        const parameters = [...required, ...optional.slice(0, index)]
+        const template = createCallTemplate(entry.path ?? entry.name, parameters)
+        return snippetCompletion(template, {
+            label: createCallLabel(entry.path ?? entry.name, parameters),
+            type: entry.kind === 'constructor' ? 'class' : 'function',
+            detail: entry.description?.split('\n')[0],
+            info: () => createCompletionInfo(entry.description),
+        })
+    })
+}
+
+const collectCodeAutoCompleteEntries = () =>
+    editorApi.members.flatMap(createCallCompletions)
 
 const collectMethodCompletionEntries = () => {
     const byClass = {}
     const allMethods = new Map()
 
-    for (const [className, methods] of Object.entries(
-        pythonLibraryVocab.methodCompletionsByClass ?? {},
-    )) {
-        byClass[className] = methods.map(createCodeMirrorCompletion)
+    for (const [className, methods] of Object.entries(editorApi.methodsByType ?? {})) {
+        byClass[className] = methods.flatMap((method) =>
+            createCallCompletions({ ...method, kind: 'method' }),
+        )
 
         for (const method of methods) {
-            if (!allMethods.has(method.label)) {
-                allMethods.set(method.label, createCodeMirrorCompletion(method))
+            for (const completion of createCallCompletions({
+                ...method,
+                kind: 'method',
+            })) {
+                if (!allMethods.has(completion.label)) {
+                    allMethods.set(completion.label, completion)
+                }
             }
         }
     }
 
     return { byClass, allMethods: Array.from(allMethods.values()) }
+}
+
+const findActiveCall = (context) => {
+    const beforeCursor = context.state.doc.sliceString(
+        context.state.doc.lineAt(context.pos).from,
+        context.pos,
+    )
+    const match = beforeCursor.match(/(?:^|[^\w.])((?:make\.)?[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\(([^()]*)$/)
+    if (!match) return null
+
+    return { callee: match[1], argumentsText: match[2] }
+}
+
+const createParameterCompletions = (entry, argumentsText) => {
+    const used = new Set(
+        Array.from(argumentsText.matchAll(/(?:^|,)\s*([A-Za-z_]\w*)\s*=/g)).map(
+            (match) => match[1],
+        ),
+    )
+    return entry.parameters
+        .filter((parameter) => !used.has(parameter.name))
+        .map((parameter) => {
+            const value = parameter.required ? '${1}' : parameter.default
+            return snippetCompletion(`${parameter.name}=${value}`, {
+                label: `${parameter.name}=${parameter.required ? '' : parameter.default}`,
+                type: 'property',
+                info: () => createCompletionInfo(entry.description),
+            })
+        })
 }
 
 const inferVariableTypes = (code) => {
@@ -130,6 +162,33 @@ const inferVariableTypes = (code) => {
 }
 
 const createCodeAutoCompleteSource = (completions, methodCompletions) => (context) => {
+    const activeCall = findActiveCall(context)
+    if (activeCall && /(?:^|,)\s*[A-Za-z_]*$/.test(activeCall.argumentsText)) {
+        let callable = editorApi.members.find(
+            (entry) => entry.path === activeCall.callee,
+        )
+
+        if (!callable) {
+            const [receiver, methodName] = activeCall.callee.split('.')
+            const receiverType = inferVariableTypes(
+                context.state.doc.sliceString(0, context.pos),
+            ).get(receiver)
+            callable = editorApi.methodsByType?.[receiverType]?.find(
+                (method) => method.name === methodName,
+            )
+        }
+
+        if (callable) {
+            return {
+                from: context.pos,
+                options: createParameterCompletions(
+                    callable,
+                    activeCall.argumentsText,
+                ),
+            }
+        }
+    }
+
     const word = context.matchBefore(/[\w.]*/)
     if (!word || (word.from === word.to && !context.explicit)) {
         return null
@@ -157,7 +216,7 @@ const createCodeAutoCompleteSource = (completions, methodCompletions) => (contex
         const receiverType = variableTypes.get(receiver)
         const options = receiverType
             ? methodCompletions.byClass[receiverType]
-            : methodCompletions.allMethods
+            : []
 
         return {
             from: memberFrom,
@@ -167,9 +226,7 @@ const createCodeAutoCompleteSource = (completions, methodCompletions) => (contex
 
     return {
         from: word.from,
-        options: completions.filter(
-            (completion) => completion.type !== 'method',
-        ),
+        options: completions,
     }
 }
 
@@ -247,7 +304,10 @@ const createLintDiagnostics = (view, verified) => {
 }
 
 export const createCodeMirrorView = (
-    { readonly, noGutter } = { readonly: false, noGutter: false },
+    {
+        readonly,
+        noGutter,
+    } = { readonly: false, noGutter: false },
 ) => {
     let verifiedOutput = null
     const completions = collectCodeAutoCompleteEntries()
