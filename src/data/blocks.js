@@ -1,7 +1,13 @@
-import { FieldDropdown, FieldNumber, FieldTextInput, FieldCheckbox, FieldImage } from 'blockly'
-import {FieldColourHsvSliders} from '@blockly/field-colour-hsv-sliders';
-import {pythonGenerator, Order} from 'blockly/python';
-import {FieldGridDropdown} from '@blockly/field-grid-dropdown';
+import {
+    FieldDropdown,
+    FieldNumber,
+    FieldTextInput,
+    FieldCheckbox,
+    FieldImage,
+} from 'blockly'
+import { FieldColourHsvSliders } from '@blockly/field-colour-hsv-sliders'
+import { pythonGenerator, Order } from 'blockly/python'
+import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 
 const simplePorts = [
@@ -30,12 +36,11 @@ const buttonPorts = [
 ]
 
 const injectHelpButton = (blocks) => {
-    blocks.forEach(category => {
-        category.entries.forEach(block => {
-            const field =
-            {
+    blocks.forEach((category) => {
+        category.entries.forEach((block) => {
+            const field = {
                 field: () =>
-                    new FieldImage("./images/help.svg", 15, 15, "Info", () => {
+                    new FieldImage('./images/help.svg', 15, 15, 'Info', () => {
                         document.dispatchEvent(
                             new CustomEvent(openCheatSheetDrawerEvent, {
                                 detail: { blockName: block.name },
@@ -51,7 +56,7 @@ const injectHelpButton = (blocks) => {
     return blocks
 }
 
-export default injectHelpButton([
+export const library = [
     {
         name: 'Motor',
         color: '#F2737B',
@@ -82,8 +87,7 @@ export default injectHelpButton([
                         text: 'is a smallmotor \non port',
                     },
                     {
-                        field: () =>
-                            new FieldDropdown(simplePorts),
+                        field: () => new FieldDropdown(simplePorts),
                         name: 'port',
                     },
                     {
@@ -124,8 +128,7 @@ export default injectHelpButton([
                         text: 'is a servo on port',
                     },
                     {
-                        field: () =>
-                            new FieldDropdown(simplePorts),
+                        field: () => new FieldDropdown(simplePorts),
                         name: 'port',
                     },
                 ],
@@ -152,8 +155,7 @@ export default injectHelpButton([
                         text: 'is a largemotor \non port',
                     },
                     {
-                        field: () =>
-                            new FieldDropdown(drivePorts),
+                        field: () => new FieldDropdown(drivePorts),
                         name: 'port',
                     },
                     {
@@ -189,7 +191,8 @@ export default injectHelpButton([
                     {
                         label: 'motor.spin',
                         type: 'method',
-                        description: 'Spins a motor at a power until it is stopped.',
+                        description:
+                            'Spins a motor at a power until it is stopped.',
                     },
                 ],
                 blocklyTemplate: [
@@ -689,7 +692,8 @@ export default injectHelpButton([
                     {
                         label: 'drivetrain.drive',
                         type: 'method',
-                        description: 'Drives forward or backward until stopped.',
+                        description:
+                            'Drives forward or backward until stopped.',
                     },
                 ],
                 blocklyTemplate: [
@@ -1124,8 +1128,7 @@ export default injectHelpButton([
                         text: 'is a button on port',
                     },
                     {
-                        field: () =>
-                            new FieldDropdown(buttonPorts),
+                        field: () => new FieldDropdown(buttonPorts),
                         name: 'port',
                     },
                 ],
@@ -1362,7 +1365,7 @@ export default injectHelpButton([
                             name: 'function',
                             type: 'Boolean',
                         },
-                    }
+                    },
                 ],
                 codeGenerator: (block, generator) => {
                     const value_function = generator.valueToCode(
@@ -1401,7 +1404,7 @@ export default injectHelpButton([
                             name: 'function',
                             type: 'Boolean',
                         },
-                    }
+                    },
                 ],
                 codeGenerator: (block, generator) => {
                     const value_function = generator.valueToCode(
@@ -1592,11 +1595,11 @@ export default injectHelpButton([
                 description: 'Creates a range of numbers.',
             },
         ],
-        entries: [ 
+        entries: [
             // {
-			// 	name: "section",
-			// 	description: "Returns whether or not the button is pressed.",
-			// 	blocklyTemplate: [
+            // 	name: "section",
+            // 	description: "Returns whether or not the button is pressed.",
+            // 	blocklyTemplate: [
             //         {
             //             field: () => new FieldCheckbox('FALSE', function(newValue) {
             //                 if(this.sourceBlock_){
@@ -1617,54 +1620,54 @@ export default injectHelpButton([
             //             }),
             //             name: 'color',
             //         },
-            //         { 
+            //         {
             //             blocklyInput: {
             //                 name: 'input',
             //                 type: 'Void',
             //             },
             //         },
-			// 	],
-			// 	save: function() {
-	  		// 		return {
-	    	// 			'collapsed': this.collapsed,
-			// 			'color': this.color,
-	  		// 		};
-			// 	},
-			// 	load: function(state) {
-	  		// 		var color = state['color'];
-	  		// 		var collapsed = state['collapsed'];
-	  		// 		this.updateShape_(color, collapsed);
-			// 	},
-			// 	update: function(color, collapsed) {
-			// 		if(color != null) {
-			// 			this.setColour(color == null ? "#ff0000" : color);
-			// 		}
-			// 		if (collapsed != null) {
-			// 			this.getInput("input").setVisible(collapsed === "FALSE")
-			// 			this.render()
-			// 		}
-			// 	},
-			// 	codeGenerator: (block) => {
-			// 		function dropOneTab(str) {
-    		// 			return str
-    		// 				.split('\n')
-    		// 				.map(line => {
-    		// 				return line.slice(2);
-    		// 				})
-    		// 			.join('\n');
-			// 		}
-			// 		var raw = pythonGenerator.statementToCode(block, 'input');
-			// 		var cleaned = dropOneTab(raw);
-			// 		const code = `${cleaned}`;
-			// 		return code;
-			// 	}
-			// },
+            // 	],
+            // 	save: function() {
+            // 		return {
+            // 			'collapsed': this.collapsed,
+            // 			'color': this.color,
+            // 		};
+            // 	},
+            // 	load: function(state) {
+            // 		var color = state['color'];
+            // 		var collapsed = state['collapsed'];
+            // 		this.updateShape_(color, collapsed);
+            // 	},
+            // 	update: function(color, collapsed) {
+            // 		if(color != null) {
+            // 			this.setColour(color == null ? "#ff0000" : color);
+            // 		}
+            // 		if (collapsed != null) {
+            // 			this.getInput("input").setVisible(collapsed === "FALSE")
+            // 			this.render()
+            // 		}
+            // 	},
+            // 	codeGenerator: (block) => {
+            // 		function dropOneTab(str) {
+            // 			return str
+            // 				.split('\n')
+            // 				.map(line => {
+            // 				return line.slice(2);
+            // 				})
+            // 			.join('\n');
+            // 		}
+            // 		var raw = pythonGenerator.statementToCode(block, 'input');
+            // 		var cleaned = dropOneTab(raw);
+            // 		const code = `${cleaned}`;
+            // 		return code;
+            // 	}
+            // },
             {
-				name: "if",
-				description: "if statement help.",
-				blocklyTemplate: [
+                name: 'if',
+                description: 'if statement help.',
+                blocklyTemplate: [
                     {
-                        "text": "if      ",
+                        text: 'if      ',
                     },
                     {
                         blocklyInput: {
@@ -1673,7 +1676,7 @@ export default injectHelpButton([
                         },
                     },
                     {
-                        "text": "do:",
+                        text: 'do:',
                     },
                     {
                         blocklyInput: {
@@ -1681,28 +1684,31 @@ export default injectHelpButton([
                             type: 'Void',
                         },
                     },
-				],
-				codeGenerator: (block) => {
-					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
-					let len = value_function.length;
-					if (len == 0)
-						value_function = 'False';
-					else {
-						value_function = value_function.replace('(','');
-						value_function = value_function.slice(0,-1);
-					}
-					var input = pythonGenerator.statementToCode(block, 'input');
-					if (input.length == 0) {
-						input = '\tpass';
-					}
+                ],
+                codeGenerator: (block) => {
+                    var value_function = pythonGenerator.valueToCode(
+                        block,
+                        'function',
+                        Order.ATOMIC,
+                    )
+                    let len = value_function.length
+                    if (len == 0) value_function = 'False'
+                    else {
+                        value_function = value_function.replace('(', '')
+                        value_function = value_function.slice(0, -1)
+                    }
+                    var input = pythonGenerator.statementToCode(block, 'input')
+                    if (input.length == 0) {
+                        input = '\tpass'
+                    }
 
-					const code = `if ${value_function}:\n${input}\n`;
-					return code;
-				}
-			},
+                    const code = `if ${value_function}:\n${input}\n`
+                    return code
+                },
+            },
             {
-				name: "ifElse",
-				description: "if_else statement help.",
+                name: 'ifElse',
+                description: 'if_else statement help.',
                 codeAutoComplete: [
                     {
                         label: 'else',
@@ -1710,9 +1716,9 @@ export default injectHelpButton([
                         description: 'Adds an alternate branch to an if block.',
                     },
                 ],
-				blocklyTemplate: [
+                blocklyTemplate: [
                     {
-                        "text": "if      ",
+                        text: 'if      ',
                     },
                     {
                         blocklyInput: {
@@ -1721,7 +1727,7 @@ export default injectHelpButton([
                         },
                     },
                     {
-                        "text": "do:",
+                        text: 'do:',
                     },
                     {
                         blocklyInput: {
@@ -1730,7 +1736,7 @@ export default injectHelpButton([
                         },
                     },
                     {
-                        "text": "\nelse:",
+                        text: '\nelse:',
                     },
                     {
                         blocklyInput: {
@@ -1738,29 +1744,32 @@ export default injectHelpButton([
                             type: 'Void',
                         },
                     },
-				],
-				codeGenerator: (block) => {
-					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
-					let len = value_function.length;
-					if (len == 0)
-						value_function = 'False';
-					else {
-						value_function = value_function.replace('(','');
-						value_function = value_function.slice(0,-1);
-					}
-					var input = pythonGenerator.statementToCode(block, 'input');
-					if (input.length == 0) {
-						input = '\tpass';
-					}
+                ],
+                codeGenerator: (block) => {
+                    var value_function = pythonGenerator.valueToCode(
+                        block,
+                        'function',
+                        Order.ATOMIC,
+                    )
+                    let len = value_function.length
+                    if (len == 0) value_function = 'False'
+                    else {
+                        value_function = value_function.replace('(', '')
+                        value_function = value_function.slice(0, -1)
+                    }
+                    var input = pythonGenerator.statementToCode(block, 'input')
+                    if (input.length == 0) {
+                        input = '\tpass'
+                    }
 
-					const code = `if ${value_function}:\n${input}\nelse:\n${pythonGenerator.statementToCode(block, 'input_else') || '\tpass'}\n`;
-					return code;
-				}
-			},
-			// {
-			// 	name: "BetterCompare",
-			// 	description: "Returns whether or not the button is pressed.",
-			// 	blocklyTemplate: [
+                    const code = `if ${value_function}:\n${input}\nelse:\n${pythonGenerator.statementToCode(block, 'input_else') || '\tpass'}\n`
+                    return code
+                },
+            },
+            // {
+            // 	name: "BetterCompare",
+            // 	description: "Returns whether or not the button is pressed.",
+            // 	blocklyTemplate: [
             //         {
             //             blocklyInput: {
             //                 name: 'functionA',
@@ -1780,30 +1789,30 @@ export default injectHelpButton([
             //                 type: 'Any',
             //             },
             //         },
-			// 	],
+            // 	],
             //     blocklyOutput: {
             //         type: 'Boolean',
             //         name: 'value',
             //     },
             //     inputsInline: true,
-			// 	codeGenerator: (block) => {
-			// 		const operation = spacesToUnderscores(block.getFieldValue('operation'));
-			// 		var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
-			// 		var value_functionB_code = pythonGenerator.valueToCode(block, 'functionB', Order.ATOMIC);
-			// 		if (value_functionA_code.length == 0) {
-			// 			value_functionA_code = '0';
-			// 		}
-			// 		if (value_functionB_code.length == 0) {
-			// 			value_functionB_code = '0';
-			// 		}
-			// 		let code = `${value_functionA_code} ${operation} ${value_functionB_code}`
-			// 		return [code, Order.NONE];
-			// 	}
-			// },
+            // 	codeGenerator: (block) => {
+            // 		const operation = spacesToUnderscores(block.getFieldValue('operation'));
+            // 		var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
+            // 		var value_functionB_code = pythonGenerator.valueToCode(block, 'functionB', Order.ATOMIC);
+            // 		if (value_functionA_code.length == 0) {
+            // 			value_functionA_code = '0';
+            // 		}
+            // 		if (value_functionB_code.length == 0) {
+            // 			value_functionB_code = '0';
+            // 		}
+            // 		let code = `${value_functionA_code} ${operation} ${value_functionB_code}`
+            // 		return [code, Order.NONE];
+            // 	}
+            // },
             {
-				name: "logicalCompare",
-				description: "Returns whether or not the button is pressed.",
-				blocklyTemplate: [
+                name: 'logicalCompare',
+                description: 'Returns whether or not the button is pressed.',
+                blocklyTemplate: [
                     {
                         blocklyInput: {
                             name: 'functionA',
@@ -1814,7 +1823,11 @@ export default injectHelpButton([
                         text: '\n',
                     },
                     {
-                        field: () => new FieldGridDropdown([['and', 'and'],['or', 'or']]),
+                        field: () =>
+                            new FieldGridDropdown([
+                                ['and', 'and'],
+                                ['or', 'or'],
+                            ]),
                         name: 'operation',
                     },
                     {
@@ -1823,29 +1836,39 @@ export default injectHelpButton([
                             type: 'Boolean',
                         },
                     },
-				],
+                ],
                 blocklyOutput: {
                     type: 'Boolean',
                     name: 'value',
                 },
                 inputsInline: true,
-				codeGenerator: (block) => {
-					const operation = spacesToUnderscores(block.getFieldValue('operation'));
-					var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
-					var value_functionB_code = pythonGenerator.valueToCode(block, 'functionB', Order.ATOMIC);
-					if (value_functionA_code.length == 0) {
-						value_functionA_code = '0';
-					}
-					if (value_functionB_code.length == 0) {
-						value_functionB_code = '0';
-					}
-					let code = `${value_functionA_code} ${operation} ${value_functionB_code}`
-					return [code, Order.NONE];
-				}
-			},
+                codeGenerator: (block) => {
+                    const operation = spacesToUnderscores(
+                        block.getFieldValue('operation'),
+                    )
+                    var value_functionA_code = pythonGenerator.valueToCode(
+                        block,
+                        'functionA',
+                        Order.ATOMIC,
+                    )
+                    var value_functionB_code = pythonGenerator.valueToCode(
+                        block,
+                        'functionB',
+                        Order.ATOMIC,
+                    )
+                    if (value_functionA_code.length == 0) {
+                        value_functionA_code = '0'
+                    }
+                    if (value_functionB_code.length == 0) {
+                        value_functionB_code = '0'
+                    }
+                    let code = `${value_functionA_code} ${operation} ${value_functionB_code}`
+                    return [code, Order.NONE]
+                },
+            },
             {
-				name: "logicalNot",
-				description: "Returns whether or not the button is pressed.",
+                name: 'logicalNot',
+                description: 'Returns whether or not the button is pressed.',
                 codeAutoComplete: [
                     {
                         label: 'not',
@@ -1853,7 +1876,7 @@ export default injectHelpButton([
                         description: 'Reverses a boolean condition.',
                     },
                 ],
-				blocklyTemplate: [
+                blocklyTemplate: [
                     {
                         text: 'not',
                     },
@@ -1863,67 +1886,71 @@ export default injectHelpButton([
                             type: 'Boolean',
                         },
                     },
-				],
+                ],
                 blocklyOutput: {
                     type: 'Boolean',
                     name: 'value',
                 },
                 // inputsInline: false,
-				codeGenerator: (block) => {
-					var value_functionA_code = pythonGenerator.valueToCode(block, 'functionA', Order.ATOMIC);
-					if (value_functionA_code.length == 0) {
-						value_functionA_code = '0';
-					}
-					let code = `not ${value_functionA_code}`
-					return [code, Order.NONE];
-				}
-			},
+                codeGenerator: (block) => {
+                    var value_functionA_code = pythonGenerator.valueToCode(
+                        block,
+                        'functionA',
+                        Order.ATOMIC,
+                    )
+                    if (value_functionA_code.length == 0) {
+                        value_functionA_code = '0'
+                    }
+                    let code = `not ${value_functionA_code}`
+                    return [code, Order.NONE]
+                },
+            },
             // {
-			// 	name: "BooleanInput",
-			// 	description: "Returns whether or not the button is pressed.",
-			// 	blocklyTemplate: [
+            // 	name: "BooleanInput",
+            // 	description: "Returns whether or not the button is pressed.",
+            // 	blocklyTemplate: [
             //         {
             //             field: () => new FieldGridDropdown([['true', 'True'],['false', 'False']]),
             //             name: 'operation',
             //         },
-			// 	],
+            // 	],
             //     blocklyOutput: {
             //         type: 'Boolean',
             //         name: 'value',
             //     },
             //     inputsInline: true,
-			// 	codeGenerator: (block) => {
-			// 		const operation = spacesToUnderscores(block.getFieldValue('operation'));
-			// 		let code = `${operation}`
-			// 		return [code, Order.NONE];
-			// 	}
-			// },
+            // 	codeGenerator: (block) => {
+            // 		const operation = spacesToUnderscores(block.getFieldValue('operation'));
+            // 		let code = `${operation}`
+            // 		return [code, Order.NONE];
+            // 	}
+            // },
             {
-				name: "numberInput",
-				description: "Returns whether or not the button is pressed.",
-				blocklyTemplate: [
+                name: 'numberInput',
+                description: 'Returns whether or not the button is pressed.',
+                blocklyTemplate: [
                     {
                         field: () => new FieldNumber(0),
                         name: 'operation',
                     },
-				],
+                ],
                 blocklyOutput: {
                     type: 'Number',
                     name: 'value',
                 },
                 inputsInline: true,
-				codeGenerator: (block) => {
-					const operation = block.getFieldValue('operation');
-					let code = `${operation}`
-					return [code, Order.NONE];
-				}
-			},
+                codeGenerator: (block) => {
+                    const operation = block.getFieldValue('operation')
+                    let code = `${operation}`
+                    return [code, Order.NONE]
+                },
+            },
             {
-				name: "repeatFor",
-				description: "if statement help.",
-				blocklyTemplate: [
+                name: 'repeatFor',
+                description: 'if statement help.',
+                blocklyTemplate: [
                     {
-                        "text": "repeat for",
+                        text: 'repeat for',
                     },
                     {
                         blocklyInput: {
@@ -1933,7 +1960,7 @@ export default injectHelpButton([
                         },
                     },
                     {
-                        "text": "times do:",
+                        text: 'times do:',
                     },
                     {
                         blocklyInput: {
@@ -1941,35 +1968,42 @@ export default injectHelpButton([
                             type: 'Void',
                         },
                     },
-				],
+                ],
                 //inputsInline: false,
-				codeGenerator: (block) => {
-					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
-					let len = value_function.length;
-					if (len == 0)
-						value_function = '0';
-					else {
-						value_function = value_function.replace('(','');
-						value_function = value_function.slice(0,-1);
-					}
-					var input = pythonGenerator.statementToCode(block, 'input');
-					if (input.length == 0) {
-						input = '\tpass';
-					}
+                codeGenerator: (block) => {
+                    var value_function = pythonGenerator.valueToCode(
+                        block,
+                        'function',
+                        Order.ATOMIC,
+                    )
+                    let len = value_function.length
+                    if (len == 0) value_function = '0'
+                    else {
+                        value_function = value_function.replace('(', '')
+                        value_function = value_function.slice(0, -1)
+                    }
+                    var input = pythonGenerator.statementToCode(block, 'input')
+                    if (input.length == 0) {
+                        input = '\tpass'
+                    }
 
-					const code = `for i in range(${value_function}):\n${input}\n`;
-					return code;
-				}
-			},
+                    const code = `for i in range(${value_function}):\n${input}\n`
+                    return code
+                },
+            },
             {
-				name: "repeatIf",
-				description: "if statement help.",
-				blocklyTemplate: [
+                name: 'repeatIf',
+                description: 'if statement help.',
+                blocklyTemplate: [
                     {
-                        "text": "repeat",
+                        text: 'repeat',
                     },
                     {
-                        field: () => new FieldGridDropdown([['while', 'While'],['until', 'Until']]),
+                        field: () =>
+                            new FieldGridDropdown([
+                                ['while', 'While'],
+                                ['until', 'Until'],
+                            ]),
                         name: 'operation',
                     },
                     {
@@ -1979,7 +2013,7 @@ export default injectHelpButton([
                         },
                     },
                     {
-                        "text": "do:",
+                        text: 'do:',
                     },
                     {
                         blocklyInput: {
@@ -1987,27 +2021,29 @@ export default injectHelpButton([
                             type: 'Void',
                         },
                     },
-				],
-				codeGenerator: (block) => {
-					var value_function = pythonGenerator.valueToCode(block, 'function', Order.ATOMIC);
-                    const operation = block.getFieldValue('operation');
-					let len = value_function.length;
-					if (len == 0)
-						value_function = 'False';
-					else {
-						value_function = value_function.replace('(','');
-						value_function = value_function.slice(0,-1);
-					}
-					var input = pythonGenerator.statementToCode(block, 'input');
-					if (input.length == 0) {
-						input = '\tpass';
-					}
+                ],
+                codeGenerator: (block) => {
+                    var value_function = pythonGenerator.valueToCode(
+                        block,
+                        'function',
+                        Order.ATOMIC,
+                    )
+                    const operation = block.getFieldValue('operation')
+                    let len = value_function.length
+                    if (len == 0) value_function = 'False'
+                    else {
+                        value_function = value_function.replace('(', '')
+                        value_function = value_function.slice(0, -1)
+                    }
+                    var input = pythonGenerator.statementToCode(block, 'input')
+                    if (input.length == 0) {
+                        input = '\tpass'
+                    }
                     const optional_not = operation == 'While' ? '' : 'not '
-                    const code = `while ${optional_not}${value_function}:\n${input}\n`;
-                    return code;
-                }
-			},
-            
+                    const code = `while ${optional_not}${value_function}:\n${input}\n`
+                    return code
+                },
+            },
         ],
         examples: [
             {
@@ -2176,9 +2212,45 @@ export default injectHelpButton([
                 },
             },
         ],
-    }
-])
-
-
+    },
+]
 
 const spacesToUnderscores = (str) => str.replace(/\s+/g, '_')
+
+export function extractJengaBlocks(sourceLibrary = library) {
+    const categories = Array.isArray(sourceLibrary)
+        ? sourceLibrary
+        : [sourceLibrary]
+
+    const jengaBlocks = categories.map(({ examples, ...category }) => ({
+        ...category,
+        entries: category.entries.map((blockEntry) => ({
+            ...blockEntry,
+            blocklyTemplate: [...blockEntry.blocklyTemplate],
+        })),
+    }))
+
+    return injectHelpButton(jengaBlocks)
+}
+
+export function extractCheatSheetBlocks(sourceLibrary = library) {
+    const categories = Array.isArray(sourceLibrary)
+        ? sourceLibrary
+        : [sourceLibrary]
+
+    const cheatSheetCategories = categories.map((category) => ({
+        ...category,
+        entries: category.entries.map((blockEntry) => ({
+            ...blockEntry,
+            blocklyTemplate: [...blockEntry.blocklyTemplate],
+        })),
+        examples: (category.examples ?? []).map((example) => ({
+            ...example,
+        })),
+    }))
+
+    return injectHelpButton(cheatSheetCategories)
+}
+
+export const jengaBlocks = extractJengaBlocks(library)
+export const cheatSheetBlocks = extractCheatSheetBlocks(library)

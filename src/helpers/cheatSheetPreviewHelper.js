@@ -6,10 +6,7 @@ import {
     mountBlocklyWorkspace,
     setBlocklyState,
 } from './blocklyHelper'
-import {
-    createCodeMirrorView,
-    setCodeMirrorText,
-} from './codeMirrorHelper'
+import { createCodeMirrorView, setCodeMirrorText } from './codeMirrorHelper'
 
 let previewId = 0
 const previewScale = 0.75
@@ -121,7 +118,10 @@ function fitPreviewToBlocks(blocklyInstance, preview) {
 }
 
 function getMaxPreviewWidth(preview) {
-    return Math.max(1, preview.parentElement?.clientWidth ?? preview.clientWidth)
+    return Math.max(
+        1,
+        preview.parentElement?.clientWidth ?? preview.clientWidth,
+    )
 }
 
 /**
@@ -143,13 +143,12 @@ export function createBlocklyPreview(workspaceState) {
             fitPreviewToBlocks(blocklyInstance, preview)
         }
     })
-    setBlocklyState(blocklyInstance, normalizedWorkspaceState)
     preview.style.width = '280px'
     preview.style.height = '96px'
-    const code = getBlocklyCode(blocklyInstance)
 
     mountBlocklyWorkspace(blocklyInstance, preview, {
         resizeImmediately: true,
+        manageWidgets: false,
         onReady: () => {
             if (!preview.isConnected) {
                 return false
@@ -167,6 +166,9 @@ export function createBlocklyPreview(workspaceState) {
             })
         },
     })
+
+    setBlocklyState(blocklyInstance, normalizedWorkspaceState)
+    const code = getBlocklyCode(blocklyInstance)
 
     return {
         element: preview,

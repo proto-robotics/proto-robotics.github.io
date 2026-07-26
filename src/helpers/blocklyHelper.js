@@ -26,7 +26,7 @@ export const createBlocklyInstance = (
         modsInjected = true
     }
 
-    const workspace = inject(canvas, {
+    const workspaceOptions = {
         readOnly: readonly,
         renderer: 'proto_renderer',
         grid: showGrid
@@ -48,12 +48,14 @@ export const createBlocklyInstance = (
         },
         trashcan: !readonly,
         toolbox: hideToolbox ? undefined : toolbox,
-    })
+    }
 
     return {
         canvas,
-        workspace,
+        workspace: null,
+        workspaceOptions,
         resizeObservers: [],
+        cleanupCallbacks: [],
     }
 }
 
@@ -64,9 +66,45 @@ export const createBlocklyInstance = (
 export const mountBlocklyWorkspace = (
     blocklyInstance,
     container,
-    { onReady = null, resizeImmediately = false } = {},
+    { onReady = null, resizeImmediately = false, manageWidgets = true } = {},
 ) => {
-    setBlocklyParentContainer(container)
+    if (manageWidgets) {
+        setBlocklyParentContainer(container)
+    }
+
+    if (!blocklyInstance.workspace) {
+        blocklyInstance.workspace = inject(
+            blocklyInstance.canvas,
+            blocklyInstance.workspaceOptions,
+        )
+    }
+
+    if (manageWidgets) {
+        const activateWidgets = () => setBlocklyParentContainer(container)
+        blocklyInstance.canvas.addEventListener(
+            'pointerdown',
+            activateWidgets,
+            true,
+        )
+        blocklyInstance.canvas.addEventListener(
+            'focusin',
+            activateWidgets,
+            true,
+        )
+        blocklyInstance.cleanupCallbacks.push(() => {
+            blocklyInstance.canvas.removeEventListener(
+                'pointerdown',
+                activateWidgets,
+                true,
+            )
+            blocklyInstance.canvas.removeEventListener(
+                'focusin',
+                activateWidgets,
+                true,
+            )
+        })
+    }
+
     return watchContainerSize(blocklyInstance, container, {
         onReady,
         resizeImmediately,
@@ -111,7 +149,12 @@ export const destroyBlocklyInstance = (blocklyInstance) => {
     }
 
     blocklyInstance.resizeObservers = []
-    blocklyInstance.workspace.dispose()
+    for (const cleanup of blocklyInstance.cleanupCallbacks ?? []) {
+        cleanup()
+    }
+    blocklyInstance.cleanupCallbacks = []
+    blocklyInstance.workspace?.dispose()
+    blocklyInstance.workspace = null
 }
 
 /**

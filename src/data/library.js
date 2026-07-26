@@ -68,11 +68,11 @@ export const library = [
                 description: 'Creates a continuous servo motor.',
                 blocklyTemplate: [
                     {
-                        field: () => new FieldTextInput('simple_motor'),
+                        field: () => new FieldTextInput('simplemotor'),
                         name: 'name',
                     },
                     {
-                        text: 'is a simple motor on port',
+                        text: 'is a simple motor\non port',
                     },
                     {
                         field: () => new FieldDropdown(simplePorts),
@@ -87,7 +87,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const port = block.getFieldValue('port')
                     const direction = block.getFieldValue('direction')
                     const directionSnippet =
@@ -98,15 +100,15 @@ export const library = [
             },
             {
                 entryType: 'block',
-                name: 'largemotor',
+                name: 'drivemotor',
                 description: 'Creates a DC motor.',
                 blocklyTemplate: [
                     {
-                        field: () => new FieldTextInput('largemotor'),
+                        field: () => new FieldTextInput('drivemotor'),
                         name: 'name',
                     },
                     {
-                        text: 'is a large motor on port',
+                        text: 'is a drive motor\non port',
                     },
                     {
                         field: () => new FieldDropdown(drivePorts),
@@ -121,13 +123,15 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const port = block.getFieldValue('port')
                     const direction = block.getFieldValue('direction')
                     const directionSnippet =
                         direction === '1' ? '' : ', direction=-1'
 
-                    return `${name} = make.largemotor(port=${port}${directionSnippet})\n`
+                    return `${name} = make.drivemotor(port=${port}${directionSnippet})\n`
                 },
             },
             {
@@ -148,7 +152,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const port = block.getFieldValue('port')
 
                     return `${name} = make.servo(port=${port})\n`
@@ -178,7 +184,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
 
                     return `${name}.spin(power=${power})\n`
@@ -208,7 +216,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
 
                     return `${name}.spin_back(power=${power})\n`
@@ -234,7 +244,7 @@ export const library = [
                         name: 'power',
                     },
                     {
-                        text: 'power for',
+                        text: 'power\nfor',
                     },
                     {
                         field: () => new FieldNumber(0, 0, Infinity, 0.01),
@@ -245,7 +255,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
                     const time = block.getFieldValue('time')
 
@@ -272,7 +284,7 @@ export const library = [
                         name: 'power',
                     },
                     {
-                        text: 'power for',
+                        text: 'power\nfor',
                     },
                     {
                         field: () => new FieldNumber(0, 0, Infinity, 0.01),
@@ -283,7 +295,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
                     const time = block.getFieldValue('time')
 
@@ -304,7 +318,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
 
                     return `${name}.stop()\n`
                 },
@@ -333,7 +349,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const angle = block.getFieldValue('angle')
 
                     return `${name}.moveto(angle=${angle})\n`
@@ -370,7 +388,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const angle = block.getFieldValue('angle')
                     const time = block.getFieldValue('time')
 
@@ -484,31 +504,38 @@ export const library = [
                         name: 'name',
                     },
                     {
-                        text: 'is a drivetrain from motors',
+                        text: 'is a drivetrain\nfrom motors',
                     },
                     {
-                        field: () => new FieldTextInput('left_motor'),
+                        field: () => new FieldTextInput('leftmotor'),
                         name: 'left',
                     },
                     {
                         text: 'and',
                     },
                     {
-                        field: () => new FieldTextInput('right_motor'),
+                        field: () => new FieldTextInput('rightmotor'),
                         name: 'right',
                     },
                     {
                         text: 'with drift',
                     },
                     {
-                        field: () => new FieldNumber(1, -Infinity, Infinity, 0.01),
+                        field: () =>
+                            new FieldNumber(1, -Infinity, Infinity, 0.01),
                         name: 'drift',
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
-                    const left = spacesToUnderscores(block.getFieldValue('left'))
-                    const right = spacesToUnderscores(block.getFieldValue('right'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
+                    const left = spacesToUnderscores(
+                        block.getFieldValue('left'),
+                    )
+                    const right = spacesToUnderscores(
+                        block.getFieldValue('right'),
+                    )
                     const drift = block.getFieldValue('drift')
                     const driftSnippet = drift === '1' ? '' : `, drift=${drift}`
 
@@ -539,7 +566,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
 
                     return `${name}.drive(power=${power})\n`
@@ -565,7 +594,7 @@ export const library = [
                         name: 'power',
                     },
                     {
-                        text: 'power for',
+                        text: 'power\nfor',
                     },
                     {
                         field: () => new FieldNumber(0, 0, Infinity, 0.01),
@@ -576,7 +605,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
                     const time = block.getFieldValue('time')
 
@@ -607,7 +638,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
 
                     return `${name}.turn(power=${power})\n`
@@ -633,7 +666,7 @@ export const library = [
                         name: 'power',
                     },
                     {
-                        text: 'power for',
+                        text: 'power\nfor',
                     },
                     {
                         field: () => new FieldNumber(0, 0, Infinity, 0.01),
@@ -644,7 +677,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const power = block.getFieldValue('power')
                     const time = block.getFieldValue('time')
 
@@ -654,7 +689,8 @@ export const library = [
             {
                 entryType: 'block',
                 name: 'curve',
-                description: 'Runs the two sides of a drivetrain at different powers.',
+                description:
+                    'Runs the two sides of a drivetrain at different powers.',
                 blocklyTemplate: [
                     {
                         text: 'Curve',
@@ -682,7 +718,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const left = block.getFieldValue('left')
                     const right = block.getFieldValue('right')
 
@@ -716,7 +754,7 @@ export const library = [
                         name: 'right',
                     },
                     {
-                        text: 'power for',
+                        text: 'power\nfor',
                     },
                     {
                         field: () => new FieldNumber(0, 0, Infinity, 0.01),
@@ -727,7 +765,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const left = block.getFieldValue('left')
                     const right = block.getFieldValue('right')
                     const time = block.getFieldValue('time')
@@ -749,7 +789,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
 
                     return `${name}.stop()\n`
                 },
@@ -758,13 +800,13 @@ export const library = [
                 entryType: 'example',
                 name: 'Straight drive',
                 preamble:
-                    'Creates two large motors, combines them into a drivetrain, then drives forward briefly.',
+                    'Creates two drive motors, combines them into a drivetrain, then drives forward briefly.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drivemotor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -773,7 +815,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'largemotor',
+                                        type: 'drivemotor',
                                         fields: {
                                             name: 'right_motor',
                                             port: '1',
@@ -831,7 +873,9 @@ export const library = [
                     },
                 ],
                 codeGenerator: (block) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
                     const port = block.getFieldValue('port')
 
                     return `${name} = make.button(port=${port})\n`
@@ -855,7 +899,9 @@ export const library = [
                     name: 'value',
                 },
                 codeGenerator: (block, generator) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
 
                     return [`${name}.pressed()`, generator.ORDER_NONE]
                 },
@@ -878,7 +924,9 @@ export const library = [
                     name: 'value',
                 },
                 codeGenerator: (block, generator) => {
-                    const name = spacesToUnderscores(block.getFieldValue('name'))
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
 
                     return [`${name}.held()`, generator.ORDER_NONE]
                 },
@@ -886,8 +934,7 @@ export const library = [
             {
                 entryType: 'example',
                 name: 'Read a button',
-                preamble:
-                    'Creates a button and waits until it is pressed.',
+                preamble: 'Creates a button and waits until it is pressed.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
@@ -1052,7 +1099,8 @@ export const library = [
             {
                 entryType: 'block',
                 name: 'ifElse',
-                description: 'Runs one set of blocks if true, otherwise another.',
+                description:
+                    'Runs one set of blocks if true, otherwise another.',
                 blocklyTemplate: [
                     {
                         text: 'If',
@@ -1073,7 +1121,7 @@ export const library = [
                         },
                     },
                     {
-                        text: 'else',
+                        text: '\nelse',
                     },
                     {
                         blocklyInput: {
@@ -1100,6 +1148,198 @@ export const library = [
             },
             {
                 entryType: 'block',
+                name: 'logicalCompare',
+                description: 'Combines two conditions using and/or.',
+                blocklyTemplate: [
+                    {
+                        blocklyInput: {
+                            name: 'functionA',
+                            type: 'Boolean',
+                        },
+                    },
+                    {
+                        text: '\n',
+                    },
+                    {
+                        field: () =>
+                            new FieldDropdown([
+                                ['and', 'and'],
+                                ['or', 'or'],
+                            ]),
+                        name: 'operation',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'functionB',
+                            type: 'Boolean',
+                        },
+                    },
+                ],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                inputsInline: true,
+                codeGenerator: (block, generator) => {
+                    const left =
+                        generator.valueToCode(
+                            block,
+                            'functionA',
+                            generator.ORDER_ATOMIC,
+                        ) || 'False'
+                    const right =
+                        generator.valueToCode(
+                            block,
+                            'functionB',
+                            generator.ORDER_ATOMIC,
+                        ) || 'False'
+                    const operation = block.getFieldValue('operation')
+
+                    return [
+                        `${left} ${operation} ${right}`,
+                        generator.ORDER_NONE,
+                    ]
+                },
+            },
+            {
+                entryType: 'block',
+                name: 'logicalNot',
+                description: 'Reverses a condition.',
+                blocklyTemplate: [
+                    {
+                        text: 'not',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'functionA',
+                            type: 'Boolean',
+                        },
+                    },
+                ],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                codeGenerator: (block, generator) => {
+                    const condition =
+                        generator.valueToCode(
+                            block,
+                            'functionA',
+                            generator.ORDER_ATOMIC,
+                        ) || 'False'
+
+                    return [`not ${condition}`, generator.ORDER_NONE]
+                },
+            },
+            {
+                entryType: 'block',
+                name: 'numberInput',
+                description: 'Provides a number.',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldNumber(0),
+                        name: 'operation',
+                    },
+                ],
+                blocklyOutput: {
+                    type: 'Number',
+                    name: 'value',
+                },
+                inputsInline: true,
+                codeGenerator: (block, generator) => [
+                    `${block.getFieldValue('operation')}`,
+                    generator.ORDER_NONE,
+                ],
+            },
+            {
+                entryType: 'block',
+                name: 'repeatFor',
+                description: 'Repeats blocks a fixed number of times.',
+                blocklyTemplate: [
+                    {
+                        text: 'Repeat',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Number',
+                            shadow: 'numberInput',
+                        },
+                    },
+                    {
+                        text: 'times',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input',
+                            type: 'Void',
+                        },
+                    },
+                ],
+                codeGenerator: (block, generator) => {
+                    const count =
+                        generator.valueToCode(
+                            block,
+                            'function',
+                            generator.ORDER_ATOMIC,
+                        ) || '0'
+                    const input =
+                        generator.statementToCode(block, 'input') || '\tpass\n'
+
+                    return `for i in range(${count}):\n${input}`
+                },
+            },
+            {
+                entryType: 'block',
+                name: 'repeatIf',
+                description: 'Repeats blocks while or until a condition.',
+                blocklyTemplate: [
+                    {
+                        text: 'Repeat',
+                    },
+                    {
+                        field: () =>
+                            new FieldDropdown([
+                                ['while', 'while'],
+                                ['until', 'until'],
+                            ]),
+                        name: 'operation',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'function',
+                            type: 'Boolean',
+                        },
+                    },
+                    {
+                        text: 'do',
+                    },
+                    {
+                        blocklyInput: {
+                            name: 'input',
+                            type: 'Void',
+                        },
+                    },
+                ],
+                codeGenerator: (block, generator) => {
+                    const condition =
+                        generator.valueToCode(
+                            block,
+                            'function',
+                            generator.ORDER_ATOMIC,
+                        ) || 'False'
+                    const input =
+                        generator.statementToCode(block, 'input') || '\tpass\n'
+                    const prefix =
+                        block.getFieldValue('operation') === 'until'
+                            ? 'not '
+                            : ''
+
+                    return `while ${prefix}${condition}:\n${input}`
+                },
+            },
+            {
+                entryType: 'block',
                 name: 'forever',
                 description: 'Repeats blocks forever.',
                 blocklyTemplate: [
@@ -1118,6 +1358,328 @@ export const library = [
                         generator.statementToCode(block, 'input') || '\tpass\n'
 
                     return `while True:\n${input}`
+                },
+            },
+            {
+                entryType: 'example',
+                name: 'Run when both buttons are pressed',
+                preamble:
+                    'Combines two button conditions and runs a motor only when both are true.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'left_button',
+                                    port: '10',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'button',
+                                        fields: {
+                                            name: 'right_button',
+                                            port: '11',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'simple_motor',
+                                                fields: {
+                                                    name: 'intake',
+                                                    port: '2',
+                                                },
+                                                next: {
+                                                    block: {
+                                                        type: 'if',
+                                                        inputs: {
+                                                            function: {
+                                                                block: {
+                                                                    type: 'logicalCompare',
+                                                                    fields: {
+                                                                        operation:
+                                                                            'and',
+                                                                    },
+                                                                    inputs: {
+                                                                        functionA:
+                                                                            {
+                                                                                block: {
+                                                                                    type: 'isPressed',
+                                                                                    fields: {
+                                                                                        name: 'left_button',
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                        functionB:
+                                                                            {
+                                                                                block: {
+                                                                                    type: 'isPressed',
+                                                                                    fields: {
+                                                                                        name: 'right_button',
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                    },
+                                                                },
+                                                            },
+                                                            input: {
+                                                                block: {
+                                                                    type: 'spinForTime',
+                                                                    fields: {
+                                                                        name: 'intake',
+                                                                        power: '70',
+                                                                        time: '1',
+                                                                    },
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                entryType: 'example',
+                name: 'Choose between actions',
+                preamble:
+                    'Uses if/else and not to choose a motor direction from a button state.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'reverse_button',
+                                    port: '10',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'simple_motor',
+                                        fields: {
+                                            name: 'arm',
+                                            port: '2',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'ifElse',
+                                                inputs: {
+                                                    function: {
+                                                        block: {
+                                                            type: 'logicalNot',
+                                                            inputs: {
+                                                                functionA: {
+                                                                    block: {
+                                                                        type: 'isPressed',
+                                                                        fields: {
+                                                                            name: 'reverse_button',
+                                                                        },
+                                                                    },
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                    input: {
+                                                        block: {
+                                                            type: 'spinForTime',
+                                                            fields: {
+                                                                name: 'arm',
+                                                                power: '60',
+                                                                time: '1',
+                                                            },
+                                                        },
+                                                    },
+                                                    input_else: {
+                                                        block: {
+                                                            type: 'spinBackForTime',
+                                                            fields: {
+                                                                name: 'arm',
+                                                                power: '60',
+                                                                time: '1',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                entryType: 'example',
+                name: 'Repeat a task',
+                preamble:
+                    'Repeats a short motor movement a fixed number of times.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'simple_motor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'indexer',
+                                    port: '3',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'repeatFor',
+                                        inputs: {
+                                            function: {
+                                                shadow: {
+                                                    type: 'numberInput',
+                                                    fields: {
+                                                        operation: '3',
+                                                    },
+                                                },
+                                            },
+                                            input: {
+                                                block: {
+                                                    type: 'spinForTime',
+                                                    fields: {
+                                                        name: 'indexer',
+                                                        power: '50',
+                                                        time: '0.5',
+                                                    },
+                                                    next: {
+                                                        block: {
+                                                            type: 'wait',
+                                                            fields: {
+                                                                time: '0.25',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                entryType: 'example',
+                name: 'Repeat until pressed',
+                preamble:
+                    'Runs a motor repeatedly until the stop button is pressed.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'button',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'stop_button',
+                                    port: '10',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'simple_motor',
+                                        fields: {
+                                            name: 'conveyor',
+                                            port: '2',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'repeatIf',
+                                                fields: {
+                                                    operation: 'until',
+                                                },
+                                                inputs: {
+                                                    function: {
+                                                        block: {
+                                                            type: 'isPressed',
+                                                            fields: {
+                                                                name: 'stop_button',
+                                                            },
+                                                        },
+                                                    },
+                                                    input: {
+                                                        block: {
+                                                            type: 'spinForTime',
+                                                            fields: {
+                                                                name: 'conveyor',
+                                                                power: '40',
+                                                                time: '0.25',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                entryType: 'example',
+                name: 'Repeat forever',
+                preamble:
+                    'Runs the same forward and backward motor sequence forever.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'simple_motor',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'sweeper',
+                                    port: '2',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'forever',
+                                        inputs: {
+                                            input: {
+                                                block: {
+                                                    type: 'spinForTime',
+                                                    fields: {
+                                                        name: 'sweeper',
+                                                        power: '50',
+                                                        time: '0.5',
+                                                    },
+                                                    next: {
+                                                        block: {
+                                                            type: 'spinBackForTime',
+                                                            fields: {
+                                                                name: 'sweeper',
+                                                                power: '50',
+                                                                time: '0.5',
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
                 },
             },
         ],
