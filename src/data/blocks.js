@@ -35,12 +35,17 @@ const buttonPorts = [
     ['13', '13'],
 ]
 
+/**
+ * Adds the shared cheatsheet-help control to each Blockly block definition.
+ * @param {object[]} blocks Blockly category definitions to modify.
+ * @returns {object[]} The same categories with help controls attached.
+ */
 const injectHelpButton = (blocks) => {
     blocks.forEach((category) => {
         category.entries.forEach((block) => {
             const field = {
                 field: () =>
-                    new FieldImage('./images/help.svg', 15, 15, 'Info', () => {
+                    new FieldImage('./assets/images/help.svg', 15, 15, 'Info', () => {
                         document.dispatchEvent(
                             new CustomEvent(openCheatSheetDrawerEvent, {
                                 detail: { blockName: block.name },
@@ -2215,8 +2220,18 @@ export const library = [
     },
 ]
 
+/**
+ * Converts learner-entered names into valid Python identifiers.
+ * @param {string} str Name entered in a Blockly text field.
+ * @returns {string} Name with whitespace replaced by underscores.
+ */
 const spacesToUnderscores = (str) => str.replace(/\s+/g, '_')
 
+/**
+ * Extracts block-only categories for the interactive Jenga toolbox.
+ * @param {object[]} [sourceLibrary=library] Library categories to extract.
+ * @returns {object[]} Toolbox-ready Blockly categories.
+ */
 export function extractJengaBlocks(sourceLibrary = library) {
     const categories = Array.isArray(sourceLibrary)
         ? sourceLibrary
@@ -2233,6 +2248,11 @@ export function extractJengaBlocks(sourceLibrary = library) {
     return injectHelpButton(jengaBlocks)
 }
 
+/**
+ * Extracts blocks and examples for cheatsheet rendering.
+ * @param {object[]} [sourceLibrary=library] Library categories to extract.
+ * @returns {object[]} Cheatsheet-ready categories.
+ */
 export function extractCheatSheetBlocks(sourceLibrary = library) {
     const categories = Array.isArray(sourceLibrary)
         ? sourceLibrary

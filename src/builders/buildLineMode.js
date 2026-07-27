@@ -7,12 +7,15 @@ import {
     getCodeMirrorText,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
+import { createDrawer } from '../helpers/drawerHelper'
 import { checkWithPyrefly } from '../helpers/pyreflyHelper'
 
+/** @returns {EditorMode} Configured Python line-editor mode. */
 export default () => {
     const view = createCodeMirrorView()
     view.dom.id = 'line-editor-canvas'
 
+    /** Restores line-editor source from local storage. */
     const loadState = () => {
         const savedState = localStorage.getItem('codeMirrorState')
         if (savedState) {
@@ -21,6 +24,7 @@ export default () => {
     }
     loadState()
 
+    /** Saves line-editor source to local storage. */
     const saveState = () => {
         localStorage.setItem('codeMirrorState', getCodeMirrorText(view))
     }
@@ -29,6 +33,10 @@ export default () => {
     view.dom.addEventListener('focus', saveState)
     view.dom.addEventListener('blur', saveState)
 
+    /**
+     * Downloads the current Python source as a project archive.
+     * @param {HTMLInputElement} ProjectNameInput Project-name field.
+     */
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
 
@@ -40,6 +48,10 @@ export default () => {
         ])
     }
 
+    /**
+     * Opens a dialog that imports a Python source file.
+     * @param {HTMLInputElement} ProjectNameInput Project-name field.
+     */
     const loadCode = (ProjectNameInput) => {
         const FileInput = tag('input', {
             type: 'file',
@@ -56,13 +68,6 @@ export default () => {
 
                 const file = FileInput.files[0]
 
-                // TODO: find some way to retreive proj name from .PY file.
-                // // Set project name to the file name
-                // const projectName = file.name.replaceAll('.py', '')
-                // ProjectNameInput.value = projectName
-                // localStorage.setItem('projectName', projectName)
-
-                // Load the contents of the file
                 const reader = new FileReader()
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
@@ -96,37 +101,40 @@ export default () => {
         'Not checked',
     )
     const VerifyIssues = tag('div', { id: 'verify-issues' })
-    const IssuesDrawerTab = button(
-        { type: 'button', id: 'issues-drawer-tab' },
-        'Issues',
-    )
-    const IssuesDrawer = tag(
-        'issues-drawer',
-        { 'aria-expanded': 'false' },
-        IssuesDrawerTab,
-        tag(
-            'aside',
-            { id: 'issues-drawer-panel' },
+    const {
+        drawer: IssuesDrawer,
+        tab: IssuesDrawerTab,
+    } = createDrawer({
+        elementName: 'issues-drawer',
+        tabId: 'issues-drawer-tab',
+        panelId: 'issues-drawer-panel',
+        tabLabel: 'Issues',
+        panelContent: [
             tag('h2', 'Issues'),
             VerifyStatus,
             VerifyIssues,
-        ),
-    )
-
-    IssuesDrawerTab.addEventListener('click', () => {
-        const isOpen = IssuesDrawer.classList.toggle('open')
-        IssuesDrawer.setAttribute('aria-expanded', String(isOpen))
+        ],
     })
+
     IssuesDrawer.addEventListener('click', (event) => {
         event.stopPropagation()
     })
 
+    /**
+     * Updates visible and machine-readable verifier status.
+     * @param {string} status Status identifier used by CSS.
+     * @param {string} message Human-readable status text.
+     */
     const setVerifyStatus = (status, message) => {
         VerifyStatus.textContent = message
         VerifyStatus.dataset.status = status
         IssuesDrawer.dataset.status = status
     }
 
+    /**
+     * @param {object[]} diagnostics Verifier diagnostics.
+     * @returns {{error: number, warning: number, info: number}} Diagnostic totals.
+     */
     const countBySeverity = (diagnostics = []) => {
         const counts = { error: 0, warning: 0, info: 0 }
 
@@ -143,6 +151,10 @@ export default () => {
         return counts
     }
 
+    /**
+     * @param {object[]} diagnostics Verifier diagnostics.
+     * @returns {string} Human-readable diagnostic summary.
+     */
     const issueStatusText = (diagnostics = []) => {
         const { error, warning, info } = countBySeverity(diagnostics)
         const parts = []
@@ -162,12 +174,21 @@ export default () => {
         return parts.length ? `${parts.join(', ')} found` : 'No issues'
     }
 
+    /**
+     * Maps an arbitrary diagnostic severity to a supported CSS class.
+     * @param {string} severity Verifier severity.
+     * @returns {string} Supported issue class.
+     */
     const issueSeverityClass = (severity) => {
         if (severity === 'warning') return 'warning'
         if (severity === 'info') return 'info'
         return 'error'
     }
 
+    /**
+     * Renders up to five diagnostics in the issues drawer.
+     * @param {object[]} diagnostics Verifier diagnostics.
+     */
     const setVerifyIssues = (diagnostics) => {
         VerifyIssues.replaceChildren()
 
@@ -202,6 +223,10 @@ export default () => {
     let verifyRunId = 0
     let lastVerifiedCode = null
 
+    /**
+     * Verifies changed source and ignores results from superseded async runs.
+     * @returns {Promise<void>} Resolves after the current verification attempt.
+     */
     const runVerify = async () => {
         if (!view.dom.isConnected) {
             return
@@ -277,6 +302,10 @@ export default () => {
         }
     }
 
+    /**
+     * Debounces verification after editor activity.
+     * @param {number} delay Delay in milliseconds.
+     */
     const scheduleVerify = (delay = 700) => {
         clearTimeout(verifyTimeout)
         verifyTimeout = setTimeout(runVerify, delay)

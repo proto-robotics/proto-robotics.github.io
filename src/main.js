@@ -5,6 +5,7 @@ import { jengaBlocks } from './data/library'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 
+/** Builds either the coding page or full cheatsheet based on the URL query. */
 const main = () => {
     const { toolbox } = processJengaTower(jengaBlocks, pythonGenerator)
 

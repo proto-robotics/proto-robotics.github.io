@@ -1,6 +1,17 @@
 import { FieldDropdown, FieldImage, FieldNumber, FieldTextInput } from 'blockly'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 
+const simplePorts = [
+    ['0', '0'],
+    ['1', '1'],
+    ['2', '2'],
+    ['3', '3'],
+    ['4', '4'],
+    ['5', '5'],
+    ['6', '6'],
+    ['7', '7'],
+]
+
 const drivePorts = [
     ['0', '0'],
     ['1', '1'],
@@ -16,8 +27,8 @@ const buttonPorts = [
 ]
 
 const directionOptions = [
-    ['clockwise ↻', '1'],
-    ['counter-clockwise ↺', '-1'],
+    ['clockwise', '1'],
+    ['counter-clockwise', '-1'],
 ]
 
 /**
@@ -63,6 +74,42 @@ export const library = [
         entries: [
             {
                 entryType: 'block',
+                name: 'simple_motor',
+                description: 'Creates a continuous servo motor.',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldTextInput('simplemotor'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'is a simple motor\non port',
+                    },
+                    {
+                        field: () => new FieldDropdown(simplePorts),
+                        name: 'port',
+                    },
+                    {
+                        text: 'in direction',
+                    },
+                    {
+                        field: () => new FieldDropdown(directionOptions),
+                        name: 'direction',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
+                    const port = block.getFieldValue('port')
+                    const direction = block.getFieldValue('direction')
+                    const directionSnippet =
+                        direction === '1' ? '' : ', direction=-1'
+
+                    return `${name} = make.simple_motor(port=${port}${directionSnippet})\n`
+                },
+            },
+            {
+                entryType: 'block',
                 name: 'drivemotor',
                 description: 'Creates a DC motor.',
                 blocklyTemplate: [
@@ -95,6 +142,32 @@ export const library = [
                         direction === '1' ? '' : ', direction=-1'
 
                     return `${name} = make.drivemotor(port=${port}${directionSnippet})\n`
+                },
+            },
+            {
+                entryType: 'block',
+                name: 'servo',
+                description: 'Creates a positional servo.',
+                blocklyTemplate: [
+                    {
+                        field: () => new FieldTextInput('servo'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'is a servo on port',
+                    },
+                    {
+                        field: () => new FieldDropdown(simplePorts),
+                        name: 'port',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
+                    const port = block.getFieldValue('port')
+
+                    return `${name} = make.servo(port=${port})\n`
                 },
             },
             {
@@ -263,16 +336,88 @@ export const library = [
                 },
             },
             {
+                entryType: 'block',
+                name: 'moveto',
+                description: 'Moves a servo to an angle.',
+                blocklyTemplate: [
+                    {
+                        text: 'Move',
+                    },
+                    {
+                        field: () => new FieldTextInput('servo'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'to',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, 180, 0.1),
+                        name: 'angle',
+                    },
+                    {
+                        text: 'degrees',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
+                    const angle = block.getFieldValue('angle')
+
+                    return `${name}.moveto(angle=${angle})\n`
+                },
+            },
+            {
+                entryType: 'block',
+                name: 'movetoForTime',
+                description: 'Moves a servo to an angle and waits.',
+                blocklyTemplate: [
+                    {
+                        text: 'Move',
+                    },
+                    {
+                        field: () => new FieldTextInput('servo'),
+                        name: 'name',
+                    },
+                    {
+                        text: 'to',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, 180, 0.1),
+                        name: 'angle',
+                    },
+                    {
+                        text: 'degrees for',
+                    },
+                    {
+                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
+                        name: 'time',
+                    },
+                    {
+                        text: 'seconds',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const name = spacesToUnderscores(
+                        block.getFieldValue('name'),
+                    )
+                    const angle = block.getFieldValue('angle')
+                    const time = block.getFieldValue('time')
+
+                    return `${name}.moveto(angle=${angle}, seconds=${time})\n`
+                },
+            },
+            {
                 entryType: 'example',
-                name: 'Timed drive motor',
+                name: 'Timed simple motor',
                 preamble:
-                    'Runs a drive motor forward, reverses it, then stops it.',
+                    'Runs a simple motor forward, reverses it, then stops it.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'simple_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -302,6 +447,47 @@ export const library = [
                                                             name: 'arm_motor',
                                                         },
                                                     },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                entryType: 'example',
+                name: 'Servo sweep',
+                preamble:
+                    'Creates a servo, moves it to the middle, waits briefly, then returns it to the start.',
+                workspace: {
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [
+                            {
+                                type: 'servo',
+                                x: 12,
+                                y: 12,
+                                fields: {
+                                    name: 'servo_sam',
+                                    port: '1',
+                                },
+                                next: {
+                                    block: {
+                                        type: 'movetoForTime',
+                                        fields: {
+                                            name: 'servo_sam',
+                                            angle: '90',
+                                            time: '1',
+                                        },
+                                        next: {
+                                            block: {
+                                                type: 'moveto',
+                                                fields: {
+                                                    name: 'servo_sam',
+                                                    angle: '0',
                                                 },
                                             },
                                         },
@@ -1210,7 +1396,7 @@ export const library = [
                                         },
                                         next: {
                                             block: {
-                                                type: 'drivemotor',
+                                                type: 'simple_motor',
                                                 fields: {
                                                     name: 'intake',
                                                     port: '2',
@@ -1289,7 +1475,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'drivemotor',
+                                        type: 'simple_motor',
                                         fields: {
                                             name: 'arm',
                                             port: '2',
@@ -1353,7 +1539,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'simple_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -1417,7 +1603,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'drivemotor',
+                                        type: 'simple_motor',
                                         fields: {
                                             name: 'conveyor',
                                             port: '2',
@@ -1467,7 +1653,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'simple_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {

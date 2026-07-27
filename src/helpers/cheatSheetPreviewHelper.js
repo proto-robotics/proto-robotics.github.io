@@ -1,3 +1,8 @@
+/*
+ * Renders and sizes one read-only Blockly and/or Python preview. It does not
+ * decide which cheatsheet sections or entries exist.
+ */
+
 import { tag } from 'ellipsi'
 
 import {
@@ -13,6 +18,7 @@ const previewScale = 0.75
 const minPreviewScale = 0.3
 const previewRefitCallbacks = new WeakMap()
 
+/** Display combinations supported by cheat sheet previews. */
 export const CheatSheetPreviewMode = Object.freeze({
     BLOCKS: 'blocks',
     CODE: 'code',
@@ -22,8 +28,10 @@ export const CheatSheetPreviewMode = Object.freeze({
 /**
  * Creates a readonly CodeMirror view for displaying generated Python code in
  * cheat sheet entries.
+ * @param {string} pythonCode Generated Python source to display.
+ * @returns {EditorView} Readonly CodeMirror view sized by its caller.
  */
-export function createCodeFormatter(pythonCode) {
+function createCodeFormatter(pythonCode) {
     const codeFormatter = createCodeMirrorView({
         readonly: true,
         noGutter: true,
@@ -37,26 +45,11 @@ export function createCodeFormatter(pythonCode) {
 }
 
 /**
- * Wraps a single block type in Blockly's serialized workspace format so block
- * reference entries can use the same preview path as full examples.
- */
-export function createSingleBlockWorkspaceState(blockType) {
-    return {
-        blocks: {
-            languageVersion: 0,
-            blocks: [
-                {
-                    type: blockType,
-                    x: 12,
-                    y: 12,
-                },
-            ],
-        },
-    }
-}
-
-/**
  * Normalizes saved Blockly JSON for small preview workspaces.
+ * Each top-level block receives a predictable position so examples do not
+ * overlap when their saved coordinates are absent.
+ * @param {object} workspaceState Serialized Blockly workspace state.
+ * @returns {object} Preview-safe workspace state.
  */
 function normalizeWorkspaceState(workspaceState) {
     return {
@@ -74,6 +67,7 @@ function normalizeWorkspaceState(workspaceState) {
 
 /**
  * Forces every block in a preview workspace to render before measuring it.
+ * @param {object} blocklyInstance Readonly Blockly preview instance.
  */
 function renderPreviewBlocks(blocklyInstance) {
     for (const block of blocklyInstance.workspace.getAllBlocks(false)) {
@@ -83,6 +77,10 @@ function renderPreviewBlocks(blocklyInstance) {
 
 /**
  * Sizes the preview element to tightly fit the visible Blockly blocks.
+ * The scale is reduced only when the available column is narrower than the
+ * preview's natural width, then blocks are repositioned into padded bounds.
+ * @param {object} blocklyInstance Readonly Blockly preview instance.
+ * @param {HTMLElement} preview Preview container element.
  */
 function fitPreviewToBlocks(blocklyInstance, preview) {
     renderPreviewBlocks(blocklyInstance)
@@ -117,6 +115,11 @@ function fitPreviewToBlocks(blocklyInstance, preview) {
     blocklyInstance.canvas.style.height = `${previewHeight}px`
 }
 
+/**
+ * Returns the usable preview width, preferring the parent column's width.
+ * @param {HTMLElement} preview Preview container element.
+ * @returns {number} Positive available width in pixels.
+ */
 function getMaxPreviewWidth(preview) {
     return Math.max(
         1,
@@ -127,8 +130,10 @@ function getMaxPreviewWidth(preview) {
 /**
  * Creates a readonly Blockly preview from serialized Blockly workspace JSON
  * and returns both the preview element and its generated Python code.
+ * @param {object} workspaceState Serialized Blockly workspace state.
+ * @returns {{element: HTMLElement, code: string}} Preview element and code.
  */
-export function createBlocklyPreview(workspaceState) {
+function createBlocklyPreview(workspaceState) {
     const normalizedWorkspaceState = normalizeWorkspaceState(workspaceState)
     const blocklyInstance = createBlocklyInstance(undefined, {
         id: `cheatsheet-blockly-preview-${previewId++}`,
@@ -179,6 +184,7 @@ export function createBlocklyPreview(workspaceState) {
 /**
  * Refits all Blockly previews inside a container after the container's column
  * width changes, such as when the browser enters print layout.
+ * @param {HTMLElement} container Element containing preview elements.
  */
 export function fitCheatSheetBlockPreviews(container) {
     for (const preview of container.querySelectorAll('blockly-preview')) {
@@ -188,6 +194,10 @@ export function fitCheatSheetBlockPreviews(container) {
 
 /**
  * Creates the rendered cheat sheet preview for the requested display mode.
+ * @param {object} workspaceState Serialized Blockly workspace state.
+ * @param {object} options Preview display options.
+ * @param {string} [options.mode='blocks-and-code'] Requested display mode.
+ * @returns {HTMLElement} Combined Blockly and/or code preview element.
  */
 export function createCheatSheetPreview(
     workspaceState,

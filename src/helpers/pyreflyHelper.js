@@ -1,11 +1,59 @@
 import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
 import * as pyrefly from '../pyrefly/pyrefly_wasm'
 
+/**
+ * Browser-side bridge to Pyrefly's WebAssembly API. The generated vocabulary
+ * remains the public API source of truth; this module renders it as a small
+ * temporary `make.pyi` file for Pyrefly and converts diagnostics for CodeMirror.
+ */
 let pyreflyState = null
 
 const mainFileName = 'main.py'
 const pythonVersion = pythonLibraryVocab.lint?.pythonVersion ?? '3.12'
 
+/**
+ * Renders structured vocabulary parameters as typed Python stub parameters.
+ * @param {object[]} parameters Structured API parameters.
+ * @returns {string} Comma-separated Python parameters.
+ */
+const lintParameters = (parameters = []) =>
+    parameters
+        .map(({ name, annotation, default: defaultValue }) => {
+            const type = annotation ?? 'Any'
+            return `${name}: ${type}${defaultValue === null ? '' : ` = ${defaultValue}`}`
+        })
+        .join(', ')
+
+/** @returns {string} Non-executable public `make` stub for Pyrefly. */
+const publicStubForPyrefly = () => {
+    const api = pythonLibraryVocab.autocomplete ?? {}
+    const definitions = ['from typing import Any', '']
+
+    for (const member of api.members ?? []) {
+        if (member.kind === 'function') {
+            definitions.push(
+                `def ${member.name}(${lintParameters(member.parameters)}) -> ${member.resultType ?? 'Any'}: ...`,
+                '',
+            )
+            continue
+        }
+
+        definitions.push(`class ${member.name}:`)
+        definitions.push(
+            `    def __init__(self${member.parameters?.length ? `, ${lintParameters(member.parameters)}` : ''}) -> None: ...`,
+        )
+        for (const method of api.methodsByType?.[member.name] ?? []) {
+            definitions.push(
+                `    def ${method.name}(self${method.parameters?.length ? `, ${lintParameters(method.parameters)}` : ''}) -> ${method.resultType ?? 'Any'}: ...`,
+            )
+        }
+        definitions.push('')
+    }
+
+    return definitions.join('\n')
+}
+
+/** @returns {Record<string, string>} In-memory files used by Pyrefly. */
 const lintFilesForPyrefly = () => {
     const files = {
         [mainFileName]: '',
@@ -16,15 +64,12 @@ const lintFilesForPyrefly = () => {
         ].join('\n'),
     }
 
-    for (const [path, source] of Object.entries(
-        pythonLibraryVocab.lint?.files ?? {},
-    )) {
-        files[path] = source
-    }
+    files['make.pyi'] = publicStubForPyrefly()
 
     return files
 }
 
+/** @returns {Promise<object|null>} Shared Pyrefly state, or null if unavailable. */
 const ensurePyreflyState = async () => {
     if (typeof pyrefly.State !== 'function') {
         return null
@@ -43,6 +88,13 @@ const ensurePyreflyState = async () => {
     return pyreflyState
 }
 
+/**
+ * Converts Pyrefly's one-based line/column locations into CodeMirror offsets.
+ * @param {string} code Python source.
+ * @param {number} lineNumber One-based line number.
+ * @param {number} column One-based column number.
+ * @returns {number} Zero-based document offset.
+ */
 const lineOffsetToIndex = (code, lineNumber, column) => {
     const safeLine = Math.max(lineNumber ?? 1, 1)
     const lineStart =
@@ -51,6 +103,11 @@ const lineOffsetToIndex = (code, lineNumber, column) => {
     return lineStart + Math.max((column ?? 1) - 1, 0)
 }
 
+/**
+ * Normalizes Pyrefly's string or numeric severities to CodeMirror values.
+ * @param {string|number} severity Pyrefly severity value.
+ * @returns {string|null} CodeMirror severity, or null when unknown.
+ */
 const severityFromPyreflyValue = (severity) => {
     if (typeof severity === 'string') {
         const normalizedSeverity = severity.toLowerCase()
@@ -72,6 +129,11 @@ const severityFromPyreflyValue = (severity) => {
     return null
 }
 
+/**
+ * Keeps unused-code diagnostics informational while preserving Pyrefly severity.
+ * @param {object} error Pyrefly diagnostic.
+ * @returns {string} CodeMirror severity.
+ */
 const toCodeMirrorSeverity = (error) => {
     if (
         ['unused-import', 'unused-variable', 'unused-parameter'].includes(
@@ -90,6 +152,12 @@ const toCodeMirrorSeverity = (error) => {
     return 'error'
 }
 
+/**
+ * Maps one Pyrefly diagnostic to the shape consumed by the line editor.
+ * @param {object} error Pyrefly diagnostic.
+ * @param {string} code Python source.
+ * @returns {object|null} CodeMirror diagnostic, or null when ignored.
+ */
 const mapPyreflyError = (error, code) => {
     const from = lineOffsetToIndex(code, error.startLineNumber, error.startColumn)
     const to = Math.max(
@@ -115,6 +183,15 @@ const mapPyreflyError = (error, code) => {
     }
 }
 
+/**
+ * Lints editor code with the in-memory public API.
+ *
+ * Returns `null` only when the bundled WASM API is unavailable. Otherwise it
+ * returns a normalized CodeMirror-compatible result, including first-error
+ * summary fields used by the lint status UI.
+ * @param {string} code Python source to lint.
+ * @returns {Promise<object|null>} Normalized lint result or null when unavailable.
+ */
 export const checkWithPyrefly = async (code) => {
     const state = await ensurePyreflyState()
 
@@ -138,25 +215,15 @@ export const checkWithPyrefly = async (code) => {
         .map((error) => mapPyreflyError(error, code))
         .filter(Boolean)
 
-    return diagnostics.length
-        ? {
-              error: diagnostics[0].message,
-              error_line_num: diagnostics[0].line,
-              error_line_offset: diagnostics[0].column,
-              diagnostics,
-              warnings: [],
-              warnings_linenum: [],
-              warnings_offset: [],
-              checker: 'pyrefly',
-          }
-        : {
-              error: null,
-              error_line_num: null,
-              error_line_offset: null,
-              diagnostics: [],
-              warnings: [],
-              warnings_linenum: [],
-              warnings_offset: [],
-              checker: 'pyrefly',
-          }
+    const firstDiagnostic = diagnostics[0] ?? null
+    return {
+        error: firstDiagnostic?.message ?? null,
+        error_line_num: firstDiagnostic?.line ?? null,
+        error_line_offset: firstDiagnostic?.column ?? null,
+        diagnostics,
+        warnings: [],
+        warnings_linenum: [],
+        warnings_offset: [],
+        checker: 'pyrefly',
+    }
 }

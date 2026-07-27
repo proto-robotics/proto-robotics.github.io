@@ -3,25 +3,29 @@ import { a, button, footer, header, img, on, span, tag } from 'ellipsi'
 import buildBlockMode from './buildBlockMode'
 import buildLineMode from './buildLineMode'
 import {
+    buildCheatSheetContent,
     cheatSheetBlockElementNumbers,
-    createCheatSheetContent,
-} from './BuildCheatSheet'
+} from './buildCheatSheetContent'
 import { EditorMode } from '../classes/editorMode'
-import cheatSheetDrawerHelper from '../helpers/cheatSheetDrawerHelper'
+import createCheatSheetDrawer from '../helpers/cheatSheetDrawerHelper'
 
+/**
+ * Builds the main coding page and its two editor modes.
+ * @param {object} toolbox Blockly toolbox configuration.
+ * @returns {HTMLElement[]} Top-level page elements.
+ */
 export default (toolbox) => {
     const blockMode = buildBlockMode(toolbox)
     const lineMode = buildLineMode()
 
     /** @type {EditorMode} The current editor mode. */
     let currentMode = null
-    // Contains the current editor element.
+    /** Container holding whichever editor mode is active. */
     const EditorContainer = span({ id: 'editor-container' })
 
     /**
      * Swaps the current editor.
-     * @param {EditorMode?} targetMode The target editor mode.  If null, toggles between
-     * editors.
+     * @param {EditorMode|null} targetMode Target mode, or null to toggle modes.
      */
     const switchEditor = (targetMode = null) => {
         if (currentMode) {
@@ -94,7 +98,7 @@ export default (toolbox) => {
         a(
             { href: 'https://protorobotics.org/index.html', target: '_self' },
             img({
-                src: '/images/proto-logo.png',
+                src: '/assets/images/proto-logo.png',
                 alt: 'The PROTO logo',
                 height: '32',
             }),
@@ -105,9 +109,9 @@ export default (toolbox) => {
         ),
     )
 
-    const CheatSheetDrawer = cheatSheetDrawerHelper(
+    const CheatSheetDrawer = createCheatSheetDrawer(
         () =>
-            createCheatSheetContent({
+            buildCheatSheetContent({
                 showPrint: false,
                 showOpenFullCheatSheet: true,
             }),

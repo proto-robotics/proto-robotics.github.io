@@ -1,435 +1,388 @@
 {
-  "version": 2,
+  "version": 1,
   "module": "make",
   "lint": {
-    "pythonVersion": "3.12",
-    "files": {
-      "make.pyi": "\"\"\"The learner-facing PROTO Robotics API.\n\nThis stub intentionally describes only the supported ``make`` API. Hardware\nconfiguration and schema internals remain implementation details in make.py.\n\"\"\"\n\nfrom typing import Callable\n\n\ndef wait(seconds: float = 0.05) -> None:\n    \"\"\"Wait the given number of seconds before moving on.\"\"\"\n    ...\n\n\ndef wait_until(condition: Callable[[], bool]) -> None:\n    \"\"\"Wait until a condition is true.\"\"\"\n    ...\n\n\ndef wait_while(condition: Callable[[], bool]) -> None:\n    \"\"\"Wait while a condition is true.\"\"\"\n    ...\n\n\nclass simple_motor:\n    \"\"\"A continuous servo connected to a general port.\"\"\"\n\n    def __init__(self, port: int, direction: int = 1) -> None:\n        \"\"\"Create a motor on a port; use -1 to reverse its direction.\"\"\"\n        ...\n\n    def spin(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin at a power from -100 to 100, optionally for a duration.\"\"\"\n        ...\n\n    def spin_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin backward at a power from -100 to 100.\"\"\"\n        ...\n\n    def stop(self) -> None:\n        \"\"\"Stop the motor.\"\"\"\n        ...\n\n\nclass drivemotor:\n    \"\"\"A DC motor connected to a drivetrain port.\"\"\"\n\n    def __init__(self, port: int, direction: int = 1) -> None:\n        \"\"\"Create a motor on a port; use -1 to reverse its direction.\"\"\"\n        ...\n\n    def spin(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin at a power from -100 to 100, optionally for a duration.\"\"\"\n        ...\n\n    def spin_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Spin backward at a power from -100 to 100.\"\"\"\n        ...\n\n    def stop(self) -> None:\n        \"\"\"Stop the motor.\"\"\"\n        ...\n\n\nclass drivetrain:\n    \"\"\"A paired drivetrain made from two DC motors or continuous servos.\"\"\"\n\n    def __init__(\n        self,\n        left_motor: simple_motor | drivemotor,\n        right_motor: simple_motor | drivemotor,\n        drift: float = 1,\n    ) -> None:\n        \"\"\"Create a drivetrain from its left and right motors.\"\"\"\n        ...\n\n    def curve(\n        self,\n        left_power: float,\n        right_power: float,\n        seconds: float | None = None,\n    ) -> None:\n        \"\"\"Drive the two motors at different powers.\"\"\"\n        ...\n\n    def drive(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Drive both motors at the same power.\"\"\"\n        ...\n\n    def turn(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Turn in place at the given power.\"\"\"\n        ...\n\n    def curve_back(\n        self,\n        left_power: float,\n        right_power: float,\n        seconds: float | None = None,\n    ) -> None:\n        \"\"\"Drive backward with different motor powers.\"\"\"\n        ...\n\n    def drive_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Drive backward at the same power.\"\"\"\n        ...\n\n    def turn_back(self, power: float, seconds: float | None = None) -> None:\n        \"\"\"Turn backward in place at the given power.\"\"\"\n        ...\n\n    def stop(self) -> None:\n        \"\"\"Stop both motors.\"\"\"\n        ...\n\n\nclass servo:\n    \"\"\"A positional servo connected to a small motor or GROVE port.\"\"\"\n\n    def __init__(self, port: int) -> None:\n        \"\"\"Create a servo on a port.\"\"\"\n        ...\n\n    def moveto(self, angle: float, seconds: float | None = None) -> None:\n        \"\"\"Rotate the servo to an angle from 0 to 180 degrees.\"\"\"\n        ...\n\n\nclass button:\n    \"\"\"A button connected to a built-in or GROVE port.\"\"\"\n\n    def __init__(self, port: int) -> None:\n        \"\"\"Create a button on a port.\"\"\"\n        ...\n\n    def pressed(self, debounce: bool = True) -> bool:\n        \"\"\"Return whether the button is pressed.\"\"\"\n        ...\n\n    def held(self) -> bool:\n        \"\"\"Return whether the button is held down.\"\"\"\n        ...\n\n    def free_port(self) -> None:\n        \"\"\"Disable this button and free its port.\"\"\"\n        ...\n\n\nclass light:\n    \"\"\"A single LED connected to a port.\"\"\"\n\n    def __init__(self, port: int) -> None:\n        \"\"\"Create a light on a port.\"\"\"\n        ...\n\n    def on(self, seconds: float | None = None) -> None:\n        \"\"\"Turn the LED on, optionally for a duration.\"\"\"\n        ...\n\n    def off(self, seconds: float | None = None) -> None:\n        \"\"\"Turn the LED off, optionally for a duration.\"\"\"\n        ...\n\n    def toggle(self) -> None:\n        \"\"\"Toggle the LED.\"\"\"\n        ...\n\n    def free_port(self) -> None:\n        \"\"\"Disable this light and free its port.\"\"\"\n        ...\n"
-    }
+    "pythonVersion": "3.12"
   },
   "autocomplete": {
     "members": [
       {
-        "path": "make.wait",
         "name": "wait",
         "kind": "function",
-        "description": "Wait the given number of seconds before moving on.",
+        "description": "Wait for the given number of seconds; the default is 0.05 seconds.",
         "parameters": [
           {
             "name": "seconds",
+            "annotation": "float",
             "default": "0.05",
             "required": false
           }
         ],
-        "resultType": null,
+        "resultType": "None",
+        "path": "make.wait",
         "category": "Time"
       },
       {
-        "path": "make.wait_until",
         "name": "wait_until",
         "kind": "function",
-        "description": "Wait until a condition is true.",
+        "description": "Wait until the given condition returns true.",
         "parameters": [
           {
             "name": "condition",
+            "annotation": null,
             "default": null,
             "required": true
           }
         ],
-        "resultType": null,
+        "resultType": "None",
+        "path": "make.wait_until",
         "category": "Time"
       },
       {
-        "path": "make.wait_while",
         "name": "wait_while",
         "kind": "function",
-        "description": "Wait while a condition is true.",
+        "description": "Wait while the given condition returns true.",
         "parameters": [
           {
             "name": "condition",
+            "annotation": null,
             "default": null,
             "required": true
           }
         ],
-        "resultType": null,
+        "resultType": "None",
+        "path": "make.wait_while",
         "category": "Time"
       },
       {
-        "path": "make.simple_motor",
-        "name": "simple_motor",
-        "kind": "constructor",
-        "description": "A continuous servo connected to a general port.",
-        "parameters": [
-          {
-            "name": "port",
-            "default": null,
-            "required": true
-          },
-          {
-            "name": "direction",
-            "default": "1",
-            "required": false
-          }
-        ],
-        "resultType": "simple_motor",
-        "category": "Motor"
-      },
-      {
-        "path": "make.drivemotor",
         "name": "drivemotor",
         "kind": "constructor",
-        "description": "A DC motor connected to a drivetrain port.",
+        "description": "A DC motor connected to a drive port.",
         "parameters": [
           {
             "name": "port",
+            "annotation": "int",
             "default": null,
             "required": true
           },
           {
             "name": "direction",
+            "annotation": "int",
             "default": "1",
             "required": false
           }
         ],
         "resultType": "drivemotor",
+        "path": "make.drivemotor",
         "category": "Motor"
       },
       {
-        "path": "make.drivetrain",
         "name": "drivetrain",
         "kind": "constructor",
-        "description": "A paired drivetrain made from two DC motors or continuous servos.",
+        "description": "A drivetrain made from two DC motors.",
         "parameters": [
           {
             "name": "left_motor",
+            "annotation": "drivemotor",
             "default": null,
             "required": true
           },
           {
             "name": "right_motor",
+            "annotation": "drivemotor",
             "default": null,
             "required": true
           },
           {
             "name": "drift",
+            "annotation": "float",
             "default": "1",
             "required": false
           }
         ],
         "resultType": "drivetrain",
+        "path": "make.drivetrain",
         "category": "Motor"
       },
       {
-        "path": "make.servo",
-        "name": "servo",
-        "kind": "constructor",
-        "description": "A positional servo connected to a small motor or GROVE port.",
-        "parameters": [
-          {
-            "name": "port",
-            "default": null,
-            "required": true
-          }
-        ],
-        "resultType": "servo",
-        "category": "Motor"
-      },
-      {
-        "path": "make.button",
         "name": "button",
         "kind": "constructor",
-        "description": "A button connected to a built-in or GROVE port.",
+        "description": "A button built into the board or connected to a GROVE port.",
         "parameters": [
           {
             "name": "port",
+            "annotation": "int",
             "default": null,
             "required": true
           }
         ],
         "resultType": "button",
+        "path": "make.button",
         "category": "Input"
       },
       {
-        "path": "make.light",
         "name": "light",
         "kind": "constructor",
-        "description": "A single LED connected to a port.",
+        "description": "A single LED connected to a board port.",
         "parameters": [
           {
             "name": "port",
+            "annotation": "int",
             "default": null,
             "required": true
           }
         ],
         "resultType": "light",
+        "path": "make.light",
         "category": "Output"
       }
     ],
     "methodsByType": {
-      "simple_motor": [
-        {
-          "name": "spin",
-          "description": "Spin at a power from -100 to 100, optionally for a duration.",
-          "parameters": [
-            {
-              "name": "power",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "default": "None",
-              "required": false
-            }
-          ]
-        },
-        {
-          "name": "spin_back",
-          "description": "Spin backward at a power from -100 to 100.",
-          "parameters": [
-            {
-              "name": "power",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "default": "None",
-              "required": false
-            }
-          ]
-        },
-        {
-          "name": "stop",
-          "description": "Stop the motor.",
-          "parameters": []
-        }
-      ],
       "drivemotor": [
         {
           "name": "spin",
-          "description": "Spin at a power from -100 to 100, optionally for a duration.",
+          "description": "Spin at the given power, optionally stopping after a number of seconds.",
           "parameters": [
             {
               "name": "power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "spin_back",
-          "description": "Spin backward at a power from -100 to 100.",
+          "description": "Spin backward at the given power, optionally stopping after a number\n        of seconds.",
           "parameters": [
             {
               "name": "power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "stop",
           "description": "Stop the motor.",
-          "parameters": []
+          "parameters": [],
+          "resultType": "None"
         }
       ],
       "drivetrain": [
         {
           "name": "curve",
-          "description": "Drive the two motors at different powers.",
+          "description": "Drive each motor at a different power, optionally for a duration.",
           "parameters": [
             {
               "name": "left_power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "right_power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "drive",
-          "description": "Drive both motors at the same power.",
+          "description": "Drive both motors at the same power, optionally for a duration.",
           "parameters": [
             {
               "name": "power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "turn",
-          "description": "Turn in place at the given power.",
+          "description": "Turn in place at the given power, optionally for a duration.",
           "parameters": [
             {
               "name": "power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "curve_back",
-          "description": "Drive backward with different motor powers.",
+          "description": "Drive backward with different motor powers, optionally for a duration.",
           "parameters": [
             {
               "name": "left_power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "right_power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "drive_back",
-          "description": "Drive backward at the same power.",
+          "description": "Drive backward at one power, optionally for a duration.",
           "parameters": [
             {
               "name": "power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "turn_back",
-          "description": "Turn backward in place at the given power.",
+          "description": "Turn in the reverse direction, optionally for a duration.",
           "parameters": [
             {
               "name": "power",
+              "annotation": "float",
               "default": null,
               "required": true
             },
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": "None"
         },
         {
           "name": "stop",
           "description": "Stop both motors.",
-          "parameters": []
-        }
-      ],
-      "servo": [
-        {
-          "name": "moveto",
-          "description": "Rotate the servo to an angle from 0 to 180 degrees.",
-          "parameters": [
-            {
-              "name": "angle",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "default": "None",
-              "required": false
-            }
-          ]
+          "parameters": [],
+          "resultType": "None"
         }
       ],
       "button": [
         {
           "name": "pressed",
-          "description": "Return whether the button is pressed.",
+          "description": "Return whether the button was newly pressed or remains pressed.",
           "parameters": [
             {
               "name": "debounce",
+              "annotation": "bool",
               "default": "True",
               "required": false
             }
-          ]
+          ],
+          "resultType": "bool"
         },
         {
           "name": "held",
-          "description": "Return whether the button is held down.",
-          "parameters": []
+          "description": "Return whether the button is currently held down.",
+          "parameters": [],
+          "resultType": "bool"
         },
         {
           "name": "free_port",
-          "description": "Disable this button and free its port.",
-          "parameters": []
+          "description": "Disable this button and release its port.",
+          "parameters": [],
+          "resultType": "None"
         }
       ],
       "light": [
         {
           "name": "on",
-          "description": "Turn the LED on, optionally for a duration.",
+          "description": "Turn the LED on, optionally for a number of seconds.",
           "parameters": [
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": null
         },
         {
           "name": "off",
-          "description": "Turn the LED off, optionally for a duration.",
+          "description": "Turn the LED off, optionally for a number of seconds.",
           "parameters": [
             {
               "name": "seconds",
+              "annotation": "float",
               "default": "None",
               "required": false
             }
-          ]
+          ],
+          "resultType": null
         },
         {
           "name": "toggle",
-          "description": "Toggle the LED.",
-          "parameters": []
+          "description": "Toggle the LED between on and off.",
+          "parameters": [],
+          "resultType": null
         },
         {
           "name": "free_port",
-          "description": "Disable this light and free its port.",
-          "parameters": []
+          "description": "Disable this light and release its port.",
+          "parameters": [],
+          "resultType": "None"
         }
       ]
     }
