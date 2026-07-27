@@ -1,179 +1,256 @@
 import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
 import * as pyrefly from '../pyrefly/pyrefly_wasm'
 
-/**
- * Browser-side bridge to Pyrefly's WebAssembly API. The generated vocabulary
- * remains the public API source of truth; this module renders it as a small
- * temporary `make.pyi` file for Pyrefly and converts diagnostics for CodeMirror.
- */
-let pyreflyState = null
+// Browser-side bridge between the editor and Pyrefly's WebAssembly API.
+// The vocabulary remains the public API source of truth. This helper presents
+// that API to Pyrefly as a small, non-executable `make.pyi` file.
 
-const mainFileName = 'main.py'
-const pythonVersion = pythonLibraryVocab.lint?.pythonVersion ?? '3.12'
+const MAIN_FILE_NAME = 'main.py'
+const API_STUB_FILE_NAME = 'make.pyi'
+const CONFIG_FILE_NAME = 'pyrefly.toml'
+const PYTHON_VERSION = pythonLibraryVocab.lint?.pythonVersion ?? '3.12'
+
+const INFORMATIONAL_DIAGNOSTICS = new Set([
+    'unused-import',
+    'unused-variable',
+    'unused-parameter',
+])
+
+const STRING_SEVERITIES = {
+    ignore: 'ignore',
+    info: 'info',
+    warn: 'warning',
+    warning: 'warning',
+    error: 'error',
+}
+
+const NUMERIC_SEVERITIES = {
+    1: 'error',
+    2: 'warning',
+    3: 'info',
+    4: 'info',
+}
+
+let pyreflyStatePromise = null
 
 /**
- * Renders structured vocabulary parameters as typed Python stub parameters.
+ * Formats structured vocabulary parameters as typed Python stub parameters.
  * @param {object[]} parameters Structured API parameters.
  * @returns {string} Comma-separated Python parameters.
  */
-const lintParameters = (parameters = []) =>
-    parameters
+function formatStubParameters(parameters = []) {
+    return parameters
         .map(({ name, annotation, default: defaultValue }) => {
             const type = annotation ?? 'Any'
-            return `${name}: ${type}${defaultValue === null ? '' : ` = ${defaultValue}`}`
+            const defaultExpression =
+                defaultValue === null ? '' : ` = ${defaultValue}`
+
+            return `${name}: ${type}${defaultExpression}`
         })
         .join(', ')
+}
 
-/** @returns {string} Non-executable public `make` stub for Pyrefly. */
-const publicStubForPyrefly = () => {
-    const api = pythonLibraryVocab.autocomplete ?? {}
+/**
+ * Formats parameters that follow `self` in a class method signature.
+ * @param {object[]} parameters Structured API parameters.
+ * @returns {string} Empty text or a comma-prefixed parameter list.
+ */
+function formatMethodParameters(parameters = []) {
+    const formattedParameters = formatStubParameters(parameters)
+    return formattedParameters ? `, ${formattedParameters}` : ''
+}
+
+/**
+ * Builds the public `make` API stub used for type checking and completion.
+ * @returns {string} Non-executable Python stub source.
+ */
+function buildPublicApiStub() {
+    const autocomplete = pythonLibraryVocab.autocomplete ?? {}
     const definitions = ['from typing import Any', '']
 
-    for (const member of api.members ?? []) {
+    for (const member of autocomplete.members ?? []) {
         if (member.kind === 'function') {
+            const parameters = formatStubParameters(member.parameters)
+            const resultType = member.resultType ?? 'Any'
+
             definitions.push(
-                `def ${member.name}(${lintParameters(member.parameters)}) -> ${member.resultType ?? 'Any'}: ...`,
+                `def ${member.name}(${parameters}) -> ${resultType}: ...`,
                 '',
             )
             continue
         }
 
-        definitions.push(`class ${member.name}:`)
+        const constructorParameters = formatMethodParameters(member.parameters)
         definitions.push(
-            `    def __init__(self${member.parameters?.length ? `, ${lintParameters(member.parameters)}` : ''}) -> None: ...`,
+            `class ${member.name}:`,
+            `    def __init__(self${constructorParameters}) -> None: ...`,
         )
-        for (const method of api.methodsByType?.[member.name] ?? []) {
+
+        const methods = autocomplete.methodsByType?.[member.name] ?? []
+        for (const method of methods) {
+            const parameters = formatMethodParameters(method.parameters)
+            const resultType = method.resultType ?? 'Any'
+
             definitions.push(
-                `    def ${method.name}(self${method.parameters?.length ? `, ${lintParameters(method.parameters)}` : ''}) -> ${method.resultType ?? 'Any'}: ...`,
+                `    def ${method.name}(self${parameters}) -> ${resultType}: ...`,
             )
         }
+
         definitions.push('')
     }
 
     return definitions.join('\n')
 }
 
-/** @returns {Record<string, string>} In-memory files used by Pyrefly. */
-const lintFilesForPyrefly = () => {
-    const files = {
-        [mainFileName]: '',
-        'pyrefly.toml': [
-            `python-version = "${pythonVersion}"`,
-            '[errors]',
-            "unimported-directive = 'ignore'",
-        ].join('\n'),
+/**
+ * Builds the virtual files Pyrefly needs when its shared state is initialized.
+ * @returns {Record<string, string>} Filename-to-source mapping.
+ */
+function buildInitialPyreflyFiles() {
+    const configuration = [
+        `python-version = "${PYTHON_VERSION}"`,
+        '[errors]',
+        "unimported-directive = 'ignore'",
+    ].join('\n')
+
+    return {
+        [MAIN_FILE_NAME]: '',
+        [CONFIG_FILE_NAME]: configuration,
+        [API_STUB_FILE_NAME]: buildPublicApiStub(),
     }
-
-    files['make.pyi'] = publicStubForPyrefly()
-
-    return files
 }
 
-/** @returns {Promise<object|null>} Shared Pyrefly state, or null if unavailable. */
-const ensurePyreflyState = async () => {
+/**
+ * Initializes the WASM module and its in-memory project.
+ * @returns {Promise<object|null>} Initialized Pyrefly state, or null when the
+ * bundled API is unavailable.
+ */
+async function createPyreflyState() {
     if (typeof pyrefly.State !== 'function') {
         return null
     }
 
-    if (!pyreflyState) {
-        if (typeof pyrefly.default === 'function') {
-            await pyrefly.default()
-        }
-
-        pyreflyState = new pyrefly.State(pythonVersion)
-        pyreflyState.updateSandboxFiles(lintFilesForPyrefly(), true)
-        pyreflyState.setActiveFile(mainFileName)
+    // wasm-bindgen exposes its module loader as the default export. Some builds
+    // initialize it elsewhere, so only invoke it when the function is present.
+    if (typeof pyrefly.default === 'function') {
+        await pyrefly.default()
     }
 
-    return pyreflyState
+    const state = new pyrefly.State(PYTHON_VERSION)
+    state.updateSandboxFiles(buildInitialPyreflyFiles(), true)
+    state.setActiveFile(MAIN_FILE_NAME)
+    return state
 }
 
 /**
- * Converts Pyrefly's one-based line/column locations into CodeMirror offsets.
+ * Returns the single shared Pyrefly state used by linting and autocomplete.
+ * Storing the promise prevents both features from initializing WASM at once.
+ * @returns {Promise<object|null>} Shared Pyrefly state.
+ */
+function getPyreflyState() {
+    if (!pyreflyStatePromise) {
+        pyreflyStatePromise = createPyreflyState()
+    }
+
+    return pyreflyStatePromise
+}
+
+/**
+ * Replaces only the user's virtual file, leaving the API stub untouched.
+ * @param {object} state Initialized Pyrefly state.
+ * @param {string} code Current Python source.
+ */
+function updateActivePythonFile(state, code) {
+    state.updateSingleFile(MAIN_FILE_NAME, code)
+    state.setActiveFile(MAIN_FILE_NAME)
+}
+
+/**
+ * Converts Pyrefly's one-based line and column into a document offset.
  * @param {string} code Python source.
  * @param {number} lineNumber One-based line number.
  * @param {number} column One-based column number.
  * @returns {number} Zero-based document offset.
  */
-const lineOffsetToIndex = (code, lineNumber, column) => {
-    const safeLine = Math.max(lineNumber ?? 1, 1)
-    const lineStart =
-        safeLine > 1 ? code.split('\n').slice(0, safeLine - 1).join('\n').length + 1 : 0
+function pyreflyPositionToOffset(code, lineNumber, column) {
+    const lines = code.split('\n')
+    const requestedLineIndex = Math.max((lineNumber ?? 1) - 1, 0)
+    const existingLineIndex = Math.min(requestedLineIndex, lines.length - 1)
 
-    return lineStart + Math.max((column ?? 1) - 1, 0)
+    // Add one character per preceding newline because split() removes them.
+    const lineStart = lines
+        .slice(0, existingLineIndex)
+        .reduce((offset, line) => offset + line.length + 1, 0)
+
+    const requestedColumnOffset = Math.max((column ?? 1) - 1, 0)
+    const lineLength = lines[existingLineIndex]?.length ?? 0
+    const columnOffset = Math.min(requestedColumnOffset, lineLength)
+
+    return lineStart + columnOffset
 }
 
 /**
- * Normalizes Pyrefly's string or numeric severities to CodeMirror values.
+ * Normalizes the string and numeric severities emitted by Pyrefly builds.
  * @param {string|number} severity Pyrefly severity value.
  * @returns {string|null} CodeMirror severity, or null when unknown.
  */
-const severityFromPyreflyValue = (severity) => {
+function normalizePyreflySeverity(severity) {
     if (typeof severity === 'string') {
-        const normalizedSeverity = severity.toLowerCase()
-        if (normalizedSeverity === 'ignore') return 'ignore'
-        if (normalizedSeverity === 'info') return 'info'
-        if (normalizedSeverity === 'warn') return 'warning'
-        if (normalizedSeverity === 'warning') return 'warning'
-        if (normalizedSeverity === 'error') return 'error'
-
-        return null
+        return STRING_SEVERITIES[severity.toLowerCase()] ?? null
     }
 
     if (typeof severity === 'number') {
-        if (severity === 1) return 'error'
-        if (severity === 2) return 'warning'
-        if (severity === 3 || severity === 4) return 'info'
+        return NUMERIC_SEVERITIES[severity] ?? null
     }
 
     return null
 }
 
 /**
- * Keeps unused-code diagnostics informational while preserving Pyrefly severity.
+ * Chooses the severity shown by CodeMirror for a Pyrefly diagnostic.
  * @param {object} error Pyrefly diagnostic.
  * @returns {string} CodeMirror severity.
  */
-const toCodeMirrorSeverity = (error) => {
-    if (
-        ['unused-import', 'unused-variable', 'unused-parameter'].includes(
-            error.kind,
-        )
-    ) {
+function getDiagnosticSeverity(error) {
+    // Unused values are worth showing, but should not make valid student code
+    // appear broken.
+    if (INFORMATIONAL_DIAGNOSTICS.has(error.kind)) {
         return 'info'
     }
 
-    const pyreflySeverity = severityFromPyreflyValue(error.severity)
-
-    if (pyreflySeverity) {
-        return pyreflySeverity
-    }
-
-    return 'error'
+    return normalizePyreflySeverity(error.severity) ?? 'error'
 }
 
 /**
- * Maps one Pyrefly diagnostic to the shape consumed by the line editor.
+ * Converts one Pyrefly diagnostic into the shape consumed by CodeMirror.
  * @param {object} error Pyrefly diagnostic.
  * @param {string} code Python source.
  * @returns {object|null} CodeMirror diagnostic, or null when ignored.
  */
-const mapPyreflyError = (error, code) => {
-    const from = lineOffsetToIndex(code, error.startLineNumber, error.startColumn)
-    const to = Math.max(
-        from + 1,
-        lineOffsetToIndex(code, error.endLineNumber, error.endColumn),
+function normalizePyreflyDiagnostic(error, code) {
+    const from = pyreflyPositionToOffset(
+        code,
+        error.startLineNumber,
+        error.startColumn,
     )
+    const reportedEnd = pyreflyPositionToOffset(
+        code,
+        error.endLineNumber,
+        error.endColumn,
+    )
+    const to = Math.min(code.length, Math.max(from + 1, reportedEnd))
+    const severity = getDiagnosticSeverity(error)
 
-    const severity = toCodeMirrorSeverity(error)
     if (severity === 'ignore') {
         return null
     }
 
+    const message = error.message_details
+        ? `${error.message_header}\n${error.message_details}`
+        : error.message_header
+
     return {
-        message: error.message_details
-            ? `${error.message_header}\n${error.message_details}`
-            : error.message_header,
+        message,
         line: error.startLineNumber ?? 1,
         column: error.startColumn ?? 1,
         from,
@@ -184,36 +261,55 @@ const mapPyreflyError = (error, code) => {
 }
 
 /**
+ * Requests type-aware completions from the bundled Pyrefly WASM state.
+ * Pyrefly's browser API expects one-based line and column positions.
+ * @param {string} code Current Python source.
+ * @param {number} lineNumber One-based cursor line.
+ * @param {number} column One-based cursor column.
+ * @returns {Promise<object[]>} Completion items, or an empty array when
+ * completion is unavailable.
+ */
+export async function getCompletionsWithPyrefly(code, lineNumber, column) {
+    const state = await getPyreflyState()
+    if (!state || typeof state.autoComplete !== 'function') {
+        return []
+    }
+
+    updateActivePythonFile(state, code)
+    return state.autoComplete(lineNumber, column) ?? []
+}
+
+/**
  * Lints editor code with the in-memory public API.
  *
  * Returns `null` only when the bundled WASM API is unavailable. Otherwise it
- * returns a normalized CodeMirror-compatible result, including first-error
- * summary fields used by the lint status UI.
+ * includes both CodeMirror diagnostics and first-error summary fields retained
+ * for the existing Issues UI.
  * @param {string} code Python source to lint.
  * @returns {Promise<object|null>} Normalized lint result or null when unavailable.
  */
-export const checkWithPyrefly = async (code) => {
-    const state = await ensurePyreflyState()
-
+export async function checkWithPyrefly(code) {
+    const state = await getPyreflyState()
     if (!state) {
         return null
     }
 
-    const files = lintFilesForPyrefly()
-    files[mainFileName] = code
+    updateActivePythonFile(state, code)
 
-    state.updateSandboxFiles(files, false)
-    state.updateSingleFile(mainFileName, code)
-    state.setActiveFile(mainFileName)
+    const diagnostics = []
+    for (const error of state.getErrors()) {
+        // Stub/configuration diagnostics are implementation problems and should
+        // not be attached to the code the user is editing.
+        const filename = error.filename ?? MAIN_FILE_NAME
+        if (filename !== MAIN_FILE_NAME) {
+            continue
+        }
 
-    const diagnostics = state
-        .getErrors()
-        .filter((error) => {
-            const filename = error.filename ?? mainFileName
-            return filename === mainFileName
-        })
-        .map((error) => mapPyreflyError(error, code))
-        .filter(Boolean)
+        const diagnostic = normalizePyreflyDiagnostic(error, code)
+        if (diagnostic) {
+            diagnostics.push(diagnostic)
+        }
+    }
 
     const firstDiagnostic = diagnostics[0] ?? null
     return {

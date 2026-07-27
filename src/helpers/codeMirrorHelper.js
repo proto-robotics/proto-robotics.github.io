@@ -1,7 +1,7 @@
 /*
- * Creates Python CodeMirror views and translates the generated API vocabulary
- * into autocomplete and lint behavior. Read-only views reuse only the display
- * portion of the configuration.
+ * Creates Python CodeMirror views, combines Pyrefly's semantic results with
+ * generated API documentation, and presents autocomplete and lint behavior.
+ * Read-only views reuse only the display portion of the configuration.
  */
 
 import {
@@ -54,6 +54,7 @@ import { marked } from 'marked'
 import { tomorrow } from 'thememirror'
 
 import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
+import { getCompletionsWithPyrefly } from './pyreflyHelper'
 
 const autocompleteApi = pythonLibraryVocab.autocomplete
 
@@ -172,9 +173,10 @@ function findCallAtCursor(context) {
  * Offers only parameters that have not already been provided in this call.
  * @param {object} entry Structured callable entry.
  * @param {string} argumentsText Current argument-list text.
+ * @param {Set<string>} allowedNames Parameter names approved by Pyrefly.
  * @returns {object[]} Parameter snippet completions.
  */
-function buildParameterCompletions(entry, argumentsText) {
+function buildParameterCompletions(entry, argumentsText, allowedNames) {
     // Named arguments already present in the call should not be suggested
     // again, even when the cursor is after a later comma.
     const used = new Set(
@@ -183,7 +185,10 @@ function buildParameterCompletions(entry, argumentsText) {
         ),
     )
     return entry.parameters
-        .filter((parameter) => !used.has(parameter.name))
+        .filter(
+            (parameter) =>
+                allowedNames.has(parameter.name) && !used.has(parameter.name),
+        )
         .map((parameter) => {
             const value = parameter.required ? '${1}' : parameter.default
             return snippetCompletion(`${parameter.name}=${value}`, {
@@ -195,38 +200,23 @@ function buildParameterCompletions(entry, argumentsText) {
 }
 
 /**
- * Infers API receiver types from simple assignments and annotations.
- * This is intentionally lightweight; Pyrefly remains responsible for linting.
- * @param {string} code Python source before the cursor.
- * @returns {Map<string, string>} Variable names mapped to API type names.
+ * Returns the callable name represented by an enriched snippet completion.
+ * @param {object} completion CodeMirror completion.
+ * @returns {string} Function, constructor, or method name.
  */
-function inferVariableTypes(code) {
-    const variableTypes = new Map()
-    const constructorAssignment =
-        /(?:^|\n)\s*([A-Za-z_]\w*)\s*=\s*make\.([A-Za-z_]\w*)\s*\(/g
-    const annotatedAssignment =
-        /(?:^|\n)\s*([A-Za-z_]\w*)\s*:\s*(?:make\.)?([A-Za-z_]\w*)\s*(?:=|\n|$)/g
-
-    // Infer `motor` from assignments such as `motor = make.drivemotor(...)`.
-    for (const match of code.matchAll(constructorAssignment)) {
-        variableTypes.set(match[1], match[2])
-    }
-
-    // Also support explicit annotations such as `motor: drivemotor`.
-    for (const match of code.matchAll(annotatedAssignment)) {
-        variableTypes.set(match[1], match[2])
-    }
-
-    return variableTypes
+function callableNameFromCompletion(completion) {
+    const path = completion.label.split('(', 1)[0]
+    return path.split('.').at(-1)
 }
 
 /**
- * Resolves the vocabulary entry for an unfinished function or method call.
+ * Resolves a callable's documentation entry without trying to infer its type.
+ * Pyrefly has already determined which parameter names are valid.
  * @param {{callee: string}} call Active call details.
- * @param {string} codeBeforeCursor Python source before the cursor.
+ * @param {Set<string>} allowedParameterNames Parameters returned by Pyrefly.
  * @returns {object|null} Matching callable entry.
  */
-function findCallableEntry(call, codeBeforeCursor) {
+function findVocabularyCallable(call, allowedParameterNames) {
     const topLevelEntry = autocompleteApi.members.find(
         (entry) => entry.path === call.callee,
     )
@@ -234,49 +224,127 @@ function findCallableEntry(call, codeBeforeCursor) {
         return topLevelEntry
     }
 
-    const [receiver, methodName] = call.callee.split('.')
-    if (!receiver || !methodName) {
+    const methodName = call.callee.split('.').at(-1)
+    if (!methodName) {
         return null
     }
 
-    const receiverType = inferVariableTypes(codeBeforeCursor).get(receiver)
+    const matchingMethods = Object.values(autocompleteApi.methodsByType ?? {})
+        .flat()
+        .filter((method) => method.name === methodName)
+
     return (
-        autocompleteApi.methodsByType?.[receiverType]?.find(
-            (method) => method.name === methodName,
-        ) ?? null
+        matchingMethods.find((method) =>
+            [...allowedParameterNames].every((parameterName) =>
+                method.parameters.some(
+                    (parameter) => parameter.name === parameterName,
+                ),
+            ),
+        ) ??
+        matchingMethods[0] ??
+        null
     )
 }
 
 /**
+ * Extracts the inferred receiver type from Pyrefly's rendered method signature.
+ * @param {object[]} completions Pyrefly completion items.
+ * @returns {string|null} Inferred API type name.
+ */
+function receiverTypeFromPyrefly(completions) {
+    for (const completion of completions) {
+        const match = completion.detail?.match(
+            /\bself:\s*([A-Za-z_][A-Za-z0-9_]*)/,
+        )
+        if (match) {
+            return match[1]
+        }
+    }
+    return null
+}
+
+/**
+ * Requests completions at CodeMirror's cursor using Pyrefly's one-based
+ * browser coordinates.
+ * @param {object} context CodeMirror completion context.
+ * @returns {Promise<object[]>} Pyrefly completion items.
+ */
+async function requestPyreflyCompletions(context) {
+    const document = context.state.doc
+    const line = document.lineAt(context.pos)
+    const column = context.pos - line.from + 1
+
+    try {
+        return await getCompletionsWithPyrefly(
+            document.toString(),
+            line.number,
+            column,
+        )
+    } catch {
+        // Other CodeMirror completion sources should remain usable if the WASM
+        // service cannot answer an incomplete file.
+        return []
+    }
+}
+
+/**
+ * Filters enriched vocabulary completions to names approved by Pyrefly.
+ * @param {object[]} completions Enriched CodeMirror completions.
+ * @param {Set<string>} allowedNames Pyrefly completion labels.
+ * @returns {object[]} Semantically valid enriched completions.
+ */
+function filterCompletionsByName(completions, allowedNames) {
+    const seenLabels = new Set()
+    return completions.filter((completion) => {
+        const isAllowed = allowedNames.has(
+            callableNameFromCompletion(completion),
+        )
+        if (!isAllowed || seenLabels.has(completion.label)) {
+            return false
+        }
+
+        seenLabels.add(completion.label)
+        return true
+    })
+}
+
+/**
  * Chooses parameter, member, or top-level completions from cursor context.
- * Method suggestions use the simple local type inference above.
+ * Pyrefly determines semantic validity and receiver types; the vocabulary adds
+ * learner-friendly snippets, defaults, and documentation.
  * @param {object[]} topLevelCompletions Public make API completions.
  * @param {Record<string, object[]>} methodCompletionsByType Methods by API type.
- * @returns {(context: object) => object|null} CodeMirror completion source.
+ * @returns {(context: object) => Promise<object|null>} Async completion source.
  */
 function createApiCompletionSource(
     topLevelCompletions,
     methodCompletionsByType,
 ) {
-    return (context) => {
+    return async (context) => {
         const activeCall = findCallAtCursor(context)
         const isStartingParameter =
             activeCall && /(?:^|,)\s*[A-Za-z_]*$/.test(activeCall.argumentsText)
 
         if (isStartingParameter) {
-            // Inside a call, parameter names take priority over normal word
-            // completion.
-            const codeBeforeCursor = context.state.doc.sliceString(
-                0,
-                context.pos,
+            const pyreflyCompletions = await requestPyreflyCompletions(context)
+            const allowedParameterNames = new Set(
+                pyreflyCompletions
+                    .map((completion) => completion.label)
+                    .filter((label) => label.endsWith('='))
+                    .map((label) => label.slice(0, -1)),
             )
-            const callable = findCallableEntry(activeCall, codeBeforeCursor)
+            const callable = findVocabularyCallable(
+                activeCall,
+                allowedParameterNames,
+            )
             if (callable) {
+                const parameterWord = context.matchBefore(/[A-Za-z_]\w*$/)
                 return {
-                    from: context.pos,
+                    from: parameterWord?.from ?? context.pos,
                     options: buildParameterCompletions(
                         callable,
                         activeCall.argumentsText,
+                        allowedParameterNames,
                     ),
                 }
             }
@@ -297,26 +365,31 @@ function createApiCompletionSource(
         }
 
         const receiver = word.text.slice(0, dotIndex)
+        const pyreflyCompletions = await requestPyreflyCompletions(context)
+        const allowedNames = new Set(
+            pyreflyCompletions.map((completion) => completion.label),
+        )
+
         if (receiver === 'make') {
             // These completion labels contain `make.`, so replace the entire
             // token rather than only the text after the period.
             return {
                 from: word.from,
-                options: topLevelCompletions.filter((completion) =>
-                    completion.label.startsWith('make.'),
+                options: filterCompletionsByName(
+                    topLevelCompletions,
+                    allowedNames,
                 ),
             }
         }
 
-        const codeBeforeReceiver = context.state.doc.sliceString(0, word.from)
-        const receiverType =
-            inferVariableTypes(codeBeforeReceiver).get(receiver)
+        const receiverType = receiverTypeFromPyrefly(pyreflyCompletions)
+        const methodCompletions = receiverType
+            ? (methodCompletionsByType[receiverType] ?? [])
+            : Object.values(methodCompletionsByType).flat()
 
-        // Unknown receiver types deliberately produce no API methods. Python's
-        // local completion source still runs after this custom source.
         return {
             from: word.from + dotIndex + 1,
-            options: methodCompletionsByType[receiverType] ?? [],
+            options: filterCompletionsByName(methodCompletions, allowedNames),
         }
     }
 }
