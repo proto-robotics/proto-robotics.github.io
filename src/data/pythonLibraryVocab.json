@@ -160,7 +160,7 @@
         },
         {
           "name": "spin_back",
-          "description": "Spin backward at the given power, optionally stopping after a number\n        of seconds.",
+          "description": "Spin backward at the given power, optionally stopping after a number\nof seconds.",
           "parameters": [
             {
               "name": "power",
