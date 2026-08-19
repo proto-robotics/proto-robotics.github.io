@@ -6,6 +6,7 @@
 import { a, img, tag } from 'ellipsi'
 
 import { buildCheatSheetContent } from './buildCheatSheetContent'
+import { protoLogo } from '../assets'
 
 /**
  * Builds the standalone cheatsheet page around the reusable cheatsheet content.
@@ -19,7 +20,7 @@ export default function BuildCheatSheet() {
         a(
             { href: 'https://protorobotics.org/index.html', target: '_self' },
             img({
-                src: '/assets/images/proto-logo.png',
+                src: protoLogo,
                 alt: 'The PROTO logo',
                 height: '32',
             }),

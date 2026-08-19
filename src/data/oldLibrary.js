@@ -1,5 +1,6 @@
 import { FieldDropdown, FieldImage, FieldNumber, FieldTextInput } from 'blockly'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
+import { helpIcon } from '../assets'
 
 const simplePorts = [
     ['0', '0'],
@@ -52,7 +53,7 @@ const injectHelpButton = (blocks) => {
 
             block.blocklyTemplate.push({
                 field: () =>
-                    new FieldImage('./assets/images/help.svg', 15, 15, 'Info', () => {
+                    new FieldImage(helpIcon, 15, 15, 'Info', () => {
                         document.dispatchEvent(
                             new CustomEvent(openCheatSheetDrawerEvent, {
                                 detail: { blockName: block.name },

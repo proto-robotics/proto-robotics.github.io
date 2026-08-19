@@ -929,24 +929,24 @@
 
 @font-face {
     font-family: Monteserrat;
-    src: url('/assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
+    src: url('assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
 }
 
 @font-face {
     font-family: Monteserrat;
-    src: url('/assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
+    src: url('assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
     font-weight: bold;
 }
 
 @font-face {
     font-family: Monteserrat;
-    src: url('/assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
+    src: url('assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
     font-style: italic;
 }
 
 @font-face {
     font-family: Monteserrat;
-    src: url('/assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
+    src: url('assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
     font-style: italic;
     font-weight: bold;
 }

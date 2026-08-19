@@ -1,5 +1,7 @@
 import { button, div, img, on, tag } from 'ellipsi'
 
+import { cancelIcon } from '../assets'
+
 /** Event used to request that a popup dialog closes. */
 export const closePopUpEvent = 'close-pop-up'
 
@@ -21,7 +23,7 @@ export const PopUp = (...children) => {
 
     const CloseButton = button(
         img({
-            src: '/assets/images/cancel.svg',
+            src: cancelIcon,
             alt: 'Close dialog',
         }),
         { type: 'button', class: 'popup-close-button' },

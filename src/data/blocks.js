@@ -9,6 +9,7 @@ import { FieldColourHsvSliders } from '@blockly/field-colour-hsv-sliders'
 import { pythonGenerator, Order } from 'blockly/python'
 import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
+import { helpIcon } from '../assets'
 
 const simplePorts = [
     ['0', '0'],
@@ -45,7 +46,7 @@ const injectHelpButton = (blocks) => {
         category.entries.forEach((block) => {
             const field = {
                 field: () =>
-                    new FieldImage('./assets/images/help.svg', 15, 15, 'Info', () => {
+                    new FieldImage(helpIcon, 15, 15, 'Info', () => {
                         document.dispatchEvent(
                             new CustomEvent(openCheatSheetDrawerEvent, {
                                 detail: { blockName: block.name },

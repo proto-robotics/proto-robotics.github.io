@@ -8,6 +8,7 @@ import {
 } from './buildCheatSheetContent'
 import { EditorMode } from '../classes/editorMode'
 import createCheatSheetDrawer from '../helpers/cheatSheetDrawerHelper'
+import { protoLogo } from '../assets'
 
 /**
  * Builds the main coding page and its two editor modes.
@@ -98,7 +99,7 @@ export default (toolbox) => {
         a(
             { href: 'https://protorobotics.org/index.html', target: '_self' },
             img({
-                src: '/assets/images/proto-logo.png',
+                src: protoLogo,
                 alt: 'The PROTO logo',
                 height: '32',
             }),
