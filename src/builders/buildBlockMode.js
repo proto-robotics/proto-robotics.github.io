@@ -1,31 +1,42 @@
 import {
     Events,
-    inject,
-    serialization,
-    svgResize,
-    setParentContainer,
 } from 'blockly'
-import { pythonGenerator } from 'blockly/python'
-import { button, div, on, tag } from 'ellipsi'
+
+import { button, on, tag } from 'ellipsi'
 
 import { EditorMode } from '../classes/editorMode'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
+import {
+    addBlocklyChangeListener,
+    createBlocklyInstance,
+    getBlocklyCode,
+    getBlocklyState,
+    mountBlocklyWorkspace,
+    setBlocklyState,
+} from '../helpers/blocklyHelper'
 
-import { claimTooltip, releaseTooltip } from '../helpers/tooltipHelper'
-import blocks from '../data/blocks'
-import { getViewText, newView, setViewText } from '../helpers/codeMirrorHelper'
+import {
+    createCodeMirrorView,
+    getCodeMirrorText,
+    setCodeMirrorText,
+} from '../helpers/codeMirrorHelper'
 
+/**
+ * Builds the Blockly editor mode and its generated-code preview.
+ * @param {object} toolbox Blockly toolbox configuration.
+ * @returns {EditorMode} Configured block editor mode.
+ */
 export default (toolbox) => {
-    const codePreview = newView({ readonly: true, noGutter: true })
+    const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
 
-    const BlocklyCanvas = div({ id: 'block-canvas' })
+    const blocklyInstance = createBlocklyInstance(toolbox)
     const CopyToLineEditorButton = button(
         'Open in Line Editor',
         { id: 'copy-to-line-editor-button' },
         on('click', async () => {
-            localStorage.setItem('codeMirrorState', getViewText(codePreview))
+            localStorage.setItem('codeMirrorState', getCodeMirrorText(codePreview))
             const switchEvent = new CustomEvent('switch-editor')
             document.dispatchEvent(switchEvent)
         }),
@@ -33,14 +44,17 @@ export default (toolbox) => {
 
     const BlockEditor = tag(
         'block-editor',
-        BlocklyCanvas,
+        blocklyInstance.canvas,
         codePreview.dom,
         CopyToLineEditorButton,
     )
-    setParentContainer(BlockEditor) // fixes Blockly blocks stealing focus from text inputs and the right click context menu
-
-    const workspace = inject(BlocklyCanvas, {
-        toolbox: toolbox,
+    mountBlocklyWorkspace(blocklyInstance, BlockEditor, {
+        onReady: () => {
+            if (!BlockEditor.parentElement) {
+                return false
+            }
+            loadState()
+        },
     })
 
     const supportedEvents = new Set([
@@ -50,62 +64,49 @@ export default (toolbox) => {
         Events.BLOCK_MOVE,
     ])
 
+    /** Saves serialized Blockly state to local storage. */
     const saveState = () => {
-        const state = serialization.workspaces.save(workspace)
+        const state = getBlocklyState(blocklyInstance)
         localStorage.setItem('blocklyState', JSON.stringify(state))
     }
 
+    /** Restores serialized Blockly state after the workspace has mounted. */
     const loadState = () => {
         const previousState = localStorage.getItem('blocklyState')
         if (previousState) {
-            // Timeout prevents styles from breaking
+            // Defer loading until Blockly has completed its initial layout.
             setTimeout(() => {
-                serialization.workspaces.load(
-                    JSON.parse(previousState),
-                    workspace,
-                )
+                setBlocklyState(blocklyInstance, JSON.parse(previousState))
             })
         }
     }
 
-    workspace.addChangeListener((event) => {
-        if (workspace.isDragging() || !supportedEvents.has(event.type)) {
+    addBlocklyChangeListener(blocklyInstance, (event) => {
+        if (
+            blocklyInstance.workspace.isDragging() ||
+            !supportedEvents.has(event.type)
+        ) {
             return
         }
 
-        const code = pythonGenerator.workspaceToCode(workspace)
-        setViewText(codePreview, 'import make\n\n' + code)
+        const code = getBlocklyCode(blocklyInstance)
+        setCodeMirrorText(codePreview, 'import make\n\n' + code)
         saveState()
     })
 
-    // Redraw the canvas when it is rendered, and load the previous code the
-    // first time it is rendered
-    let hasRendered = false
-    const resizeObserver = new ResizeObserver(() => {
-        svgResize(workspace)
-
-        if (hasRendered || !BlockEditor.parentElement) {
-            return
-        }
-
-        // Only executed the first time the blockly editor is rendered
-        hasRendered = true
-
-        // Load previous state if one exists
-        loadState()
-    })
-    resizeObserver.observe(BlockEditor)
-
+    /**
+     * Downloads generated Python and Blockly state as a project archive.
+     * @param {HTMLInputElement} ProjectNameInput Project-name field.
+     */
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
 
-        // Save the blockly state.
-        const blocklyState = serialization.workspaces.save(workspace)
+        const blocklyState = getBlocklyState(blocklyInstance)
 
         saveFilesInZip(projectName, [
             {
                 name: 'main.py',
-                text: getViewText(codePreview),
+                text: getCodeMirrorText(codePreview),
             },
             {
                 name: projectName + '.json',
@@ -114,41 +115,11 @@ export default (toolbox) => {
         ])
     }
 
-    let blockDescriptionDictionary = getBlockDescriptionDictionary(blocks)
-    let hoverTimer = null
-    let currentHoveredBlock = null
 
-    function attachCustomTooltipHandlers(workspace) {
-        workspace.addChangeListener(() => {
-            for (const block of workspace.getAllBlocks(false)) {
-                const svgRoot = block.getSvgRoot()
-                if (svgRoot.customTooltipAttached) continue
-                svgRoot.customTooltipAttached = true
-
-                svgRoot.addEventListener('mouseenter', (e) => {
-                    currentHoveredBlock = block
-                    hoverTimer = setTimeout(() => {
-                        if (currentHoveredBlock === block) {
-                            claimTooltip(
-                                'Block',
-                                { x: e.pageX, y: e.pageY },
-                                blockDescriptionDictionary[block.type],
-                            )
-                        }
-                    }, 1000)
-                })
-
-                svgRoot.addEventListener('mouseleave', () => {
-                    clearTimeout(hoverTimer)
-                    currentHoveredBlock = null
-                    releaseTooltip('Block')
-                })
-            }
-        })
-    }
-
-    attachCustomTooltipHandlers(workspace)
-
+    /**
+     * Opens a dialog that imports a serialized Blockly project.
+     * @param {HTMLInputElement} ProjectNameInput Project-name field.
+     */
     const loadCode = (ProjectNameInput) => {
         const FileInput = tag('input', {
             type: 'file',
@@ -175,7 +146,7 @@ export default (toolbox) => {
                 reader.readAsText(file, 'utf-8')
                 reader.onload = (event) => {
                     const state = JSON.parse(event.target.result)
-                    serialization.workspaces.load(state, workspace)
+                    setBlocklyState(blocklyInstance, state)
                 }
 
                 // Close the pop up
@@ -201,14 +172,4 @@ export default (toolbox) => {
         saveState,
         loadState,
     )
-}
-
-function getBlockDescriptionDictionary(categories) {
-    const dictionary = {}
-    for (const category of categories) {
-        for (const entry of category.entries) {
-            dictionary[entry.name] = entry.description
-        }
-    }
-    return dictionary
 }
