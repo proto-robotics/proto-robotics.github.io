@@ -23,7 +23,7 @@
         --rule-width: 1px;
 
         font:
-            14pt / 1.5 Monteserrat,
+            14pt / 1.5 Montserrat,
             sans-serif;
         hyphens: auto;
         color: var(--text);
@@ -33,7 +33,7 @@
     button,
     input {
         font:
-            14pt / 1.5 Monteserrat,
+            14pt / 1.5 Montserrat,
             sans-serif;
         color: var(--text);
     }
@@ -488,7 +488,7 @@
 
     .blocklyToolboxCategoryLabel {
         font:
-            10pt / 1.5 Monteserrat,
+            10pt / 1.5 Montserrat,
             sans-serif !important;
     }
 }
@@ -828,7 +828,7 @@
 
         @bottom-right {
             content: 'Page ' counter(page);
-            font-family: Monteserrat, sans-serif;
+            font-family: Montserrat, sans-serif;
             font-size: 8pt;
             color: #000;
         }
@@ -928,24 +928,24 @@
 }
 
 @font-face {
-    font-family: Monteserrat;
+    font-family: Montserrat;
     src: url('assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
 }
 
 @font-face {
-    font-family: Monteserrat;
+    font-family: Montserrat;
     src: url('assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
     font-weight: bold;
 }
 
 @font-face {
-    font-family: Monteserrat;
+    font-family: Montserrat;
     src: url('assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
     font-style: italic;
 }
 
 @font-face {
-    font-family: Monteserrat;
+    font-family: Montserrat;
     src: url('assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
     font-style: italic;
     font-weight: bold;
