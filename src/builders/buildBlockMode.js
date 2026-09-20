@@ -22,6 +22,11 @@ import {
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
 
+/**
+ * Builds the Blockly editor mode and its generated-code preview.
+ * @param {object} toolbox Blockly toolbox configuration.
+ * @returns {EditorMode} Configured block editor mode.
+ */
 export default (toolbox) => {
     const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
@@ -59,15 +64,17 @@ export default (toolbox) => {
         Events.BLOCK_MOVE,
     ])
 
+    /** Saves serialized Blockly state to local storage. */
     const saveState = () => {
         const state = getBlocklyState(blocklyInstance)
         localStorage.setItem('blocklyState', JSON.stringify(state))
     }
 
+    /** Restores serialized Blockly state after the workspace has mounted. */
     const loadState = () => {
         const previousState = localStorage.getItem('blocklyState')
         if (previousState) {
-            // Timeout prevents styles from breaking
+            // Defer loading until Blockly has completed its initial layout.
             setTimeout(() => {
                 setBlocklyState(blocklyInstance, JSON.parse(previousState))
             })
@@ -87,10 +94,13 @@ export default (toolbox) => {
         saveState()
     })
 
+    /**
+     * Downloads generated Python and Blockly state as a project archive.
+     * @param {HTMLInputElement} ProjectNameInput Project-name field.
+     */
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
 
-        // Save the blockly state.
         const blocklyState = getBlocklyState(blocklyInstance)
 
         saveFilesInZip(projectName, [
@@ -106,6 +116,10 @@ export default (toolbox) => {
     }
 
 
+    /**
+     * Opens a dialog that imports a serialized Blockly project.
+     * @param {HTMLInputElement} ProjectNameInput Project-name field.
+     */
     const loadCode = (ProjectNameInput) => {
         const FileInput = tag('input', {
             type: 'file',

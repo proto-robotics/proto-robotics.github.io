@@ -1,107 +1,38 @@
 import * as Blockly from 'blockly';
 import { SvgPath, reversePath, SvgItem } from 'svg-path-editor-lib';
 
+/**
+ * PROTO renderer implementation.
+ *
+ * See README.md in this directory for guidance on the available Blockly
+ * renderer extension points.
+ */
+
+/** Blockly renderer that supplies PROTO-specific connection shapes. */
 export class ProtoRenderer extends Blockly.blockRendering.Renderer {
 	constructor() {
 		super();
 	}
 
+	/** @returns {ProtoRendererConstantProvider} Renderer constants and shapes. */
 	makeConstants_() {
 		return new ProtoRendererConstantProvider();
 	}
 }
 
+/** Defines PROTO typography and SVG connection geometry. */
 export class ProtoRendererConstantProvider extends Blockly.blockRendering.ConstantProvider {
 
-	//optional modifiers
+	/** Font size used by Blockly fields. */
 	FIELD_TEXT_FONTSIZE = 10;
-
-	//FIELD_TEXT_FONTWEIGHT = 'bold';
-
-	// FIELD_TEXT_FONTFAMILY = '"Helvetica Neue", "Segoe UI", Helvetica, sans-serif';
-	// FIELD_TEXT_FONTFAMILY = 'Ubuntu Mono, monospace';
-	FIELD_TEXT_FONTFAMILY = 'Monteserrat, sans-serif';
+	/** Font family loaded by the website stylesheet. */
+	FIELD_TEXT_FONTFAMILY = 'Montserrat, sans-serif';
 
 	constructor() {
-		// Set up all of the constants from the base provider.
 		super();
-
-		//https://github.com/RaspberryPiFoundation/blockly/blob/master/core/renderers/common/constants.ts to find a full list of constants to override
-		/**
-		 * Key Constant Categories
-		 * Connection Shapes and Sizes
-		 * 
-		 * NOTCH_WIDTH: Width of the notch used for previous and next connections.
-		 * NOTCH_HEIGHT: Height of the notch used for previous and next connections.
-		 * TAB_WIDTH: Width of the puzzle tab used for input and output connections.
-		 * TAB_HEIGHT: Height of the puzzle tab used for input and output connections.
-		 * JAGGED_TEETH_WIDTH: Width of the SVG path for jagged teeth at the end of collapsed blocks.
-		 * JAGGED_TEETH_HEIGHT: Height of the SVG path for jagged teeth at the end of collapsed blocks. 
-		 * Block Geometry and Spacing
-		 * 
-		 * CORNER_RADIUS: Rounded corner radius for block edges.
-		 * MIN_BLOCK_WIDTH: Minimum width of a block.
-		 * MIN_BLOCK_HEIGHT: Minimum height of a block.
-		 * BETWEEN_STATEMENT_PADDING_Y: Vertical padding between consecutive statement inputs.
-		 * EMPTY_STATEMENT_INPUT_HEIGHT: Height of an empty statement input.
-		 * EMPTY_INLINE_INPUT_HEIGHT: Height of an empty inline input.
-		 * EMPTY_INLINE_INPUT_PADDING: Padding around an empty inline input.
-		 * STATEMENT_BOTTOM_SPACER: Spacing below a statement input. 
-		 * Field and Input Styling
-		 * 
-		 * FIELD_TEXT_FONTSIZE: Point size of text within fields.
-		 * FIELD_TEXT_FONTFAMILY: Font family for text within fields.
-		 * FIELD_TEXT_FONTWEIGHT: Font weight for text within fields.
-		 * FIELD_BORDER_RECT_HEIGHT: Default height of a field's border rectangle.
-		 * FIELD_BORDER_RECT_RADIUS: Corner radius of a field's border rectangle.
-		 * FIELD_BORDER_RECT_X_PADDING: X padding for a field's border rectangle.
-		 * FIELD_BORDER_RECT_Y_PADDING: Y padding for a field's border rectangle.
-		 * Colors and Styling
-		 * 
-		 * CURSOR_COLOUR: Color of the cursor used during dragging.
-		 * INSERTION_MARKER_COLOUR: Main color of insertion markers (hex code).
-		 * INSERTION_MARKER_OPACITY: Opacity of the insertion marker.
-		 * MARKER_COLOUR: Color of immovable markers. 
-		 * Miscellaneous
-		 * 
-		 * LARGE_PADDING, MEDIUM_PADDING, SMALL_PADDING: Standard padding sizes.
-		 * NO_PADDING: Size of an empty spacer.
-		 * START_HAT_HEIGHT, START_HAT_WIDTH: Dimensions of the top hat on blocks with no previous connection.
-		 */
-
-		//width of all vertical connection points
-
-		// this.NOTCH_WIDTH = 14;
-
-		// //height of all vertical connection points
-		// this.NOTCH_HEIGHT = 14;
-
-		// //how round the blocks are
-		// this.CORNER_RADIUS = 5;
-
-		// // the width of all horizontal connection points
-		// this.TAB_WIDTH = 9*1.5;
-
-		// // the height of all horizontal connection points
-		// this.TAB_HEIGHT = 8*1.5;
-
-		// // General block spacing
-    	// this.MEDIUM_PADDING = 3;        // increases inner spacing
-    	// this.TIGHT_PADDING = 6;          // slightly tighter spacing
-    	// this.INPUT_PADDING_Y = 8;        // more space between inputs
-		//this.INPUT_PADDING_X = 14;
-
-    	// Optional: control statement padding
-    	// this.STATEMENT_INPUT_PADDING_LEFT = 150;  // indent statements more or less
-    	//this.DUMMY_INPUT_MIN_HEIGHT = 5;        // taller dummy inputs
-
-
-
-
-
-		
 	}
 
+	/** Initializes normalized SVG shapes after Blockly calculates base sizes. */
 	init() {
 		super.init();
 
@@ -136,6 +67,11 @@ export class ProtoRendererConstantProvider extends Blockly.blockRendering.Consta
 
 	}
 
+	/**
+	 * Chooses a connection shape from the connection type and type checks.
+	 * @param {Blockly.RenderedConnection} connection Blockly connection.
+	 * @returns {object} Blockly connection shape.
+	 */
 	shapeFor(connection) {
 		var checks = connection.getCheck();
 		switch (connection.type) {
@@ -171,9 +107,9 @@ export class ProtoRendererConstantProvider extends Blockly.blockRendering.Consta
 	 * - NOTE: do not connect the last point to the first point leave it as an open path not a closed shape
 	 * - https://yqnn.github.io/svg-path-editor/
 	 * 
-	 * @param {*} plugPath the svg path for the male end of the connection
-	 * @param {*} portPath the svg path for the female end of the connection
-	 * @returns blockly shape object
+	 * @param {string} plugPath SVG path for the male connection.
+	 * @param {string} portPath SVG path for the female connection.
+	 * @returns {object} Blockly horizontal connection shape.
 	 */
 	makeSVGPathHorizontal(plugPath, portPath = plugPath) {
 
@@ -201,9 +137,9 @@ export class ProtoRendererConstantProvider extends Blockly.blockRendering.Consta
 	 * - NOTE: do not connect the last point to the first point leave it as an open path not a closed shape
 	 * - https://yqnn.github.io/svg-path-editor/
 	 * 
-	 * @param {*} plugPath the svg path for the male end of the connection
-	 * @param {*} portPath the svg path for the female end of the connection
-	 * @returns blockly shape object
+	 * @param {string} plugPath SVG path for the male connection.
+	 * @param {string} portPath SVG path for the female connection.
+	 * @returns {object} Blockly vertical connection shape.
 	 */
 	makeSVGPathVertical(plugPath, portPath = plugPath) {
 
@@ -224,36 +160,59 @@ export class ProtoRendererConstantProvider extends Blockly.blockRendering.Consta
 
 }
 
+/** @param {string} d SVG path. @returns {string} Relative SVG path. */
 function relativizePath(d) {
 	const svgPath = new SvgPath(d);
 	svgPath.setRelative(true);
 	return svgPath.asString();
 }
 
+/**
+ * @param {string} d SVG path.
+ * @param {number} scaleX Horizontal scale.
+ * @param {number} scaleY Vertical scale.
+ * @returns {string} Scaled SVG path.
+ */
 function scaleSvgPath(d, scaleX, scaleY) {
 	const svgPath = new SvgPath(d);
 	svgPath.scale(scaleX, scaleY);
 	return svgPath.asString();
 }
 
+/**
+ * @param {string} d SVG path.
+ * @param {number} angle Rotation in degrees.
+ * @returns {string} Rotated SVG path.
+ */
 function rotatePath(d, angle) {
 	const svgPath = new SvgPath(d);
 	svgPath.rotate(0,0,angle);
 	return svgPath.asString();
 }
 
+/** @param {string} d SVG path. @returns {string} Reversed SVG path. */
 function reverseSvgPath(d) {
 	const svgPath = new SvgPath(d);
 	reversePath(svgPath);
 	return svgPath.asString();
 }
 
+/**
+ * Replaces the first move command with a line command for path concatenation.
+ * @param {string} d SVG path.
+ * @returns {string} Path beginning with a relative line command.
+ */
 function replaceFirstCommand(d) {
 	// blockly doesn't like 'M' commands in the middle of paths
 	// remove the first character of the string and replace with 'l' to convert moveto to lineto
 	return 'l' + d.slice(d.indexOf(' ') + 1);
 }
 
+/**
+ * Removes the SVG editor's initial origin command.
+ * @param {string} d SVG path.
+ * @returns {string} Path without the initial origin command.
+ */
 function removeFirstCommand(d) {
 	// the svg editor adds an initial 'M' command to set the origin that we don't want
 	const svgPath = new SvgPath(d);
@@ -262,6 +221,11 @@ function removeFirstCommand(d) {
 	return svgPath.asString();
 }
 
+/**
+ * Measures the straight-line distance between an SVG path's endpoints.
+ * @param {string} d SVG path.
+ * @returns {number} Endpoint distance.
+ */
 function getDistanceBetweenLastAndFirstPoint(d) {
 	const svgPath = new SvgPath(d);
 	const points = svgPath.path;
