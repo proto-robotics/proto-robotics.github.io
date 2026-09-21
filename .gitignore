@@ -1,4 +1,4 @@
 node_modules/
 package-lock.json
 justfile
-bundled.js
+dist/
