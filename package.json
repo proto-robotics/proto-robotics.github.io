@@ -4,8 +4,9 @@
     "license": "MIT",
     "author": "Carston Wiebe <ctwiebe23@gmail.com>",
     "scripts": {
-        "build": "npx webpack",
-        "format": "npx prettier ./src/*.js -w"
+        "build": "webpack",
+        "format": "npx prettier ./src/*.js -w",
+        "start": "webpack serve"
     },
     "dependencies": {
         "@blockly/field-colour-hsv-sliders": "^6.0.5",
@@ -31,10 +32,15 @@
     },
     "devDependencies": {
         "baseline-browser-mapping": "^2.9.19",
+        "copy-webpack-plugin": "^14.0.0",
+        "css-loader": "^7.1.5",
+        "html-webpack-plugin": "^5.6.8",
+        "mini-css-extract-plugin": "^2.10.2",
         "prettier": "^3.6.2",
         "vite": "^7.3.1",
         "webpack": "^5.102.1",
-        "webpack-cli": "^6.0.1"
+        "webpack-cli": "^6.0.1",
+        "webpack-dev-server": "^5.2.6"
     },
     "prettier": {
         "trailingComma": "all",
