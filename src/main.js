@@ -1,3 +1,4 @@
+import '../styles.css'
 import { processJengaTower } from '@protorobotics/jenga'
 import { pythonGenerator } from 'blockly/python'
 
