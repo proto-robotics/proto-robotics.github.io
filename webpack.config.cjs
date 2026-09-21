@@ -1,3 +1,4 @@
+const fs = require('fs')
 const path = require('path')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
@@ -23,7 +24,17 @@ module.exports = {
         },
         symlinks: true,
     },
+    // Emit a real ES module. The bundle then finds its own URL through
+    // import.meta.url, so asset URLs (the Pyrefly wasm) resolve next to it.
+    // A classic script cannot do that when loaded with type="module":
+    // document.currentScript is null there, and webpack's fallback picks the
+    // last <script> on the page, which on the live site is the analytics
+    // beacon Cloudflare injects at the end of <body>.
+    experiments: {
+        outputModule: true,
+    },
     output: {
+        module: true,
         filename: '[name].[contenthash].js',
         assetModuleFilename: '[name].[contenthash][ext]',
         path: path.resolve(__dirname, 'dist'),
@@ -50,7 +61,10 @@ module.exports = {
     plugins: [
         new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' }),
         new HtmlWebpackPlugin({
-            template: './index.html',
+            // Read the template directly: the plugin's template loader emits
+            // a `with` statement, which webpack rejects for ES module output.
+            templateContent: () =>
+                fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf8'),
             scriptLoading: 'module',
         }),
         new CopyWebpackPlugin({
@@ -64,6 +78,9 @@ module.exports = {
         }),
     ],
     devServer: {
+        // templateContent bypasses webpack's dependency tracking for the
+        // template, so watch it explicitly.
+        watchFiles: ['index.html'],
         port: 5501,
         open: true,
         hot: false,
