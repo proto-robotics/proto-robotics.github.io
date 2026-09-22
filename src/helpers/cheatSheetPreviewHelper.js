@@ -11,6 +11,7 @@ import {
     mountBlocklyWorkspace,
     setBlocklyState,
 } from './blocklyHelper'
+import { whenEditorFontsReady } from './fontHelper'
 import { createCodeMirrorView, setCodeMirrorText } from './codeMirrorHelper'
 
 let previewId = 0
@@ -159,7 +160,7 @@ function createBlocklyPreview(workspaceState) {
                 return false
             }
 
-            document.fonts?.ready.then(() => {
+            whenEditorFontsReady().then(() => {
                 if (!preview.isConnected) {
                     return
                 }

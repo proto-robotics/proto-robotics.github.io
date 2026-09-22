@@ -11,6 +11,7 @@ import {
     createCheatSheetPreview,
     fitCheatSheetBlockPreviews,
 } from '../helpers/cheatSheetPreviewHelper'
+import { whenEditorFontsReady } from '../helpers/fontHelper'
 
 const displayModeOptions = [
     {
@@ -365,7 +366,7 @@ async function createCheatSheetPrintStage(mode) {
 
     document.body.appendChild(stage)
     await rendered
-    await document.fonts?.ready
+    await whenEditorFontsReady()
     await waitForAnimationFrame()
 
     const content = stage.querySelector('cheatsheet-content')
@@ -604,7 +605,7 @@ export function buildCheatSheetContent({
 
         // Font metrics affect both Blockly and CodeMirror measurements. Build
         // the DOM only after fonts are ready and the current frame completes.
-        await document.fonts?.ready
+        await whenEditorFontsReady()
         await waitForAnimationFrame()
 
         const settings = { mode: displayMode }
