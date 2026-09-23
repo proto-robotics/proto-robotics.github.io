@@ -64,15 +64,15 @@ export const library = [
         entries: [
             {
                 entryType: 'block',
-                name: 'drivemotor',
+                name: 'largemotor',
                 description: 'Creates a DC motor.',
                 blocklyTemplate: [
                     {
-                        field: () => new FieldTextInput('drivemotor'),
+                        field: () => new FieldTextInput('largemotor'),
                         name: 'name',
                     },
                     {
-                        text: 'is a drive motor\non port',
+                        text: 'is a large motor\non port',
                     },
                     {
                         field: () => new FieldDropdown(drivePorts),
@@ -95,7 +95,7 @@ export const library = [
                     const directionSnippet =
                         direction === '1' ? '' : ', direction=-1'
 
-                    return `${name} = make.drivemotor(port=${port}${directionSnippet})\n`
+                    return `${name} = make.largemotor(port=${port}${directionSnippet})\n`
                 },
             },
             {
@@ -265,15 +265,15 @@ export const library = [
             },
             {
                 entryType: 'example',
-                name: 'Timed drive motor',
+                name: 'Timed large motor',
                 preamble:
-                    'Runs a drive motor forward, reverses it, then stops it.',
+                    'Runs a large motor forward, reverses it, then stops it.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'largemotor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -625,13 +625,13 @@ export const library = [
                 entryType: 'example',
                 name: 'Straight drive',
                 preamble:
-                    'Creates two drive motors, combines them into a drivetrain, then drives forward briefly.',
+                    'Creates two large motors, combines them into a drivetrain, then drives forward briefly.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'largemotor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -640,7 +640,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'drivemotor',
+                                        type: 'largemotor',
                                         fields: {
                                             name: 'right_motor',
                                             port: '1',
@@ -1078,6 +1078,30 @@ export const library = [
             },
             {
                 entryType: 'block',
+                name: 'booleanInput',
+                description: 'Provides true or false.',
+                blocklyTemplate: [
+                    {
+                        field: () =>
+                            new FieldDropdown([
+                                ['true', 'True'],
+                                ['false', 'False'],
+                            ]),
+                        name: 'operation',
+                    },
+                ],
+                blocklyOutput: {
+                    type: 'Boolean',
+                    name: 'value',
+                },
+                inputsInline: true,
+                codeGenerator: (block, generator) => [
+                    `${block.getFieldValue('operation')}`,
+                    generator.ORDER_ATOMIC,
+                ],
+            },
+            {
+                entryType: 'block',
                 name: 'repeatFor',
                 description: 'Repeats blocks a fixed number of times.',
                 blocklyTemplate: [
@@ -1211,7 +1235,7 @@ export const library = [
                                         },
                                         next: {
                                             block: {
-                                                type: 'drivemotor',
+                                                type: 'largemotor',
                                                 fields: {
                                                     name: 'intake',
                                                     port: '2',
@@ -1290,7 +1314,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'drivemotor',
+                                        type: 'largemotor',
                                         fields: {
                                             name: 'arm',
                                             port: '2',
@@ -1354,7 +1378,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'largemotor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -1418,7 +1442,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'drivemotor',
+                                        type: 'largemotor',
                                         fields: {
                                             name: 'conveyor',
                                             port: '2',
@@ -1468,7 +1492,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'drivemotor',
+                                type: 'largemotor',
                                 x: 12,
                                 y: 12,
                                 fields: {

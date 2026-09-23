@@ -55,7 +55,7 @@
         "category": "Time"
       },
       {
-        "name": "drivemotor",
+        "name": "largemotor",
         "kind": "constructor",
         "description": "A DC motor connected to a drive port.",
         "parameters": [
@@ -72,8 +72,8 @@
             "required": false
           }
         ],
-        "resultType": "drivemotor",
-        "path": "make.drivemotor",
+        "resultType": "largemotor",
+        "path": "make.largemotor",
         "category": "Motor"
       },
       {
@@ -83,13 +83,13 @@
         "parameters": [
           {
             "name": "left_motor",
-            "annotation": "drivemotor",
+            "annotation": "largemotor",
             "default": null,
             "required": true
           },
           {
             "name": "right_motor",
-            "annotation": "drivemotor",
+            "annotation": "largemotor",
             "default": null,
             "required": true
           },
@@ -138,7 +138,7 @@
       }
     ],
     "methodsByType": {
-      "drivemotor": [
+      "largemotor": [
         {
           "name": "spin",
           "description": "Spin at the given power, optionally stopping after a number of seconds.",
