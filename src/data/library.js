@@ -1,6 +1,19 @@
-import { FieldDropdown, FieldImage, FieldNumber, FieldTextInput } from 'blockly'
+import { FieldImage, FieldNumber, FieldTextInput } from 'blockly'
+import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 import { helpIcon } from '../assets'
+
+/**
+ * A dropdown whose choices open as a grid of buttons rather than a list
+ * (@blockly/field-grid-dropdown), easier to hit on a touch screen. Short
+ * lists sit in one row; longer ones wrap at four.
+ * @param {Array<[string, string]>} options The choices, as [label, value].
+ * @returns {FieldGridDropdown} The field.
+ */
+const gridDropdown = (options) =>
+    new FieldGridDropdown(options, undefined, {
+        columns: Math.min(options.length, 4),
+    })
 
 const drivePorts = [
     ['0', '0'],
@@ -75,14 +88,14 @@ export const library = [
                         text: 'is a large motor\non port',
                     },
                     {
-                        field: () => new FieldDropdown(drivePorts),
+                        field: () => gridDropdown(drivePorts),
                         name: 'port',
                     },
                     {
                         text: 'in direction',
                     },
                     {
-                        field: () => new FieldDropdown(directionOptions),
+                        field: () => gridDropdown(directionOptions),
                         name: 'direction',
                     },
                 ],
@@ -693,7 +706,7 @@ export const library = [
                         text: 'is a button on port',
                     },
                     {
-                        field: () => new FieldDropdown(buttonPorts),
+                        field: () => gridDropdown(buttonPorts),
                         name: 'port',
                     },
                 ],
@@ -987,7 +1000,7 @@ export const library = [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
+                            gridDropdown([
                                 ['and', 'and'],
                                 ['or', 'or'],
                             ]),
@@ -1083,7 +1096,7 @@ export const library = [
                 blocklyTemplate: [
                     {
                         field: () =>
-                            new FieldDropdown([
+                            gridDropdown([
                                 ['true', 'True'],
                                 ['false', 'False'],
                             ]),
@@ -1148,7 +1161,7 @@ export const library = [
                     },
                     {
                         field: () =>
-                            new FieldDropdown([
+                            gridDropdown([
                                 ['while', 'while'],
                                 ['until', 'until'],
                             ]),

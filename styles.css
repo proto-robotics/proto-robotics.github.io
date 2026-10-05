@@ -4,23 +4,58 @@
         padding: 0;
         box-sizing: border-box;
     }
+
+    /* The hidden attribute must win: any author display rule (the button
+       pills, say) would otherwise cancel the browser's own [hidden]. */
+    [hidden] {
+        display: none !important;
+    }
 }
 
+/* Tokens shared with the main PROTO site (public-website/src/styles/site.css)
+   so the editor and the site read as one product. */
 @layer base {
     html {
-        --text: #333;
-        --text-faded: #999;
-        --bg: #fff;
-        --bg-faded: #eee;
-        --primary-red: #f2737b;
-        --secondary-red: #b2404b;
-        --primary-blue: #6395cf;
-        --secondary-red: #b2404b;
-        --secondary-blue: #325f94;
-        --offset-grey: #d8d8d8;
-        --secondary-grey: #4e4e4e;
+        /* PROTO brand (SEP 2025 guidelines) */
+        --red: #f2737b;
+        --red-dark: #b2404b;
+        --red-soft: #fde3e5;
+        --blue: #6395cf;
+        --blue-dark: #325f94;
+        --blue-soft: #e2ecf8;
+        --green: #00b8aa;
+        --green-dark: #006d65;
+        --green-soft: #dcf4f0;
+        --gold: #f8bf41;
+        --gold-dark: #a47b2c;
+        --gold-soft: #fdf3d0;
+        --purple: #9970b1;
+        --purple-dark: #5d3c6e;
+        --purple-soft: #ece3f2;
+        --gray-brand: #d8d8d8;
+        --gray-brand-dark: #4e4e4e;
 
-        --rule-width: 1px;
+        --text: #21242c;
+        --text-muted: var(--gray-brand-dark);
+        --text-faint: #9a9a9a;
+        --bg: #ffffff;
+        --bg-soft: #f6f7f9;
+        --bg-muted: #eceef2;
+        --line: #e2e4e8;
+        --line-strong: #cfd3da;
+        --border: #d6d8da;
+
+        --radius: 14px;
+        --shadow:
+            0 1px 2px rgba(20, 30, 50, 0.06),
+            0 6px 20px rgba(20, 30, 50, 0.06);
+        --shadow-lg: 0 10px 40px rgba(20, 30, 50, 0.14);
+        /* the site's hard bottom edge under every pill */
+        --edge: 0 3px 0 var(--gray-brand);
+        /* a soft white glow that lifts things off the bar's mosaics */
+        --halo: 0 0 8px 4px rgba(255, 255, 255, 0.9);
+        /* the code drawer and the cheatsheet drawer share this width */
+        --side-pane-width: max(380px, calc(100vw / 3));
 
         font:
             14pt / 1.5 Montserrat,
@@ -28,107 +63,308 @@
         hyphens: auto;
         color: var(--text);
         background: var(--bg);
+        -webkit-font-smoothing: antialiased;
     }
 
-    button,
     input {
-        font:
-            14pt / 1.5 Montserrat,
-            sans-serif;
+        font: inherit;
         color: var(--text);
     }
 }
 
 @layer elements {
     a {
-        color: var(--primary-blue);
+        color: var(--blue-dark);
         text-decoration: none;
 
         &:hover {
-            text-decoration: underline 1px solid currentColor;
+            text-decoration: underline;
         }
     }
 
-    a:has(img) {
-        display: flex;
+    /* ---------- pills ----------
+       Every button and the bar's links are the site's pill with a hard
+       bottom edge. On hover the pill lifts 3px and a soft oval shadow stays
+       on the "ground" under it; on press it settles back. Blockly's own DOM
+       has no <button> elements, so this never reaches the blocks. */
+    button,
+    .nav-btn {
+        position: relative;
+        display: inline-flex;
         align-items: center;
-    }
-
-    button {
+        justify-content: center;
+        gap: 8px;
+        margin: 0;
         border: none;
-        border-radius: 8px;
-        padding: 4px 8px;
-        background: var(--primary-red);
-        display: block;
-        margin: 16px auto;
-
-        &:hover {
-            background: var(--secondary-red);
-            color: var(--bg);
-        }
-
-        &:active {
-            background: var(--offset-grey);
-            color: var(--text);
-        }
+        border-radius: 999px;
+        padding: 8px 18px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--text);
+        background: var(--red);
+        box-shadow: 0 3px 0 var(--red-dark);
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: transform 0.15s ease;
     }
 
+    button::before,
+    .nav-btn::before {
+        content: '';
+        position: absolute;
+        left: 14%;
+        right: 14%;
+        top: calc(100% + 1px);
+        height: 8px;
+        border-radius: 50%;
+        background: radial-gradient(
+            ellipse at center,
+            rgba(20, 30, 50, 0.3),
+            transparent 70%
+        );
+        opacity: 0;
+        transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+        pointer-events: none;
+    }
+
+    button:hover,
+    .nav-btn:hover {
+        transform: translateY(-3px);
+        text-decoration: none;
+    }
+
+    button:hover::before,
+    .nav-btn:hover::before {
+        opacity: 1;
+        transform: translateY(3px); /* cancels the lift: stays on the ground */
+    }
+
+    button:active,
+    .nav-btn:active {
+        transform: translateY(0);
+        transition-duration: 0.06s;
+    }
+
+    button:active::before,
+    .nav-btn:active::before {
+        opacity: 0;
+    }
+
+    button:disabled {
+        background: var(--bg-muted);
+        color: var(--text-faint);
+        box-shadow: 0 3px 0 var(--line-strong);
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    button:focus-visible,
+    .nav-btn:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+    }
+
+    /* the white pill: used wherever several sit together */
+    .nav-btn,
+    tool-bar button,
+    cheatsheet-controls button,
+    #task-hint-buttons button {
+        padding: 7px 16px;
+        margin-bottom: 3px; /* room for the hard edge */
+        border: 1px solid var(--line);
+        background: #fff;
+        box-shadow: var(--edge);
+        font-size: 14px;
+    }
+
+    /* the pressed/active white pill turns red */
+    cheatsheet-controls button[aria-pressed='true'],
+    #task-hint-buttons button.active {
+        background: var(--red);
+        border-color: var(--red-dark);
+        box-shadow: 0 3px 0 var(--red-dark);
+    }
+
+    /* CodeMirror's own panels (search) use plain buttons; keep them small */
+    .cm-editor button {
+        padding: 2px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        background: var(--bg-muted);
+        box-shadow: none;
+    }
+
+    .cm-editor button::before {
+        display: none;
+    }
+
+    .cm-editor button:hover {
+        transform: none;
+        background: var(--line);
+    }
+
+    /* ---------- fields ---------- */
+    input[type='text'] {
+        padding: 7px 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: #fff;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    input[type='text']::placeholder {
+        color: var(--text-faint);
+    }
+
+    input[type='text']:focus {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
+    }
+
+    /* the file field: its "Choose File" is a white pill, with room below
+       for the pill's edge (the field clips its own box) and the focus ring
+       on the pill rather than the browser's box around the whole field */
     input[type='file'] {
-        border: none;
-        border-radius: 8px;
-        padding: 4px 8px;
-        background: var(--offset-grey);
         display: block;
-        margin: 16px auto;
-
-        &:hover {
-            background: var(--primary-red);
-        }
+        padding: 2px 0 4px;
+        font-size: 14px;
+        color: var(--text-muted);
     }
 
+    input[type='file']:focus-visible {
+        outline: none;
+    }
+
+    input[type='file']::file-selector-button {
+        margin-right: 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        background: #fff;
+        box-shadow: var(--edge);
+        cursor: pointer;
+    }
+
+    input[type='file']::file-selector-button:hover {
+        background: var(--red-soft);
+    }
+
+    input[type='file']:focus-visible::file-selector-button {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
+    }
+
+    /* ---------- popup ---------- */
     dialog.popup-dialog {
         width: fit-content;
         height: fit-content;
+        max-width: min(540px, calc(100vw - 32px));
         background: var(--bg);
+        color: var(--text);
         z-index: 1000;
-        border-radius: 8px;
-        border: var(--rule-width) solid var(--secondary-grey);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-lg);
         padding: 0;
         margin: auto;
 
         &::backdrop {
-            background: rgb(from var(--secondary-grey) r g b / 0.3);
+            background: rgba(33, 36, 44, 0.35);
         }
     }
 
     div.popup-content {
         position: relative;
-        padding: 32px;
+        padding: 28px 44px 26px 32px;
+        font-size: 15px;
+        line-height: 1.55;
     }
 
+    /* a popup with steps to follow (the brain connection help) */
+    div.popup-content > h2 {
+        margin: 0 0 10px;
+        font-size: 19px;
+    }
+
+    div.popup-content > ol.popup-steps {
+        max-width: 420px;
+        margin: 0 0 12px;
+        padding-left: 22px;
+    }
+
+    div.popup-content > ol.popup-steps > li {
+        margin: 6px 0;
+    }
+
+    div.popup-content > p {
+        max-width: 420px;
+        color: var(--text-muted);
+    }
+
+    /* what went wrong, when a popup's own action fails */
+    div.popup-content > p.popup-trouble {
+        margin-top: 12px;
+        padding: 8px 12px;
+        border-left: 3px solid var(--red);
+        border-radius: 0 8px 8px 0;
+        background: var(--red-soft);
+        color: var(--red-dark);
+    }
+
+    /* the popup's own controls sit centred under its text */
+    div.popup-content > input[type='file'],
+    div.popup-content > button:not(.popup-close-button) {
+        margin: 16px auto 0;
+        width: fit-content;
+    }
+
+    div.popup-content > input[type='text'] {
+        display: block;
+        width: min(100%, 320px);
+        margin: 16px auto 0;
+    }
+
+    div.popup-content > button:not(.popup-close-button) {
+        display: flex;
+    }
+
+    /* the close button: a small round white pill with the close icon */
     button.popup-close-button {
         position: absolute;
-        top: 0px;
-        right: 0px;
-        background: rgb(from var(--offset-grey) r g b / 0.7);
-        border-radius: 8px calc(8px / sqrt(2)) 8px 8px;
-        border: none;
-        padding: 6px;
+        top: 10px;
+        right: 10px;
+        width: 30px;
+        height: 30px;
+        padding: 0;
         margin: 0;
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: var(--edge);
+    }
+
+    button.popup-close-button::before {
+        display: none;
     }
 
     button.popup-close-button:hover {
-        background: var(--primary-red);
+        transform: none;
+        background: var(--red-soft);
     }
 
     button.popup-close-button img {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         display: block;
         opacity: 0.55;
         filter: grayscale(1);
@@ -138,86 +374,237 @@
         opacity: 1;
         filter: none;
     }
-
 }
 
 @layer layout {
+    /* The editor row is minmax(0, 1fr), not 1fr: a plain 1fr track never
+       shrinks below its content, so a long program would stretch the row
+       past the window instead of scrolling inside the code drawer. */
     body {
         width: 100vw;
         height: 100vh;
         display: grid;
         grid-template:
             'head' min-content
-            'edit' 1fr
-            'foot' min-content
-            / 1fr;
+            'edit' minmax(0, 1fr)
+            / minmax(0, 1fr);
     }
 
+    /* The editor pages fill the window and never scroll as a page: stray
+       overlays (Blockly menus, the box-select tool's layer) can poke a
+       pixel past the edge and must not summon scrollbars. The cheatsheet
+       page does scroll. */
+    body.editor,
+    body.embed {
+        overflow: hidden;
+    }
+
+    /* The bar starts below the phone's status bar, notch, or island: in
+       the app the page runs edge to edge (viewport-fit=cover), and the
+       safe-area insets say how much to keep clear. White, so the inset
+       strip matches the bar. The measured header height includes it, so
+       the drawers still start under the bar. */
     header {
         grid-area: head;
+        padding-top: env(safe-area-inset-top, 0px);
+        background: #fff;
     }
 
-    nav {
-        padding: 12px 8px;
-        background: var(--secondary-grey);
+    /* A grid with one capped row, so the editor inside gets a definite
+       height to fill and scroll within (a plain block would let a
+       percentage height fall through to "as tall as the content"). */
+    #editor-container {
+        grid-area: edit;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        min-height: 0;
+        /* clear of the home indicator and curved corners */
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+    }
+
+    /* ---------- top bar ----------
+       The main site's white bar: the logo in a raised pill with an uppercase
+       tagline, then the page's controls, the copyright, and pill links. A
+       mosaic (mosaicHelper.js) sits in each top corner, fading to white
+       toward the bottom edge; everything on the bar carries a white halo so
+       it reads cleanly over the shapes. */
+    nav.site-nav {
+        position: relative;
+        z-index: 60;
         display: flex;
-        flex-direction: row;
-        gap: 20px;
+        flex-wrap: wrap;
         align-items: center;
+        gap: 10px 16px;
+        min-height: 60px;
+        padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px
+            max(16px, env(safe-area-inset-left, 0px));
+        background: #fff;
+        border-bottom: 1px solid #e6e8ec;
+        box-shadow: 0 1px 6px rgba(33, 36, 44, 0.08);
+        overflow: hidden;
+    }
 
-        a:first-child:has(img) {
-            padding-right: 16px;
-        }
+    .mosaic {
+        position: absolute;
+        display: block;
+        opacity: 0.48;
+        pointer-events: none;
+        z-index: 0;
+        clip-path: inset(10px 0 0 0); /* the mosaic starts 10px above the bar */
+    }
 
-        a {
-            color: var(--primary-red);
-            text-decoration: none;
+    nav.site-nav::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.6) 85%,
+            #fff 100%
+        );
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    nav.site-nav > :not(.mosaic) {
+        position: relative;
+        z-index: 1;
+    }
+
+    .site-nav__brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        color: var(--text);
+    }
+
+    .site-nav__brand:hover {
+        text-decoration: none;
+        opacity: 0.85;
+    }
+
+    .site-nav__logo {
+        display: block;
+        box-sizing: content-box;
+        height: 28px;
+        width: auto;
+        padding: 6px 14px;
+        background: #fff;
+        border-radius: 999px;
+        box-shadow:
+            0 2px 6px rgba(33, 36, 44, 0.12),
+            var(--halo);
+    }
+
+    /* a near-solid white pocket behind the tagline whose edge blurs out */
+    .site-nav__brand-text {
+        padding: 3px 10px;
+        margin-left: -10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 0 6px 3px rgba(255, 255, 255, 0.92);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--red);
+    }
+
+    /* the page's controls (the toolbar), as one item of the bar */
+    .site-nav__controls {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        margin-left: 8px;
+    }
+
+    nav.site-nav tool-bar button,
+    .nav-btn {
+        box-shadow:
+            var(--edge),
+            var(--halo);
+    }
+
+    nav.site-nav tool-bar input[type='text'] {
+        box-shadow: var(--halo);
+    }
+
+    /* the menu button: a round white pill with the hamburger, phone only */
+    button.site-nav__menu {
+        display: none;
+        width: 38px;
+        height: 38px;
+        margin-left: auto;
+        padding: 0;
+        border: 1px solid var(--line);
+        background: #fff;
+        box-shadow:
+            var(--edge),
+            var(--halo);
+        color: var(--text);
+    }
+
+    button.site-nav__menu svg {
+        display: block;
+    }
+
+    nav.site-nav.menu-open button.site-nav__menu {
+        background: var(--red);
+        border-color: var(--red-dark);
+    }
+
+    .site-nav__copy {
+        margin-left: auto;
+        color: var(--text-muted);
+        font-size: 13px;
+        white-space: nowrap;
+        text-shadow:
+            0 0 4px #fff,
+            0 0 8px #fff,
+            0 0 14px #fff,
+            0 0 24px #fff;
+    }
+
+    .site-nav__actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* the copyright is the first thing to go when the bar gets tight, so
+       the toolbar keeps to one line on a laptop screen */
+    @media (max-width: 1320px) {
+        nav.site-nav > .site-nav__copy {
+            display: none;
         }
     }
 
+    /* ---------- toolbar ----------
+       The project-name field and the Save/Load/Switch pills in a row. On
+       the coding page it sits inside the bar; the embed gives it a strip of
+       its own (see the embed layer). */
     tool-bar {
-        background: var(--offset-grey);
-        display: block;
-        width: 100%;
-        border-bottom: var(--rule-width) solid var(--text-faded);
-
-        input[type='text'], button {
-            border: var(--rule-width) solid var(--text-faded);
-            border-bottom: none;
-            font-size: 0.8rem;
-            margin: 4px 4px 0 4px;
-            box-shadow: 1px -0.5px 2px var(--text-faded);
-        }
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
 
         input[type='text'] {
-            background: var(--bg);
-            padding: 2px 4px;
+            flex: 0 1 200px;
+            min-width: 0;
+            margin: 0 4px 3px 0;
         }
 
-        button {
-            border-radius: 8px 8px 0 0;
-            background: var(--bg-faded);
-            padding: 2px 8px;
-            display: inline;
-
-            &:hover {
-                background: rgb(from var(--primary-red) r g b / 0.3);
-                color: var(--text);
-            }
-
-            &:active {
-                background: var(--primary-red);
-            }
+        button.active {
+            background: var(--red-soft);
+            border-color: var(--red);
         }
-    }
-
-    footer {
-        grid-area: foot;
-        text-align: center;
-        background-color: var(--secondary-grey);
-        color: var(--bg);
-        padding: 8px;
-        font-size: 0.7rem;
     }
 
     .cheatsheet-page-header {
@@ -226,10 +613,10 @@
         z-index: 20;
     }
 
-    #editor-container {
-        grid-area: edit;
-    }
-
+    /* ---------- drawers ----------
+       Panels that slide in from the right edge, each with a tab on its
+       left edge. The tab is a white tag with rounded outer corners, red
+       while the drawer is open, and never lifts like a button. */
     .drawer {
         position: fixed;
         right: calc(-1 * var(--drawer-width));
@@ -244,49 +631,71 @@
     }
 
     .drawer-tab {
+        display: block;
         position: absolute;
         top: 16px;
-        left: -48px;
-        width: 48px;
+        left: -44px;
+        width: 44px;
         margin: 0;
-        border: var(--rule-width) solid var(--text-faded);
-        border-radius: 8px 0 0 8px;
+        padding: 16px 0;
+        border: 1px solid var(--line);
+        border-right: none;
+        border-radius: 12px 0 0 12px;
+        background: #fff;
+        box-shadow: -2px 2px 8px rgba(33, 36, 44, 0.12);
+        font-size: 14px;
         writing-mode: vertical-rl;
         text-orientation: mixed;
-        background: var(--bg-faded);
+        transition: background 0.15s ease;
     }
 
-    .drawer.open .drawer-tab,
-    .drawer-tab:hover {
-        background: var(--primary-red);
-        color: var(--bg);
+    .drawer-tab::before {
+        display: none;
+    }
+
+    .drawer-tab:hover,
+    .drawer-tab:active {
+        transform: none;
+        background: var(--red-soft);
+    }
+
+    .drawer.open .drawer-tab {
+        background: var(--red);
+        border-color: var(--red-dark);
     }
 
     .drawer-panel {
         height: 100%;
         overflow-x: hidden;
         overflow-y: auto;
-        border: var(--rule-width) solid var(--text-faded);
+        border: 1px solid var(--line);
         border-right: none;
+        border-radius: var(--radius) 0 0 var(--radius);
         background: var(--bg);
+        box-shadow: -8px 0 30px rgba(33, 36, 44, 0.14);
     }
 
-    cheatsheet-drawer {
-        --drawer-width: min(720px, calc(100vw - 56px));
+    /* the cheatsheet: the code drawer's footprint, laid over it rather
+       than replacing it. --header-height is set by watchHeaderHeight. */
+    cheatsheet-drawer.drawer {
+        --drawer-width: var(--side-pane-width);
 
-        top: 116px;
+        top: var(--header-height, 60px);
+        bottom: 0;
         z-index: 900;
     }
 
+    /* the Cheatsheet and Code tabs sit together right under the backpack
+       in the canvas's top-right corner, clear of the controls stacked at
+       the bottom even on short windows */
     #cheatsheet-drawer-tab {
+        top: 100px;
         min-height: 88px;
-        border-right: none;
-        box-shadow: -1px 1px 3px rgb(from var(--secondary-grey) r g b / 0.25);
+        padding: 8px 0;
     }
 
     #cheatsheet-drawer-panel {
-        box-shadow: -2px 0 8px rgb(from var(--secondary-grey) r g b / 0.25);
-        padding: 0 16px 16px;
+        padding: 0 10px 10px;
     }
 }
 
@@ -306,107 +715,109 @@
     }
 
     #issues-drawer-tab {
-        padding: 8px 4px;
-        box-shadow: 0 1px 3px #00000022;
+        padding: 14px 0;
     }
 
+    /* the tab takes the colour of the worst issue: brand red, gold, blue */
     issues-drawer.open #issues-drawer-tab,
-    #issues-drawer-tab:hover,
     issues-drawer[data-status='error'] #issues-drawer-tab {
-        background: var(--primary-red);
-        color: var(--bg);
+        background: var(--red);
+        border-color: var(--red-dark);
     }
 
     issues-drawer[data-status='warning'] #issues-drawer-tab {
-        background: #f79009;
-        color: var(--bg);
+        background: var(--gold);
+        border-color: var(--gold-dark);
     }
 
     issues-drawer[data-status='info'] #issues-drawer-tab {
-        background: #2f80ed;
-        color: var(--bg);
+        background: color-mix(in srgb, var(--blue) 78%, #fff);
+        border-color: var(--blue-dark);
     }
 
     #issues-drawer-panel {
-        box-shadow: 0 2px 10px #00000022;
-        padding: 8px;
+        padding: 12px 14px 14px;
     }
 
     #issues-drawer-panel h2 {
         margin: 0 0 8px;
-        font-size: 1.1rem;
+        font-size: 17px;
     }
 
     span#verify-status {
         display: inline-block;
-        margin-bottom: 8px;
-        padding: 2px 6px;
-        border-radius: 4px;
-        background: #ffffffd9;
-        color: #555;
+        margin-bottom: 10px;
+        padding: 3px 12px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 999px;
+        background: var(--bg-muted);
+        color: var(--text-muted);
         font-size: 12px;
+        font-weight: 700;
         line-height: 1.4;
     }
 
-    span#verify-status[data-status='checking'] {
-        color: #8a5a00;
+    span#verify-status[data-status='checking'],
+    span#verify-status[data-status='warning'] {
+        background: var(--gold-soft);
+        color: var(--gold-dark);
     }
 
     span#verify-status[data-status='success'] {
-        color: #16723a;
+        background: var(--green-soft);
+        color: var(--green-dark);
     }
 
     span#verify-status[data-status='error'] {
-        color: #b42318;
-    }
-
-    span#verify-status[data-status='warning'] {
-        color: #b54708;
+        background: var(--red-soft);
+        color: var(--red-dark);
     }
 
     span#verify-status[data-status='info'] {
-        color: #175cd3;
+        background: var(--blue-soft);
+        color: var(--blue-dark);
     }
 
     div#verify-issues {
         display: grid;
-        gap: 4px;
+        gap: 6px;
     }
 
     .verify-issue {
-        padding: 4px 6px;
-        border-radius: 4px;
-        box-shadow: 0 1px 3px #00000022;
+        padding: 6px 10px;
+        border-radius: 8px;
         font-size: 12px;
-        line-height: 1.35;
+        line-height: 1.4;
         overflow-wrap: anywhere;
     }
 
     .verify-issue-error {
-        border-left: 3px solid #d92d20;
-        background: #fff2f0;
-        color: #7a271a;
+        border-left: 3px solid var(--red);
+        background: var(--red-soft);
+        color: var(--red-dark);
     }
 
     .verify-issue-warning {
-        border-left: 3px solid #f79009;
-        background: #fffaeb;
-        color: #7a2e0e;
+        border-left: 3px solid var(--gold);
+        background: var(--gold-soft);
+        color: var(--gold-dark);
     }
 
     .verify-issue-info {
-        border-left: 3px solid #2f80ed;
-        background: #eff8ff;
-        color: #1849a9;
+        border-left: 3px solid var(--blue);
+        background: var(--blue-soft);
+        color: var(--blue-dark);
     }
 
     .verify-issue-more {
-        border-left-color: #b54708;
-        background: #fff7ed;
-        color: #7c2d12;
+        border-left: 3px solid var(--gray-brand);
+        background: var(--bg-muted);
+        color: var(--text-muted);
     }
 
-    div#line-editor-canvas {
+    /* the editor fills the pane and scrolls inside it */
+    div#line-editor-canvas,
+    div#line-editor-canvas.cm-editor {
         width: 100%;
         height: 100%;
     }
@@ -420,33 +831,28 @@
         background-color: #2f80ed66 !important;
     }
 
-    .cm-editor .cm-lintRange-error {
-        background-image: none !important;
-        text-decoration-line: underline;
-        text-decoration-style: wavy;
-        text-decoration-color: #d92d20;
-        text-decoration-thickness: 1.5px;
-        text-underline-offset: 3px;
-        background-color: #fff2f066;
-    }
-
-    .cm-editor .cm-lintRange-warning {
-        background-image: none !important;
-        text-decoration-line: underline;
-        text-decoration-style: wavy;
-        text-decoration-color: #f79009;
-        text-decoration-thickness: 1.5px;
-        text-underline-offset: 3px;
-        background-color: #fffaeb66;
-    }
-
+    .cm-editor .cm-lintRange-error,
+    .cm-editor .cm-lintRange-warning,
     .cm-editor .cm-lintRange-info {
         background-image: none !important;
         text-decoration-line: underline;
         text-decoration-style: wavy;
-        text-decoration-color: #2f80ed;
         text-decoration-thickness: 1.5px;
         text-underline-offset: 3px;
+    }
+
+    .cm-editor .cm-lintRange-error {
+        text-decoration-color: #d92d20;
+        background-color: #fff2f066;
+    }
+
+    .cm-editor .cm-lintRange-warning {
+        text-decoration-color: #f79009;
+        background-color: #fffaeb66;
+    }
+
+    .cm-editor .cm-lintRange-info {
+        text-decoration-color: #2f80ed;
         background-color: #eff8ff66;
     }
 
@@ -464,32 +870,314 @@
 }
 
 @layer block-editor {
+    /* Not positioned on purpose: Blockly's dropdown, text-editor, and
+       tooltip layers are parented here (blocklyHelper.js) and placed in page
+       coordinates, so a positioned ancestor would shift them all. */
     block-editor {
         width: 100%;
         height: 100%;
         display: grid;
-        grid-template:
-            'blockly code' 1fr
-            / 2fr 1fr;
+        grid-template: 'blockly code' minmax(0, 1fr) / minmax(0, 1fr) auto;
+    }
 
-        div#code-preview {
-            border-left: var(--rule-width) solid var(--text-faded);
-            overflow: auto;
-            padding: 8px;
+    /* the canvas and the things pinned over it (the "blocks left" pill) */
+    .block-canvas-wrap {
+        position: relative;
+        grid-area: blockly;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .block-canvas-wrap > div#block-canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* The code drawer, with the generated Python. It sits in the editor's
+       layout and opens by growing from zero width, so the canvas shrinks to
+       make room (buildBlockMode.js resizes Blockly as it does) and the bar
+       is never covered. */
+    code-drawer.drawer {
+        --drawer-width: var(--side-pane-width);
+
+        position: relative;
+        grid-area: code;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        width: 0;
+        height: 100%;
+        z-index: 890;
+        transition: width 180ms ease;
+    }
+
+    code-drawer.drawer.open {
+        right: auto;
+        width: var(--drawer-width);
+    }
+
+    #code-drawer-tab {
+        top: 210px; /* right under the cheatsheet tab */
+        padding: 8px 0;
+        min-height: 64px;
+    }
+
+    /* The dividing line is an inset shadow, not a border: a border would
+       keep the closed (0px wide) panel 1px wide and overflow the page. */
+    #code-drawer-panel {
+        display: flex;
+        flex-direction: column;
+        border: none;
+        border-radius: 0;
+        box-shadow: inset 1px 0 0 var(--line);
+    }
+
+    #code-drawer-panel div#code-preview {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 12px 14px;
+    }
+
+    button#open-in-line-editor-button {
+        flex: none;
+        align-self: flex-end;
+        margin: 8px 16px 16px;
+    }
+
+    /* "You have N blocks left.", centred above the canvas when a block cap
+       is set, as in Blockly's max-blocks demo. */
+    #block-capacity {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 800;
+        white-space: nowrap;
+        padding: 5px 14px;
+        border: 1px solid rgba(0, 0, 0, 0.25);
+        border-radius: 999px;
+        background: var(--red-soft);
+        box-shadow: var(--shadow);
+        font-size: 13px;
+        font-weight: 700;
+
+        &.full {
+            background: var(--red);
+            border-color: var(--red-dark);
+        }
+
+        &.over {
+            animation: capacity-flash 0.6s ease;
         }
     }
 
-    button#copy-to-line-editor-button {
-        position: absolute;
-        bottom: 40px;
-        right: 16px;
-        z-index: 800;
+    @keyframes capacity-flash {
+        0%, 40% {
+            background: var(--red);
+            transform: translateX(-50%) scale(1.1);
+        }
+        100% {
+            background: var(--red-soft);
+            transform: translateX(-50%) scale(1);
+        }
+    }
+
+    /* ---------- toolbox ----------
+       The always-open toolbox (@blockly/continuous-toolbox): Scratch-style
+       tabs, each the category's icon (or a colour dot) over a small label,
+       beside one scrolling flyout of every block. Blockly and the plugin
+       style these with unlayered and inline CSS, hence the !important.
+       Block shapes are untouched.
+       DOM: .blocklyToolbox > .blocklyToolboxCategoryGroup >
+       .blocklyToolboxCategoryContainer > .blocklyToolboxCategory (the row) >
+       .blocklyTreeRowContentContainer > .categoryBubble + label */
+    .blocklyToolbox {
+        background: #fff !important;
+        border-right: 1px solid var(--line);
+        padding: 0 !important;
+    }
+
+    .blocklyToolboxCategoryContainer {
+        margin: 0 !important;
+    }
+
+    .blocklyToolboxCategory {
+        box-sizing: border-box;
+        min-width: 66px;
+        height: auto !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+        padding: 8px 5px 7px !important;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .blocklyToolboxCategory:hover {
+        background: var(--bg-soft) !important;
+    }
+
+    /* the plugin sets an inline gray on the selected row */
+    .blocklyToolboxCategory.blocklyToolboxSelected {
+        background: var(--bg-muted) !important;
     }
 
     .blocklyToolboxCategoryLabel {
+        padding: 0 !important;
         font:
-            10pt / 1.5 Montserrat,
+            600 10px / 1.2 Montserrat,
             sans-serif !important;
+        color: var(--text) !important;
+        cursor: pointer !important;
+    }
+
+    .categoryBubble {
+        width: 15px !important;
+        height: 15px !important;
+        margin: 0 auto 3px !important;
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* the categories' own icons (assets/images/category-icons, see
+       createCategoryIcon in mods.js): bubbles with a glyph, so a little
+       bigger than the dot and without the dot's border */
+    img.categoryIcon {
+        display: block;
+        width: 24px !important;
+        height: 24px !important;
+        margin: 0 auto 2px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: none !important;
+        pointer-events: none;
+    }
+
+    /* The search field (src/mods/searchField.js): an item in the flyout's
+       Search section, drawn inside the flyout's SVG. Its size and scale
+       are set there; this is its look. */
+    input.toolbox-search-field {
+        display: block;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 4px 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: #fff;
+        box-shadow: var(--shadow);
+        font: 600 12px / 1.2 Montserrat, sans-serif;
+        color: var(--text);
+    }
+
+    input.toolbox-search-field::placeholder {
+        color: var(--text-faint);
+    }
+
+    input.toolbox-search-field:focus {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
+    }
+
+    /* the native clear button is replaced by Escape */
+    input.toolbox-search-field::-webkit-search-cancel-button {
+        display: none;
+    }
+
+    /* the plugin's "Type to search for blocks" and "No matching blocks
+       found" lines, as hints rather than headings (ProtoSearchCategory) */
+    .blocklyFlyoutLabel.search-hint .blocklyFlyoutLabelText {
+        font-size: 17px !important;
+        font-weight: 500 !important;
+        fill: var(--text-muted) !important;
+    }
+
+    .blocklyFlyoutBackground {
+        fill: var(--bg-soft) !important;
+        fill-opacity: 1 !important;
+    }
+
+    /* category headings inside the flyout. They live in the flyout's SVG
+       and are drawn at the flyout's fixed zoom (FLYOUT_SCALE 0.65 in
+       src/mods/flyouts.js), so 22px here reads as about 14px on screen. */
+    .blocklyFlyoutLabelText {
+        font-family: Montserrat, sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 22px !important;
+        fill: var(--text) !important;
+    }
+
+    .blocklyFlyout .blocklyScrollbarHandle {
+        fill: var(--line-strong) !important;
+    }
+
+    /* the minimap (@blockly/workspace-minimap), when the bar's toggle is
+       on: a card in the site's style; the plugin's own styles are unlayered */
+    .blockly-minimap {
+        border: 1px solid var(--line) !important;
+        border-radius: 12px;
+        box-shadow: var(--shadow) !important;
+        overflow: hidden;
+    }
+
+    .blockly-focus-region {
+        fill: var(--blue-soft) !important;
+    }
+
+    /* The backpack brightens on hover like the other canvas controls, and
+       "opens" (lifts, tilts, full strength) while a block is dragged over
+       it: the plugin only adds a darken class then. The scale and rotate
+       properties compose with the plugin's own positioning transform. */
+    .blocklyBackpack {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        transition:
+            opacity 0.15s ease,
+            scale 0.15s ease,
+            rotate 0.15s ease;
+    }
+
+    .blocklyBackpack:hover {
+        opacity: 0.6 !important;
+        cursor: pointer;
+    }
+
+    .blocklyBackpack.blocklyBackpackDarken {
+        opacity: 1 !important;
+        scale: 1.1;
+        rotate: -5deg;
+    }
+
+    /* The grid dropdowns (@blockly/field-grid-dropdown): the choices are
+       <button>s inside Blockly's dropdown bubble, so the site's pill
+       styling (shadow, lift, shine) is taken back off them. The plugin's
+       own rules are unlayered, hence the !important. */
+    .blocklyFieldGrid .blocklyFieldGridItem {
+        border-radius: 8px !important;
+        padding: 6px 14px !important;
+        box-shadow: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 0.15s ease;
+    }
+
+    .blocklyFieldGrid .blocklyFieldGridItem::before {
+        display: none;
+    }
+
+    .blocklyFieldGrid .blocklyFieldGridItem:hover,
+    .blocklyFieldGrid .blocklyFieldGridItem:active {
+        transform: none;
+        background: rgba(255, 255, 255, 0.18) !important;
+    }
+
+    .blocklyFieldGrid .blocklyFieldGridItem.blocklyFieldGridItemSelected {
+        background: rgba(0, 0, 0, 0.22) !important;
+    }
+
+    /* No hover tooltips on blocks: jenga sets each block's description as
+       its tooltip, and the cheatsheet covers that. Blockly shows the tooltip
+       with an inline style, hence the !important. */
+    .blocklyTooltipDiv {
+        display: none !important;
     }
 }
 
@@ -511,9 +1199,9 @@
         align-items: center;
         justify-content: flex-end;
         gap: 6px;
-        padding: 8px;
-        background: rgb(from var(--bg) r g b / 0.92);
-        border-bottom: var(--rule-width) solid var(--offset-grey);
+        padding: 8px 8px 6px;
+        background: rgba(255, 255, 255, 0.94);
+        border-bottom: 1px solid var(--line);
     }
 
     .cheatsheet-page > cheatsheet-content > cheatsheet-controls {
@@ -521,57 +1209,54 @@
         z-index: 19;
     }
 
+    /* the section tabs scroll sideways when they do not fit, never up and
+       down: the row has room for the hover lift and the hard edge */
     cheatsheet-section-tabs {
         display: flex;
         flex: 1 1 auto;
         gap: 4px;
         min-width: 0;
         margin-right: auto;
+        padding: 4px 2px 6px;
         overflow-x: auto;
+        overflow-y: hidden;
         scrollbar-width: thin;
     }
 
     cheatsheet-controls button {
         flex: 0 0 auto;
-        margin: 0;
-        border: var(--rule-width) solid var(--text-faded);
-        border-radius: 8px;
-        padding: 2px 10px;
-        font-size: 0.75rem;
-        background: var(--bg-faded);
+        padding: 4px 12px;
+        font-size: 13px;
     }
 
-    cheatsheet-controls button[aria-pressed='true'] {
-        background: var(--primary-red);
-        color: var(--bg);
-    }
-
+    /* section tabs take their section's block colour: as an outline, and
+       filled in for the section on screen */
     cheatsheet-section-tabs button {
-        border-color: var(--cheatsheet-section-color, var(--text-faded));
-        color: var(--cheatsheet-section-color, var(--text));
+        --tab-color: var(--cheatsheet-section-color, var(--gray-brand));
+
+        border-color: var(--tab-color);
+        box-shadow: 0 3px 0 color-mix(in srgb, var(--tab-color) 65%, #000);
     }
 
     cheatsheet-section-tabs button:hover {
-        background: rgb(from var(--cheatsheet-section-color, var(--primary-red)) r g b / 0.14);
+        background: color-mix(in srgb, var(--tab-color) 18%, #fff);
     }
 
     cheatsheet-section-tabs button[aria-current='true'] {
-        border-color: var(--cheatsheet-section-color, var(--primary-red));
-        background: var(--cheatsheet-section-color, var(--primary-red));
-        color: var(--bg);
+        background: var(--tab-color);
     }
 
     cheatsheet-section {
         display: block;
         break-inside: avoid;
-        page-break-inside: avoid;
     }
 
     cheatsheet-section h2 {
-        border-bottom: solid 1px;
-        text-align: center;
-        font-size: 1.25rem;
-        margin: 8px 0;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 6px;
+        font-size: 22px;
+        font-weight: 800;
+        margin: 14px 0 10px;
     }
 
     cheatsheet-section h3 {
@@ -582,11 +1267,11 @@
     cheatsheet-section p {
         margin: 4px 0;
         overflow-wrap: break-word;
-        word-break: normal;
     }
 
     cheatsheet-section-content {
         --cheatsheet-column-gap: 12px;
+
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: var(--cheatsheet-column-gap);
@@ -602,7 +1287,6 @@
         min-width: 0;
         padding: 4px;
         break-inside: avoid;
-        page-break-inside: avoid;
     }
 
     cheatsheet-item.cheatsheet-item-wide {
@@ -614,18 +1298,25 @@
     }
 
     cheatsheet-item:target {
-        outline: 2px solid var(--primary-red);
+        outline: 2px solid var(--gold);
         outline-offset: 2px;
+        border-radius: 8px;
     }
 
-    cheatsheet-code-section,
-    cheatsheet-example-section {
-        min-width: 0;
+    /* "Copy": puts the entry's blocks on the editor's clipboard for Ctrl+V */
+    button.cheatsheet-copy {
+        padding: 2px 10px;
+        margin: 0 0 3px;
+        border: 1px solid var(--line);
+        background: #fff;
+        box-shadow: var(--edge);
+        font-size: 11px;
     }
 
-    cheatsheet-example-section {
-        border-left: none;
-        padding-left: 0;
+    button.cheatsheet-copy.done {
+        background: var(--green-soft);
+        border-color: var(--green);
+        color: var(--green-dark);
     }
 
     cheatsheet-preview {
@@ -643,69 +1334,6 @@
 
     cheatsheet-content .cm-line {
         white-space: pre;
-    }
-
-    cheatsheet-drawer h2 {
-        font-size: 1.2rem;
-    }
-
-    cheatsheet-drawer h3 {
-        font-size: 1rem;
-    }
-
-    cheatsheet-drawer p {
-        font-size: 0.85rem;
-    }
-
-    cheatsheet-drawer .cm-editor {
-        font-size: 0.8rem;
-    }
-
-    cheatsheet-drawer cheatsheet-content {
-        max-width: none;
-        padding: 0 8px 8px;
-        font-size: 0.78rem;
-    }
-
-    cheatsheet-drawer cheatsheet-controls {
-        position: sticky;
-        top: 0;
-        flex-wrap: wrap;
-        margin: 0 -8px 8px;
-        padding: 8px;
-    }
-
-    cheatsheet-drawer cheatsheet-section-tabs {
-        flex-basis: 100%;
-        margin-right: 0;
-    }
-
-    cheatsheet-drawer cheatsheet-section-content {
-        --cheatsheet-column-gap: 8px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--cheatsheet-column-gap);
-    }
-
-    cheatsheet-drawer cheatsheet-example-section {
-        border-top: none;
-        padding-left: 0;
-        padding-top: 0;
-    }
-
-    cheatsheet-drawer cheatsheet-item {
-        padding: 4px;
-    }
-
-    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide {
-        grid-column: span 2;
-    }
-
-    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide > p {
-        max-width: calc((100% - var(--cheatsheet-column-gap)) / 2);
-    }
-
-    cheatsheet-drawer blockly-preview {
-        max-width: 100%;
     }
 
     blockly-preview {
@@ -731,17 +1359,88 @@
         display: none;
     }
 
+    /* ---------- the drawer: a compact two-column version ---------- */
+    cheatsheet-drawer cheatsheet-content {
+        max-width: none;
+        padding: 0 8px 8px;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    cheatsheet-drawer h2 {
+        font-size: 15px;
+        margin: 6px 0 4px;
+        padding-bottom: 3px;
+    }
+
+    cheatsheet-drawer h3 {
+        font-size: 13px;
+        margin: 2px 0 0;
+    }
+
+    cheatsheet-drawer p {
+        font-size: 12px;
+        line-height: 1.3;
+        margin: 2px 0;
+    }
+
+    cheatsheet-drawer .cm-editor {
+        font-size: 11px;
+    }
+
+    cheatsheet-drawer hr {
+        margin: 4px 0;
+        border: none;
+        border-top: 1px solid var(--line);
+    }
+
+    /* two centred rows: the section tabs, then the view buttons */
+    cheatsheet-drawer cheatsheet-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+        margin: 0 -8px 6px;
+        padding: 6px 8px 4px;
+    }
+
+    cheatsheet-drawer cheatsheet-controls button {
+        padding: 3px 10px;
+        font-size: 12px;
+    }
+
+    cheatsheet-drawer cheatsheet-section-tabs {
+        flex-basis: 100%;
+        justify-content: safe center;
+        margin-right: 0;
+    }
+
+    cheatsheet-drawer cheatsheet-section-content {
+        --cheatsheet-column-gap: 6px;
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    cheatsheet-drawer cheatsheet-item {
+        padding: 2px;
+    }
+
+    cheatsheet-drawer cheatsheet-preview {
+        margin-bottom: 4px;
+    }
+
+    cheatsheet-drawer blockly-preview {
+        margin: 2px 0;
+    }
+
+    /* ---------- the print stage: an off-screen A4 render ---------- */
     cheatsheet-print-stage {
         position: absolute;
         top: 0;
         left: -10000px;
         display: block;
-        box-sizing: border-box;
         width: 21cm;
         padding: 1.4cm;
         background: var(--bg);
-        -webkit-box-decoration-break: clone;
-        box-decoration-break: clone;
         pointer-events: none;
     }
 
@@ -768,8 +1467,8 @@
 
     cheatsheet-print-stage cheatsheet-section-content {
         --cheatsheet-column-gap: 8pt;
+
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--cheatsheet-column-gap);
     }
 
     cheatsheet-print-stage cheatsheet-item {
@@ -798,8 +1497,7 @@
 }
 
 @media (max-width: 760px) {
-    cheatsheet-section-content,
-    cheatsheet-drawer cheatsheet-section-content {
+    cheatsheet-section-content {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -810,13 +1508,11 @@
         grid-template-columns: 1fr;
     }
 
-    cheatsheet-item.cheatsheet-item-wide,
-    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide {
+    cheatsheet-item.cheatsheet-item-wide {
         grid-column: auto;
     }
 
-    cheatsheet-item.cheatsheet-item-wide > p,
-    cheatsheet-drawer cheatsheet-item.cheatsheet-item-wide > p {
+    cheatsheet-item.cheatsheet-item-wide > p {
         max-width: none;
     }
 }
@@ -846,9 +1542,9 @@
 
     header,
     nav,
-    footer,
     cheatsheet-drawer,
-    cheatsheet-controls {
+    cheatsheet-controls,
+    button.cheatsheet-copy {
         display: none !important;
     }
 
@@ -876,7 +1572,6 @@
 
     cheatsheet-section {
         break-inside: avoid;
-        page-break-inside: avoid;
         margin-bottom: 8pt;
     }
 
@@ -892,11 +1587,11 @@
 
     cheatsheet-section p {
         margin: 2pt 0;
-        overflow-wrap: break-word;
     }
 
     cheatsheet-section-content {
         --cheatsheet-column-gap: 8pt;
+
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--cheatsheet-column-gap);
@@ -949,4 +1644,391 @@
     src: url('assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
     font-style: italic;
     font-weight: bold;
+}
+
+/* The editor embedded in another site (?embed, see BuildEmbedContent.js):
+   a toolbar strip, a collapsible task panel from the host, one editor, and
+   the cheatsheet drawer. No top bar. */
+@layer embed {
+    body.embed tool-bar {
+        flex-wrap: wrap;
+        padding: 8px 12px 11px;
+        background: var(--bg-soft);
+        border-bottom: 1px solid var(--line);
+
+        input[type='text'] {
+            flex: 1 1 140px;
+            max-width: 260px;
+        }
+    }
+
+    body.embed #editor-container {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        min-height: 0;
+        height: 100%;
+    }
+
+    body.embed.task-closed #editor-container {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.embed.task-closed task-panel {
+        display: none;
+    }
+
+    #task-badge {
+        display: inline-block;
+        min-width: 18px;
+        margin-left: 2px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: var(--red);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 18px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    task-panel {
+        display: block;
+        width: 320px;
+        min-height: 0;
+        overflow: auto;
+        padding: 14px 16px 20px;
+        border-right: 1px solid var(--line);
+        background: var(--bg-soft);
+        font-size: 0.85rem;
+        line-height: 1.45;
+
+        > small {
+            display: inline-block;
+            margin-bottom: 8px;
+            padding: 3px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 999px;
+            background: var(--red-soft);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin: 2px 0 12px;
+        }
+
+        #task-limit {
+            margin: -6px 0 12px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: var(--red-soft);
+            color: var(--red-dark);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: 16px 0 6px;
+        }
+    }
+
+    #task-body {
+        > h1:first-child {
+            display: none;
+        }
+
+        h2, h3 {
+            font-size: 0.9rem;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--text);
+            margin: 14px 0 6px;
+        }
+
+        p, ul, ol {
+            margin: 0 0 10px;
+        }
+
+        ul, ol {
+            padding-left: 18px;
+        }
+
+        code {
+            font-size: 0.85em;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background: var(--bg-muted);
+        }
+
+        pre {
+            margin: 0 0 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: var(--text);
+            color: var(--bg);
+            font-size: 0.78rem;
+            line-height: 1.5;
+            overflow: auto;
+
+            code {
+                padding: 0;
+                background: none;
+                font-size: inherit;
+            }
+        }
+    }
+
+    #task-blocks {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        li {
+            padding: 2px 10px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #fff;
+            font-family: monospace;
+            font-size: 0.78rem;
+        }
+
+        li.have {
+            border-color: var(--green);
+            background: var(--green-soft);
+            color: var(--green-dark);
+        }
+
+        li.have::before {
+            content: '\2713  ';
+        }
+    }
+
+    #task-hint-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        button {
+            padding: 4px 12px;
+            font-size: 13px;
+        }
+    }
+
+    #task-hint-text {
+        margin-top: 8px;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--red);
+        border-radius: 0 8px 8px 0;
+        background: #fff;
+    }
+
+    body.embed cheatsheet-drawer {
+        top: var(--header-height, 16px);
+    }
+
+    /* The toolbar opens the cheatsheet, so the drawer's own tab only shows
+       while open, where it works as the close control. */
+    body.embed cheatsheet-drawer:not(.open) .drawer-tab {
+        display: none;
+    }
+}
+
+/* ---------- the phone layout ----------
+   A narrow portrait window (body.phone-layout, set by phoneLayoutHelper.js):
+   the toolbar wraps, the toolbox runs across the top of the canvas behind a
+   tab that pulls it away, and the cheatsheet drawer rises from the bottom.
+   Last layer, so it wins over the embed layer too. */
+@layer phone {
+    /* ---------- the menu ----------
+       The bar keeps to one line: the brand and the menu button. The
+       controls hang below the bar in a panel while the menu is open, each
+       on its own line. The panel is fixed, so the bar's own clipping (for
+       the mosaics) does not cut it off. */
+    body.phone-layout nav.site-nav {
+        flex-wrap: nowrap;
+    }
+
+    /* the open menu is above everything on the page (the bar's own level
+       is below the drawers and the canvas controls) */
+    body.phone-layout nav.site-nav.menu-open {
+        z-index: 960;
+    }
+
+    body.phone-layout .site-nav__copy {
+        display: none;
+    }
+
+    body.phone-layout button.site-nav__menu {
+        display: inline-flex;
+    }
+
+    body.phone-layout .site-nav__controls {
+        display: none;
+        position: fixed;
+        top: var(--header-height, 60px);
+        left: 0;
+        right: 0;
+        z-index: 950; /* over the drawers */
+        margin: 0;
+        padding: 12px 16px 16px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        box-shadow: 0 10px 30px rgba(33, 36, 44, 0.16);
+    }
+
+    body.phone-layout nav.site-nav.menu-open .site-nav__controls {
+        display: block;
+    }
+
+    body.phone-layout .site-nav__controls tool-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    body.phone-layout .site-nav__controls tool-bar input[type='text'] {
+        flex: none;
+        width: 100%;
+        margin: 0;
+    }
+
+    body.phone-layout .site-nav__controls tool-bar button {
+        width: 100%;
+        margin: 0 0 3px;
+    }
+
+    /* ---------- the toolbox drawer ----------
+       The toolbox is one row of tabs across the top of the canvas (its
+       flyout drops down below it, see src/mods/flyouts.js). The row scrolls
+       sideways and never wraps; Blockly's own (unlayered) rule wraps, hence
+       the !important. Its scrollbar strip is hidden: a finger scrolls it,
+       and the cut-off tabs give it away. */
+    body.phone-layout .blocklyToolbox {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scrollbar-width: none;
+    }
+
+    body.phone-layout .blocklyToolbox::-webkit-scrollbar {
+        display: none;
+    }
+
+    body.phone-layout .blocklyToolboxCategoryGroup {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: max-content;
+    }
+
+    body.phone-layout .blocklyToolboxCategory {
+        flex: none;
+    }
+
+    /* the drawer's tab: hangs from the flyout's lower edge in the middle
+       of the canvas, and from the canvas's top edge once the toolbox is
+       away (--toolbox-height is set on block-editor by
+       toolboxDrawerHelper.js) */
+    .block-canvas-wrap > #toolbox-drawer-tab {
+        display: none;
+    }
+
+    body.phone-layout .block-canvas-wrap > #toolbox-drawer-tab {
+        display: block;
+        position: absolute;
+        top: var(--toolbox-height, 0px);
+        left: 50%;
+        translate: -50%;
+        z-index: 80;
+        width: auto;
+        height: 26px;
+        min-height: 0;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 2px 8px rgba(33, 36, 44, 0.12);
+        font-size: 12px;
+        line-height: 24px;
+        writing-mode: horizontal-tb;
+        transition:
+            top 180ms ease,
+            background 0.15s ease;
+    }
+
+    body.phone-layout #toolbox-drawer-tab[aria-expanded='true'] {
+        background: var(--red);
+        border-color: var(--red-dark);
+    }
+
+    /* the code drawer takes nearly the whole width, leaving its tab */
+    body.phone-layout code-drawer.drawer {
+        --drawer-width: calc(100vw - 52px);
+    }
+
+    /* below the flyout and the backpack under it (--toolbox-height is the
+       toolbox row plus the flyout while they show, see
+       toolboxDrawerHelper.js) */
+    body.phone-layout #code-drawer-tab {
+        top: calc(var(--toolbox-height, 0px) + 90px);
+    }
+
+    /* the cheatsheet: a drawer along the bottom, its tab in the middle */
+    body.phone-layout cheatsheet-drawer.drawer {
+        --drawer-height: min(
+            60vh,
+            calc(100vh - var(--header-height, 60px) - 80px)
+        );
+
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: calc(-1 * var(--drawer-height));
+        width: auto;
+        height: var(--drawer-height);
+        transition: bottom 180ms ease;
+    }
+
+    body.phone-layout cheatsheet-drawer.drawer.open {
+        right: 0;
+        bottom: 0;
+    }
+
+    body.phone-layout #cheatsheet-drawer-tab {
+        display: block;
+        top: auto;
+        bottom: 100%;
+        left: 50%;
+        translate: -50%;
+        width: auto;
+        height: 32px;
+        min-height: 0;
+        padding: 0 16px;
+        border: 1px solid var(--line);
+        border-bottom: none;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 -2px 8px rgba(33, 36, 44, 0.12);
+        line-height: 30px;
+        writing-mode: horizontal-tb;
+    }
+
+    body.phone-layout #cheatsheet-drawer-panel {
+        border: 1px solid var(--line);
+        border-bottom: none;
+        border-radius: var(--radius) var(--radius) 0 0;
+        box-shadow: 0 -8px 30px rgba(33, 36, 44, 0.14);
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
 }

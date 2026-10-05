@@ -18,6 +18,44 @@ export class ProtoRenderer extends Blockly.blockRendering.Renderer {
 	makeConstants_() {
 		return new ProtoRendererConstantProvider();
 	}
+
+	/**
+	 * @param {Blockly.BlockSvg} block The block to measure.
+	 * @returns {ProtoRenderInfo} Measurements with rounded right corners.
+	 */
+	makeRenderInfo_(block) {
+		return new ProtoRenderInfo(this, block);
+	}
+}
+
+/*
+ * Blockly's base renderer rounds a block's left corners (CORNER_RADIUS) but
+ * keeps the right ones square. The rows decide that, so these rows answer
+ * "not square" and the stock drawer rounds the right edge with the same
+ * radius.
+ */
+
+/** The top row of a block, with a rounded right corner. */
+class ProtoTopRow extends Blockly.blockRendering.TopRow {
+	hasRightSquareCorner() {
+		return false;
+	}
+}
+
+/** The bottom row of a block, with a rounded right corner. */
+class ProtoBottomRow extends Blockly.blockRendering.BottomRow {
+	hasRightSquareCorner() {
+		return false;
+	}
+}
+
+/** Block measurements built from the rows above. */
+class ProtoRenderInfo extends Blockly.blockRendering.RenderInfo {
+	constructor(renderer, block) {
+		super(renderer, block);
+		this.topRow = new ProtoTopRow(this.constants_);
+		this.bottomRow = new ProtoBottomRow(this.constants_);
+	}
 }
 
 /** Defines PROTO typography and SVG connection geometry. */
@@ -27,6 +65,9 @@ export class ProtoRendererConstantProvider extends Blockly.blockRendering.Consta
 	FIELD_TEXT_FONTSIZE = 10;
 	/** Font family loaded by the website stylesheet. */
 	FIELD_TEXT_FONTFAMILY = 'Montserrat, sans-serif';
+
+	/** A shallower notch between stacked blocks than Blockly's default. */
+	NOTCH_HEIGHT = 6;
 
 	constructor() {
 		super();

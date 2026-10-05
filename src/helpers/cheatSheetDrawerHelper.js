@@ -4,6 +4,7 @@
  */
 
 import { createDrawer, openDrawer } from './drawerHelper'
+import { animateScrollTo } from './scrollHelper'
 
 /** Event dispatched to open the cheatsheet drawer at a block or item. */
 export const openCheatSheetDrawerEvent = 'open-cheatsheet-drawer'
@@ -26,10 +27,7 @@ function scrollCheatSheetDrawerToElementNumber(drawer, elementNumber) {
 
     const panelBox = panel.getBoundingClientRect()
     const targetBox = target.getBoundingClientRect()
-    panel.scrollTo({
-        top: panel.scrollTop + targetBox.top - panelBox.top - 8,
-        behavior: 'smooth',
-    })
+    animateScrollTo(panel, panel.scrollTop + targetBox.top - panelBox.top - 8)
 
     return true
 }

@@ -6,6 +6,8 @@
 import { hr, on, tag } from 'ellipsi'
 
 import { cheatSheetBlocks as blocks } from '../data/library'
+import { copyWorkspaceStateToClipboard } from '../helpers/blockClipboardHelper'
+import { animateScrollTo } from '../helpers/scrollHelper'
 import {
     CheatSheetPreviewMode,
     createCheatSheetPreview,
@@ -15,7 +17,7 @@ import { whenEditorFontsReady } from '../helpers/fontHelper'
 
 const displayModeOptions = [
     {
-        label: 'Blocks + code',
+        label: 'Blocks + Code',
         mode: CheatSheetPreviewMode.BLOCKS_AND_CODE,
     },
     {
@@ -94,6 +96,30 @@ function createSingleBlockWorkspaceState(blockType) {
 }
 
 /**
+ * A "Copy" button that puts an entry's blocks on the editor's clipboard,
+ * for pasting with Ctrl+V.
+ * @param {object} workspaceState The entry's workspace state.
+ * @returns {HTMLButtonElement} The button.
+ */
+function buildCopyButton(workspaceState) {
+    const button = tag(
+        'button',
+        { type: 'button', class: 'cheatsheet-copy' },
+        'Copy',
+        on('click', () => {
+            copyWorkspaceStateToClipboard(workspaceState)
+            button.textContent = 'Copied'
+            button.classList.add('done')
+            setTimeout(() => {
+                button.textContent = 'Copy'
+                button.classList.remove('done')
+            }, 1500)
+        }),
+    )
+    return button
+}
+
+/**
  * Renders a single documented block, including its generated preview.
  * @param {object} block Block definition.
  * @param {object} settings Preview settings.
@@ -101,6 +127,7 @@ function createSingleBlockWorkspaceState(blockType) {
  * @returns {HTMLElement} Rendered block item.
  */
 function buildBlockItem(block, settings, elementNumber) {
+    const workspaceState = createSingleBlockWorkspaceState(block.name)
     const item = tag('cheatsheet-item', {
         id: `cheatsheet-item-${elementNumber}`,
         'data-cheatsheet-element-number': String(elementNumber),
@@ -109,10 +136,8 @@ function buildBlockItem(block, settings, elementNumber) {
     })
     item.append(
         tag('p', block.description),
-        createCheatSheetPreview(
-            createSingleBlockWorkspaceState(block.name),
-            settings,
-        ),
+        createCheatSheetPreview(workspaceState, settings),
+        ...(settings.showCopy ? [buildCopyButton(workspaceState)] : []),
     )
     return item
 }
@@ -154,6 +179,7 @@ function buildExampleItem(example, settings, elementNumber) {
     item.append(
         tag('p', example.preamble),
         createCheatSheetPreview(example.workspace, settings),
+        ...(settings.showCopy ? [buildCopyButton(example.workspace)] : []),
     )
     return item
 }
@@ -226,10 +252,10 @@ function scrollToCheatSheetSection(content, sectionIndex) {
     if (scrollContainer === window) {
         // Section and controls positions are viewport-relative. Add the page's
         // existing scroll position to produce the document-relative target.
-        window.scrollTo({
-            top: window.scrollY + sectionTop - controlsBottom - spacing,
-            behavior: 'smooth',
-        })
+        animateScrollTo(
+            window,
+            window.scrollY + sectionTop - controlsBottom - spacing,
+        )
         return
     }
 
@@ -237,15 +263,14 @@ function scrollToCheatSheetSection(content, sectionIndex) {
     const controlsHeight = controls?.getBoundingClientRect().height ?? 0
     // Drawer scrolling uses coordinates relative to the drawer panel instead
     // of the document. Leave room for the sticky controls at the top.
-    scrollContainer.scrollTo({
-        top:
-            scrollContainer.scrollTop +
+    animateScrollTo(
+        scrollContainer,
+        scrollContainer.scrollTop +
             sectionTop -
             containerTop -
             controlsHeight -
             spacing,
-        behavior: 'smooth',
-    })
+    )
 }
 
 /** @returns {Promise<void>} Resolves on the next animation frame. */
@@ -423,7 +448,7 @@ function buildCheatSheetControls(
             tag(
                 'button',
                 { type: 'button' },
-                'Print cheatsheet',
+                'Print Cheatsheet',
                 on('click', onPrint),
             ),
         )
@@ -434,7 +459,7 @@ function buildCheatSheetControls(
             tag(
                 'button',
                 { type: 'button' },
-                'Open full cheatsheet',
+                'Open Full Cheatsheet',
                 on('click', onOpenFullCheatSheet),
             ),
         )
@@ -608,7 +633,8 @@ export function buildCheatSheetContent({
         await whenEditorFontsReady()
         await waitForAnimationFrame()
 
-        const settings = { mode: displayMode }
+        // the print stage has no controls, so no Copy buttons either
+        const settings = { mode: displayMode, showCopy: showControls }
         const sections = blocks.map((section, index) =>
             buildSection(section, settings, index),
         )

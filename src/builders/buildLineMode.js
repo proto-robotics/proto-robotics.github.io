@@ -5,28 +5,47 @@ import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import {
     createCodeMirrorView,
     getCodeMirrorText,
+    PROGRAM_PREAMBLE,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
 import { createDrawer } from '../helpers/drawerHelper'
 import { checkWithPyrefly } from '../helpers/pyreflyHelper'
 
-/** @returns {EditorMode} Configured Python line-editor mode. */
-export default () => {
+/**
+ * @param {object} [options] Embedding options (see BuildEmbedContent).
+ * @param {boolean} [options.persist=true] Keep the source in local storage.
+ *     An embedding page owns the state instead and passes false.
+ * @param {(detail: {code: string, state: string}) => void} [options.onChange]
+ *     Called after every edit with the source (as both code and state).
+ * @returns {EditorMode} Configured Python line-editor mode.
+ */
+export default ({ persist = true, onChange = null } = {}) => {
     const view = createCodeMirrorView()
     view.dom.id = 'line-editor-canvas'
 
     /** Restores line-editor source from local storage. */
     const loadState = () => {
-        const savedState = localStorage.getItem('codeMirrorState')
+        const savedState = persist
+            ? localStorage.getItem('codeMirrorState')
+            : null
         if (savedState) {
             setCodeMirrorText(view, savedState)
         }
     }
     loadState()
 
+    let lastReported = null
+
     /** Saves line-editor source to local storage. */
     const saveState = () => {
-        localStorage.setItem('codeMirrorState', getCodeMirrorText(view))
+        const code = getCodeMirrorText(view)
+        if (persist) {
+            localStorage.setItem('codeMirrorState', code)
+        }
+        if (onChange && code !== lastReported) {
+            lastReported = code
+            onChange({ code, state: code })
+        }
     }
     view.dom.addEventListener('keydown', saveState)
     view.dom.addEventListener('input', saveState)
@@ -39,14 +58,19 @@ export default () => {
      */
     const saveCode = (ProjectNameInput) => {
         const projectName = ProjectNameInput?.value || 'proto'
-
-        saveFilesInZip(projectName, [
-            {
-                name: 'main.py',
-                text: view.state.doc.toString(),
-            },
-        ])
+        saveFilesInZip(projectName, getProjectFiles())
     }
+
+    /**
+     * The project's files: the Python as typed.
+     * @returns {{name: string, text: string}[]} The files.
+     */
+    const getProjectFiles = () => [
+        {
+            name: 'main.py',
+            text: view.state.doc.toString(),
+        },
+    ]
 
     /**
      * Opens a dialog that imports a Python source file.
@@ -59,7 +83,7 @@ export default () => {
         })
 
         const LoadButton = button(
-            'Load project',
+            'Load Project',
             on('click', () => {
                 if (FileInput.files.length < 1) {
                     // Wait for them to add a file
@@ -324,12 +348,21 @@ export default () => {
     )
     scheduleVerify(0)
 
-    return new EditorMode(
-        'line',
-        LineEditor,
+    return new EditorMode({
+        name: 'line',
+        EditorElement: LineEditor,
         saveCode,
         loadCode,
         saveState,
         loadState,
-    )
+        getProjectFiles,
+        setState: (state) => {
+            setCodeMirrorText(
+                view,
+                typeof state === 'string' ? state : PROGRAM_PREAMBLE,
+            )
+            saveState()
+            scheduleVerify(0)
+        },
+    })
 }

@@ -1,0 +1,27 @@
+diff --git a/src/multiselect_draggable.js b/src/multiselect_draggable.js
+index f666ec6..e432405 100644
+--- a/src/multiselect_draggable.js
++++ b/src/multiselect_draggable.js
+@@ -362,6 +362,22 @@ export class MultiselectDraggable {
+ 
+   onNodeBlur() {
+     this.unselect();
++    // Blockly 12 moves focus instead of firing a SELECTED event when the
++    // workspace background (or another block) is clicked, so the group
++    // would keep its members after losing its highlight and the next drag
++    // of any member would still move them all. Release the group once
++    // focus has settled, unless it only left briefly (a field editor or a
++    // menu took ephemeral focus) or multi-select mode is choosing blocks.
++    setTimeout(() => {
++      const focusManager = Blockly.getFocusManager();
++      if (inMultipleSelectionModeWeakMap.get(this.workspace) ||
++          focusManager.ephemeralFocusTaken() ||
++          focusManager.getFocusedNode() === this) {
++        return;
++      }
++      this.clearAll_();
++      this.dragSelection.clear();
++    }, 0);
+   }
+ 
+   canBeFocused() {

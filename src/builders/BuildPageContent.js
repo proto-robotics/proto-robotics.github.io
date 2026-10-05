@@ -1,22 +1,40 @@
-import { a, button, footer, header, img, on, span, tag } from 'ellipsi'
+/*
+ * The coding page: the top bar with the toolbar, one of the two editors
+ * (block or line, switchable), and the cheatsheet drawer.
+ */
+
+import { button, header, on, span, tag } from 'ellipsi'
 
 import buildBlockMode from './buildBlockMode'
-import buildLineMode from './buildLineMode'
+import { buildBrainButton } from './buildBrainButton'
 import {
     buildCheatSheetContent,
     cheatSheetBlockElementNumbers,
 } from './buildCheatSheetContent'
+import buildLineMode from './buildLineMode'
+import { buildSiteNav, watchHeaderHeight } from './buildSiteChrome'
 import { EditorMode } from '../classes/editorMode'
 import createCheatSheetDrawer from '../helpers/cheatSheetDrawerHelper'
-import { protoLogo } from '../assets'
+import { watchPhoneLayout } from '../helpers/phoneLayoutHelper'
+import { ensureProjectName } from '../helpers/popUpHelper'
 
 /**
- * Builds the main coding page and its two editor modes.
+ * Builds the coding page and its two editor modes.
  * @param {object} toolbox Blockly toolbox configuration.
+ * @param {object} [options] Parsed editor parameters (readEditorParams).
+ *     `mode` picks the starting editor when the URL names one; the block
+ *     limits apply to the block editor.
  * @returns {HTMLElement[]} Top-level page elements.
  */
-export default (toolbox) => {
-    const blockMode = buildBlockMode(toolbox)
+export default (
+    toolbox,
+    { maxBlocks, maxInstances, codePreview = true } = {},
+) => {
+    const blockMode = buildBlockMode(toolbox, {
+        maxBlocks,
+        maxInstances,
+        codePreview,
+    })
     const lineMode = buildLineMode()
 
     /** @type {EditorMode} The current editor mode. */
@@ -41,13 +59,8 @@ export default (toolbox) => {
             currentMode = blockMode
         }
 
-        // Move the editor element onto the page.
         EditorContainer.replaceChildren(currentMode.EditorElement)
-
-        // Store the current choice in local storage.
         localStorage.setItem('editorMode', currentMode.name)
-
-        // Load the previous state for the new editor.
         currentMode.loadState()
     }
 
@@ -55,13 +68,18 @@ export default (toolbox) => {
         switchEditor()
     })
 
-    // Set the initial editor.
-    const previousModeName = localStorage.getItem('editorMode')
+    // The initial editor: the URL's mode wins, then the last one used.
+    const requestedMode = new URLSearchParams(window.location.search).get(
+        'mode',
+    )
+    const previousModeName = requestedMode ?? localStorage.getItem('editorMode')
     if (previousModeName === lineMode.name) {
         switchEditor(lineMode)
     } else {
         switchEditor(blockMode)
     }
+
+    // ---- the toolbar ---------------------------------------------------------
 
     const ProjectNameInput = tag(
         'input',
@@ -70,45 +88,63 @@ export default (toolbox) => {
             localStorage.setItem('projectName', ProjectNameInput.value),
         ),
     )
-
-    // Set initial project name.
     const previousProjectName = localStorage.getItem('projectName')
     if (previousProjectName) {
         ProjectNameInput.value = previousProjectName
     }
+
+    /** Shows or hides the block editor's minimap; remembered like the mode. */
+    const setMinimap = (wanted) => {
+        blockMode.setMinimap(wanted)
+        MinimapToggle.classList.toggle('active', wanted)
+        MinimapToggle.setAttribute('aria-pressed', String(wanted))
+        localStorage.setItem('minimap', wanted ? 'on' : 'off')
+    }
+    const MinimapToggle = button(
+        'Minimap',
+        { type: 'button', 'aria-pressed': 'false' },
+        on('click', () =>
+            setMinimap(MinimapToggle.getAttribute('aria-pressed') !== 'true'),
+        ),
+    )
+    setMinimap(localStorage.getItem('minimap') === 'on')
 
     const Toolbar = tag(
         'tool-bar',
         ProjectNameInput,
         button(
             'Save',
-            on('click', () => currentMode.saveCode(ProjectNameInput)),
+            on('click', async () => {
+                if (await ensureProjectName(ProjectNameInput)) {
+                    currentMode.saveCode(ProjectNameInput)
+                }
+            }),
         ),
+        buildBrainButton({
+            getProjectName: () => ProjectNameInput.value,
+            getProjectFiles: (projectName) =>
+                currentMode.getProjectFiles(projectName),
+        }),
         button(
             'Load',
             on('click', () => currentMode.loadCode(ProjectNameInput)),
         ),
+        MinimapToggle,
         button(
-            'Switch editor',
+            'Switch Editor',
             on('click', () => switchEditor()),
         ),
     )
 
-    const Navbar = tag(
-        'nav',
-        a(
-            { href: 'https://protorobotics.org/index.html', target: '_self' },
-            img({
-                src: protoLogo,
-                alt: 'The PROTO logo',
-                height: '32',
-            }),
-        ),
-        a(
-            { href: `${window.location.pathname}?cheatsheet`, target: '_self' },
-            'Cheatsheet',
-        ),
+    // ---- the page ------------------------------------------------------------
+
+    // One bar: the brand, then the toolbar, then the copyright. The
+    // cheatsheet is reached through its drawer, so there are no links.
+    const Header = header(
+        buildSiteNav({ tagline: 'Code Editor', controls: [Toolbar] }),
     )
+    watchHeaderHeight(Header)
+    watchPhoneLayout()
 
     const CheatSheetDrawer = createCheatSheetDrawer(
         () =>
@@ -120,19 +156,9 @@ export default (toolbox) => {
             blockLookup: cheatSheetBlockElementNumbers,
         },
     )
-    const PageContent = [
-        header(Navbar, Toolbar),
-        EditorContainer,
-        CheatSheetDrawer,
-        footer(
-            'PROTO Robotics | ',
-            a('Contact us', { href: 'mailto:outreach@protorobotics.org' }),
-            ' | ',
-            a('View page source', {
-                href: 'https://github.com/proto-robotics/proto-robotics.github.io',
-            }),
-        ),
-    ]
 
-    return PageContent
+    // the editor fills the window; the page itself never scrolls
+    document.body.classList.add('editor')
+
+    return [Header, EditorContainer, CheatSheetDrawer]
 }

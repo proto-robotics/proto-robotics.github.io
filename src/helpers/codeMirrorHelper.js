@@ -24,6 +24,7 @@ import {
     foldKeymap,
     indentOnInput,
     syntaxHighlighting,
+    syntaxTree,
 } from '@codemirror/language'
 import {
     globalCompletion,
@@ -509,6 +510,53 @@ function buildReadOnlyExtensions() {
  * @param {() => object|null} getVerifierResult Returns the latest lint result.
  * @returns {object[]} Extensions used only by editable views.
  */
+/**
+ * Phone keyboards add a space after a full stop: some the moment the full
+ * stop is typed, Gboard ("auto-space after punctuation") together with the
+ * next letter. Python code never has a space right after a full stop
+ * outside a comment or a string, so a space that typing has just put
+ * there, right before the cursor, is removed in the same transaction. A
+ * space already in the text is never touched.
+ */
+const dropAutoSpaceAfterFullStop = EditorState.transactionFilter.of((tr) => {
+    if (!tr.docChanged || !tr.isUserEvent('input.type')) {
+        return tr
+    }
+    const head = tr.newSelection.main.head
+    // the space's position: right before the cursor, or before a letter
+    // that arrived with it
+    const text = tr.newDoc.sliceString(Math.max(0, head - 3), head)
+    const space = /\. $/.test(text)
+        ? head - 1
+        : /^\. \w$/.test(text)
+          ? head - 2
+          : -1
+    if (space < 1) {
+        return tr
+    }
+    let fresh = false
+    tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+        if (fromB <= space && space < toB) {
+            fresh = true
+        }
+    })
+    if (!fresh) {
+        return tr
+    }
+    // prose in a comment or a string keeps its spaces
+    const before = tr.changes.mapPos(space - 1, -1)
+    for (
+        let node = syntaxTree(tr.startState).resolveInner(before, -1);
+        node;
+        node = node.parent
+    ) {
+        if (/Comment|String/.test(node.name)) {
+            return tr
+        }
+    }
+    return [tr, { changes: { from: space, to: space + 1 }, sequential: true }]
+})
+
 function buildEditableExtensions(getVerifierResult) {
     const topLevelCompletions = buildTopLevelCompletions()
     const methodCompletionsByType = buildMethodCompletionsByType()
@@ -517,6 +565,7 @@ function buildEditableExtensions(getVerifierResult) {
     )
 
     return [
+        dropAutoSpaceAfterFullStop,
         history(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),
@@ -566,6 +615,9 @@ function buildGutterExtensions(readonly, noGutter) {
     return extensions
 }
 
+/** The first lines of every program, and the whole of an empty one. */
+export const PROGRAM_PREAMBLE = 'import make\n\n'
+
 /**
  * Creates a configured Python CodeMirror view.
  * Read-only views keep syntax, selection, and search support without loading
@@ -573,11 +625,15 @@ function buildGutterExtensions(readonly, noGutter) {
  * @param {object} options Editor display options.
  * @param {boolean} [options.readonly=false] Disables editing and edit-only features.
  * @param {boolean} [options.noGutter=false] Hides the line-number gutter.
+ * @param {boolean} [options.lineWrapping=true] Wraps long lines onto the
+ *     next screen line instead of scrolling sideways; the line keeps its
+ *     number. Off for views that are sized to their content.
  * @returns {EditorView} A detached CodeMirror editor view.
  */
 export function createCodeMirrorView({
     readonly = false,
     noGutter = false,
+    lineWrapping = true,
 } = {}) {
     let verifierResult = null
     const modeExtensions = readonly
@@ -587,10 +643,11 @@ export function createCodeMirrorView({
         ...buildDisplayExtensions(),
         ...modeExtensions,
         ...buildGutterExtensions(readonly, noGutter),
+        ...(lineWrapping ? [EditorView.lineWrapping] : []),
     ]
 
     const view = new EditorView({
-        doc: 'import make\n\n',
+        doc: PROGRAM_PREAMBLE,
         extensions,
     })
 

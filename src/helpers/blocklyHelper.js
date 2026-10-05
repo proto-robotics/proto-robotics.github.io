@@ -1,9 +1,60 @@
+/*
+ * Blockly workspaces: creating them with our options and plugins, mounting
+ * them in the page, and the small operations the editors need on them.
+ * Our Blockly modifications themselves live in src/mods.
+ */
+
 import { inject, serialization, setParentContainer, svgResize } from 'blockly'
 import { pythonGenerator } from 'blockly/python'
+import { ScrollOptions } from '@blockly/plugin-scroll-options'
+import { Backpack } from '@blockly/workspace-backpack'
+import { ZoomToFitControl } from '@blockly/zoom-to-fit'
+import { Multiselect } from '@mit-app-inventor/blockly-plugin-workspace-multiselect'
 import { div } from 'ellipsi'
-import { injectMods } from '../mods/mods.js'
+
+import { multiselectOffIcon, multiselectOnIcon } from '../assets'
+import { injectMods, SEARCH_CATEGORY_KIND } from '../mods/mods.js'
+import { isPhoneLayout } from './phoneLayoutHelper'
 
 let modsInjected = false
+
+/**
+ * The plugin classes for an editable workspace (registered in mods.js):
+ * the continuous toolbox, whose flyout stays open and scrolls through every
+ * category, and scroll options, which make the wheel scroll the canvas
+ * (also mid-drag) and scroll it along when a block is dragged to an edge,
+ * except over the trash and backpack (ProtoBlockDragger in mods.js).
+ * The cheatsheet previews have no toolbox and get none of this.
+ */
+const editorPlugins = {
+    flyoutsVerticalToolbox: 'ProtoColumnFlyout',
+    metricsManager: 'ProtoMetrics',
+    toolbox: 'ContinuousToolbox',
+    blockDragger: 'ProtoBlockDragger',
+}
+
+/**
+ * The phone layout's plugins (see phoneLayoutHelper.js): the same
+ * continuous toolbox across the top of the canvas, with its always-open
+ * flyout as a row under it (ContinuousRowFlyout in src/mods/flyouts.js).
+ */
+const phoneEditorPlugins = {
+    ...editorPlugins,
+    flyoutsHorizontalToolbox: 'ProtoRowFlyout',
+}
+
+/**
+ * The @blockly/toolbox-search category, placed after the last category. Its
+ * tab looks like the others, and its search field is the first item of its
+ * section in the flyout, where it scrolls with the blocks (categories.js
+ * and searchField.js in src/mods). Tapping the tab, or Ctrl+B, scrolls there
+ * and puts the cursor in the field; the matching blocks list under it.
+ */
+const searchCategory = {
+    kind: SEARCH_CATEGORY_KIND,
+    name: 'Search',
+    contents: [],
+}
 
 /**
  * Creates a Blockly workspace instance and returns the DOM canvas plus the
@@ -14,8 +65,14 @@ let modsInjected = false
  * @param {boolean} [options.readonly=false] Disables workspace editing.
  * @param {boolean} [options.hideToolbox=false] Omits the toolbox UI.
  * @param {boolean} [options.showGrid=true] Shows the Blockly grid.
- * @param {number} [options.startScale=0.8] Initial workspace zoom level.
+ * @param {number} [options.startScale=0.65] Initial workspace zoom level. The
+ *     flyout follows it, so this sets the block size in the toolbox too.
+ * @param {number} [options.maxBlocks] Cap on blocks in the workspace.
+ * @param {Record<string, number>} [options.maxInstances] Per-type caps.
  * @returns {object} Canvas, workspace slot, options, and cleanup handles.
+ *     `editor` says whether this is the full editor (toolbox and plugins),
+ *     `phone` whether it was built for the phone layout, `multiselect`
+ *     holds the selection plugin once started.
  */
 export const createBlocklyInstance = (
     toolbox,
@@ -24,7 +81,9 @@ export const createBlocklyInstance = (
         readonly = false,
         hideToolbox = false,
         showGrid = true,
-        startScale = 0.8,
+        startScale = 0.65,
+        maxBlocks = undefined,
+        maxInstances = undefined,
     } = {},
 ) => {
     const canvas = div({ id })
@@ -33,6 +92,11 @@ export const createBlocklyInstance = (
         injectMods()
         modsInjected = true
     }
+
+    const editor = Boolean(toolbox) && !hideToolbox && !readonly
+    // the phone layout is decided when the workspace is built; the block
+    // mode rebuilds it when the layout changes (buildBlockMode.js)
+    const phone = editor && isPhoneLayout()
 
     const workspaceOptions = {
         readOnly: readonly,
@@ -55,13 +119,33 @@ export const createBlocklyInstance = (
             pinch: !readonly,
         },
         trashcan: !readonly,
-        toolbox: hideToolbox ? undefined : toolbox,
+        toolbox: hideToolbox
+            ? undefined
+            : editor
+              ? { ...toolbox, contents: [...toolbox.contents, searchCategory] }
+              : toolbox,
+        plugins: !editor
+            ? undefined
+            : phone
+              ? phoneEditorPlugins
+              : editorPlugins,
+        horizontalLayout: phone,
+        toolboxPosition: 'start',
+        // the wheel scrolls (Ctrl+wheel zooms); scroll options need this
+        move: readonly
+            ? undefined
+            : { scrollbars: true, drag: true, wheel: true },
+        maxBlocks,
+        maxInstances,
     }
 
     return {
         canvas,
         workspace: null,
         workspaceOptions,
+        editor,
+        phone,
+        multiselect: null,
         resizeObservers: [],
         cleanupCallbacks: [],
     }
@@ -87,11 +171,40 @@ export const mountBlocklyWorkspace = (
         setBlocklyParentContainer(container)
     }
 
+    // The editor is built before it is attached to the page, so Blockly
+    // measures the flyout's text while detached and gets the widths wrong.
+    // The continuous toolbox fills its flyout at inject time (the default
+    // toolbox waited for a click, after attachment), so it is rebuilt once
+    // the container has a size. Recycling is off so the blocks are really
+    // re-created rather than repositioned.
+    const injectedDetached = !container.isConnected
+    let userOnReady = onReady
     if (!blocklyInstance.workspace) {
         blocklyInstance.workspace = inject(
             blocklyInstance.canvas,
             blocklyInstance.workspaceOptions,
         )
+        if (injectedDetached && blocklyInstance.workspaceOptions.toolbox) {
+            const workspace = blocklyInstance.workspace
+            workspace.getFlyout()?.setRecyclingEnabled?.(false)
+            userOnReady = () => {
+                workspace.getToolbox()?.refreshSelection()
+                return onReady?.()
+            }
+        }
+        if (blocklyInstance.editor) {
+            new ScrollOptions(blocklyInstance.workspace).init()
+            // a button above the zoom controls that fits every block on screen
+            new ZoomToFitControl(blocklyInstance.workspace).init()
+            // A backpack to carry blocks between projects: "Copy to
+            // Backpack" in a block's menu, click the backpack to take them
+            // out. Its contents are saved with the workspace. Started
+            // before the multiselect plugin so that one can extend its menu
+            // entry to a whole selection.
+            new Backpack(blocklyInstance.workspace, {
+                useFilledBackpackImage: true,
+            }).init()
+        }
     }
 
     if (manageWidgets) {
@@ -131,8 +244,46 @@ export const mountBlocklyWorkspace = (
     }
 
     return watchContainerSize(blocklyInstance, container, {
-        onReady,
+        onReady: userOnReady,
         resizeImmediately,
+    })
+}
+
+/**
+ * Starts multi-block selection (workspace-multiselect): Shift-drag a box or
+ * Shift-click to select several blocks and move, copy, or delete them
+ * together; the button above the trash toggles the mode. Built from the
+ * plugin's Blockly 12 branch, see vendor/. It looks Blockly's widgets up in
+ * the document, so it can only start once the editor is attached; it is
+ * disposed with the workspace.
+ * @param {object} blocklyInstance Value returned by createBlocklyInstance,
+ *     mounted and attached to the page.
+ */
+export const startMultiselect = (blocklyInstance) => {
+    if (blocklyInstance.multiselect) {
+        return
+    }
+    const multiselect = new Multiselect(blocklyInstance.workspace)
+    multiselect.init({
+        useDoubleClick: false,
+        bumpNeighbours: false,
+        // jenga blocks have fields that depend on each other, so a field
+        // edit is not copied to the other selected blocks
+        multiFieldUpdate: false,
+        workspaceAutoFocus: true,
+        multiselectIcon: {
+            hideIcon: false,
+            weight: 3,
+            enabledIcon: multiselectOnIcon,
+            disabledIcon: multiselectOffIcon,
+        },
+        multiSelectKeys: ['Shift'],
+        multiselectCopyPaste: { crossTab: true, menu: true },
+    })
+    blocklyInstance.multiselect = multiselect
+    blocklyInstance.cleanupCallbacks.push(() => {
+        multiselect.dispose()
+        blocklyInstance.multiselect = null
     })
 }
 
@@ -208,8 +359,10 @@ const setBlocklyParentContainer = (container) => {
  * container dimensions.
  * @param {object} blocklyInstance Value returned by createBlocklyInstance.
  */
-const resizeBlocklyInstance = (blocklyInstance) => {
-    svgResize(blocklyInstance.workspace)
+export const resizeBlocklyInstance = (blocklyInstance) => {
+    if (blocklyInstance.workspace) {
+        svgResize(blocklyInstance.workspace)
+    }
 }
 
 /**
