@@ -2,7 +2,7 @@ import '../styles.css'
 import { processJengaTower } from '@protorobotics/jenga'
 import { pythonGenerator } from 'blockly/python'
 
-import { jengaBlocks } from './data/library'
+import { hiddenCategoryNames, jengaBlocks } from './data/library'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 import BuildEmbedContent from './builders/BuildEmbedContent'
@@ -28,7 +28,10 @@ const main = async () => {
         jengaBlocks,
         pythonGenerator,
     )
-    const toolbox = filterToolbox(fullToolbox, editorParams)
+    const toolbox = filterToolbox(fullToolbox, {
+        ...editorParams,
+        hidden: hiddenCategoryNames,
+    })
 
     const PageContent = params.has('cheatsheet')
         ? BuildCheatSheet()

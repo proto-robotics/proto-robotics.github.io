@@ -63,28 +63,41 @@ export const readEditorParams = (params) => {
 
 /**
  * Narrows a category toolbox to the requested categories and block types.
+ * Hidden categories are dropped unless `categories` names them or `blocks`
+ * names one of their block types.
  * @param {object} toolbox Toolbox from processJengaTower.
  * @param {object} options
  * @param {string[]|null} [options.categories] Category names to keep, or null for all.
  * @param {string[]|null} [options.blocks] Block types to keep, or null for all.
+ * @param {string[]} [options.hidden] Category names left out by default.
  * @returns {object} A new toolbox with the same shape.
  */
-export const filterToolbox = (toolbox, { categories = null, blocks = null } = {}) => {
-    if (!categories && !blocks) {
-        return toolbox
-    }
-
+export const filterToolbox = (
+    toolbox,
+    { categories = null, blocks = null, hidden = [] } = {},
+) => {
     const wantedCategories = categories
         ? new Set(categories.map((name) => name.toLowerCase()))
         : null
     const wantedBlocks = blocks ? new Set(blocks) : null
+    const hiddenCategories = new Set(hidden.map((name) => name.toLowerCase()))
 
     const contents = toolbox.contents
-        .filter(
-            (category) =>
-                !wantedCategories ||
-                wantedCategories.has(category.name.toLowerCase()),
-        )
+        .filter((category) => {
+            const name = category.name.toLowerCase()
+            if (wantedCategories) {
+                return wantedCategories.has(name)
+            }
+            if (hiddenCategories.has(name)) {
+                return (
+                    wantedBlocks &&
+                    category.contents.some((block) =>
+                        wantedBlocks.has(block.type),
+                    )
+                )
+            }
+            return true
+        })
         .map((category) => ({
             ...category,
             contents: category.contents.filter(

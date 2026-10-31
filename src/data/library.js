@@ -1,4 +1,5 @@
 import { FieldImage, FieldNumber, FieldTextInput } from 'blockly'
+import { pythonGenerator } from 'blockly/python'
 import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 import { helpIcon } from '../assets'
@@ -34,6 +35,69 @@ const directionOptions = [
     ['counter-clockwise ↺', '-1'],
 ]
 
+/** The two wheel motors every Wheels block drives, written once at the top of the program. */
+const WHEEL_MOTORS =
+    'left = make.largemotor(port=0)\nright = make.largemotor(port=1)'
+
+/**
+ * Builds one Wheels block: a fixed wheel (left or right) and one action
+ * (forward, backward or stop), with the motor lines added as a definition
+ * so they appear once, above the program, whichever block comes first.
+ * @param {'left'|'right'} wheel Which motor the block drives.
+ * @param {'forward'|'backward'|'stop'} action What the block does.
+ * @returns {object} A library entry.
+ */
+const wheelBlock = (wheel, action) => {
+    const Wheel = wheel[0].toUpperCase() + wheel.slice(1)
+    const define = () => {
+        pythonGenerator.definitions_['wheels'] = WHEEL_MOTORS
+    }
+
+    if (action === 'stop') {
+        return {
+            entryType: 'block',
+            name: `${wheel}Stop`,
+            description: `Stops the ${wheel} motor.`,
+            blocklyTemplate: [
+                {
+                    text: `Stop ${wheel} motor`,
+                },
+            ],
+            codeGenerator: () => {
+                define()
+
+                return `${wheel}.stop()\n`
+            },
+        }
+    }
+
+    const method = action === 'forward' ? 'spin' : 'spin_back'
+
+    return {
+        entryType: 'block',
+        name: `${wheel}${action[0].toUpperCase()}${action.slice(1)}`,
+        description: `Spins the ${wheel} motor ${action} until stopped.`,
+        blocklyTemplate: [
+            {
+                text: `${Wheel} motor ${action} at`,
+            },
+            {
+                field: () => new FieldNumber(50, 0, 100, 1),
+                name: 'power',
+            },
+            {
+                text: 'power',
+            },
+        ],
+        codeGenerator: (block) => {
+            const power = block.getFieldValue('power')
+            define()
+
+            return `${wheel}.${method}(power=${power})\n`
+        },
+    }
+}
+
 /**
  * Converts learner-entered names into valid Python identifiers.
  * @param {string} str Name entered in a Blockly text field.
@@ -48,6 +112,11 @@ const spacesToUnderscores = (str) => str.replace(/\s+/g, '_')
  */
 const injectHelpButton = (blocks) => {
     blocks.forEach((category) => {
+        // A hidden category has no cheatsheet entry for the icon to open.
+        if (category.hidden) {
+            return
+        }
+
         category.entries.forEach((block) => {
             if (block.entryType && block.entryType !== 'block') {
                 return
@@ -1546,7 +1615,88 @@ export const library = [
             },
         ],
     },
+    {
+        // Sandbox-only moves for the PROTO Learn practice maze. The real
+        // robot's make library has none of these, so the category stays out
+        // of the toolbox and the cheatsheet unless the embedding page asks
+        // for it by name (toolbox=Maze or blocks=forward,...).
+        name: 'Maze',
+        color: '#4E4E4E',
+        hidden: true,
+        entries: [
+            {
+                entryType: 'block',
+                name: 'forward',
+                description:
+                    'Drives the maze car straight ahead a number of squares.',
+                blocklyTemplate: [
+                    {
+                        text: 'Move forward',
+                    },
+                    {
+                        field: () => new FieldNumber(1, 1, 50, 1),
+                        name: 'squares',
+                    },
+                    {
+                        text: 'squares',
+                    },
+                ],
+                codeGenerator: (block) => {
+                    const squares = block.getFieldValue('squares')
+
+                    return `make.forward(squares=${squares})\n`
+                },
+            },
+            {
+                entryType: 'block',
+                name: 'turnLeft',
+                description: 'Turns the maze car a quarter turn to the left.',
+                blocklyTemplate: [
+                    {
+                        text: 'Turn left ↺',
+                    },
+                ],
+                codeGenerator: () => 'make.turn_left()\n',
+            },
+            {
+                entryType: 'block',
+                name: 'turnRight',
+                description: 'Turns the maze car a quarter turn to the right.',
+                blocklyTemplate: [
+                    {
+                        text: 'Turn right ↻',
+                    },
+                ],
+                codeGenerator: () => 'make.turn_right()\n',
+            },
+        ],
+    },
+    {
+        // A two-wheel car with the left motor on port 0 and the right motor on
+        // port 1, the way the drive robot is wired. The motors are built into
+        // the blocks, so there is nothing to set up or type: a program is
+        // nothing but forward, backward, stop and wait. The first block used
+        // adds the two motor lines at the top of the Python, so the output is
+        // exactly what the Motor blocks would write and runs on the real
+        // robot too. Hidden like Maze; ask for it with toolbox=Wheels.
+        name: 'Wheels',
+        color: '#B2404B',
+        hidden: true,
+        entries: [
+            wheelBlock('left', 'forward'),
+            wheelBlock('right', 'forward'),
+            wheelBlock('left', 'backward'),
+            wheelBlock('right', 'backward'),
+            wheelBlock('left', 'stop'),
+            wheelBlock('right', 'stop'),
+        ],
+    },
 ]
+
+/** Names of the categories left out unless an embed asks for them. */
+export const hiddenCategoryNames = library
+    .filter((category) => category.hidden)
+    .map((category) => category.name)
 
 /**
  * Extracts block-only categories for the interactive Jenga toolbox.
@@ -1569,6 +1719,7 @@ export function extractJengaBlocks(sourceLibrary = library) {
         return {
             name: category.name,
             color: category.color,
+            hidden: category.hidden,
             entries: blockEntries,
         }
     })
@@ -1586,19 +1737,21 @@ export function extractCheatSheetBlocks(sourceLibrary = library) {
         ? sourceLibrary
         : [sourceLibrary]
 
-    const cheatSheetCategories = categories.map((category) => ({
-        name: category.name,
-        color: category.color,
-        entries: category.entries
-            .filter((entry) => entry.entryType === 'block')
-            .map(({ entryType, ...blockEntry }) => ({
-                ...blockEntry,
-                blocklyTemplate: [...blockEntry.blocklyTemplate],
-            })),
-        examples: category.entries
-            .filter((entry) => entry.entryType === 'example')
-            .map(({ entryType, ...exampleEntry }) => exampleEntry),
-    }))
+    const cheatSheetCategories = categories
+        .filter((category) => !category.hidden)
+        .map((category) => ({
+            name: category.name,
+            color: category.color,
+            entries: category.entries
+                .filter((entry) => entry.entryType === 'block')
+                .map(({ entryType, ...blockEntry }) => ({
+                    ...blockEntry,
+                    blocklyTemplate: [...blockEntry.blocklyTemplate],
+                })),
+            examples: category.entries
+                .filter((entry) => entry.entryType === 'example')
+                .map(({ entryType, ...exampleEntry }) => exampleEntry),
+        }))
 
     return injectHelpButton(cheatSheetCategories)
 }
