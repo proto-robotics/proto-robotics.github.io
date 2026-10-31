@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100">
+<defs><clipPath id="c"><rect width="100" height="100" rx="0"></rect></clipPath>
+<pattern id="s" patternUnits="userSpaceOnUse" width="9.9" height="9.9" patternTransform="rotate(45)"><rect width="9.9" height="9.9" fill="#F2727A"></rect><rect x="4.95" width="4.95" height="9.9" fill="#F37B82"></rect></pattern></defs>
+<g clip-path="url(#c)"><rect width="100" height="100" fill="url(#s)"></rect><circle cx="0" cy="100" r="59.4" fill="#F48389"></circle><circle cx="100" cy="0" r="48.1" fill="#F49A86"></circle>
+<g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><circle cx="54" cy="50" r="17"></circle><path d="M37 50V80M21 50A33 33 0 0 1 54 17H78"></path></g></g></svg>

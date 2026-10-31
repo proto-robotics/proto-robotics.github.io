@@ -15,7 +15,7 @@ import { whenEditorFontsReady } from './fontHelper'
 import { createCodeMirrorView, setCodeMirrorText } from './codeMirrorHelper'
 
 let previewId = 0
-const previewScale = 0.75
+const previewScale = 0.65 // the toolbox flyout's zoom (FLYOUT_SCALE in src/mods/flyouts.js)
 const minPreviewScale = 0.3
 const previewRefitCallbacks = new WeakMap()
 
@@ -36,6 +36,7 @@ function createCodeFormatter(pythonCode) {
     const codeFormatter = createCodeMirrorView({
         readonly: true,
         noGutter: true,
+        lineWrapping: false,
     })
     codeFormatter.scrollDOM.style.height = 'auto'
     codeFormatter.scrollDOM.style.overflow = 'visible'

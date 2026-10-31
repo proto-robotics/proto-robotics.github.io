@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PROTO Code</string>
+    <string name="title_activity_main">PROTO Code</string>
+    <string name="package_name">org.protorobotics.code</string>
+    <string name="custom_url_scheme">org.protorobotics.code</string>
+</resources>

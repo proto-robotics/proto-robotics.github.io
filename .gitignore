@@ -2,3 +2,5 @@ node_modules/
 package-lock.json
 justfile
 dist/
+resources/
+.vscode/
