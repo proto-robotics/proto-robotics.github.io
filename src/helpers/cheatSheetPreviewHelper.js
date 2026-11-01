@@ -143,6 +143,9 @@ function createBlocklyPreview(workspaceState) {
         hideToolbox: true,
         showGrid: false,
         startScale: previewScale,
+        // a preview never plays a sound, and an AudioContext per preview
+        // (one for each of the forty or so blocks) took seconds to open
+        sounds: false,
     })
     const preview = tag('blockly-preview', blocklyInstance.canvas)
     previewRefitCallbacks.set(preview, () => {

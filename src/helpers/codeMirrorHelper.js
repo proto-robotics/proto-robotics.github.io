@@ -54,10 +54,11 @@ import { EditorView } from 'codemirror'
 import { marked } from 'marked'
 import { tomorrow } from 'thememirror'
 
-import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
+import { getVocab } from '../data/vocab'
 import { getCompletionsWithPyrefly } from './pyreflyHelper'
 
-const autocompleteApi = pythonLibraryVocab.autocomplete
+/** The vocabulary as it stands now; a host may have added to it (data/vocab.js). */
+const autocompleteApi = () => getVocab().autocomplete
 
 /**
  * Renders API documentation in a completion panel.
@@ -129,7 +130,7 @@ function buildCallableCompletions(entry) {
 
 /** @returns {object[]} Completions for top-level public make API entries. */
 function buildTopLevelCompletions() {
-    return autocompleteApi.members.flatMap(buildCallableCompletions)
+    return autocompleteApi().members.flatMap(buildCallableCompletions)
 }
 
 /**
@@ -140,7 +141,7 @@ function buildMethodCompletionsByType() {
     const completionsByType = {}
 
     for (const [typeName, methods] of Object.entries(
-        autocompleteApi.methodsByType ?? {},
+        autocompleteApi().methodsByType ?? {},
     )) {
         completionsByType[typeName] = methods.flatMap((method) =>
             buildCallableCompletions({ ...method, kind: 'method' }),
@@ -218,7 +219,7 @@ function callableNameFromCompletion(completion) {
  * @returns {object|null} Matching callable entry.
  */
 function findVocabularyCallable(call, allowedParameterNames) {
-    const topLevelEntry = autocompleteApi.members.find(
+    const topLevelEntry = autocompleteApi().members.find(
         (entry) => entry.path === call.callee,
     )
     if (topLevelEntry) {
@@ -230,7 +231,7 @@ function findVocabularyCallable(call, allowedParameterNames) {
         return null
     }
 
-    const matchingMethods = Object.values(autocompleteApi.methodsByType ?? {})
+    const matchingMethods = Object.values(autocompleteApi().methodsByType ?? {})
         .flat()
         .filter((method) => method.name === methodName)
 

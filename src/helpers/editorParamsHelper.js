@@ -11,6 +11,11 @@
  *                              how many are left.
  *   maxInstances=spin:2,wait:1 Per-type caps, `type:count` pairs.
  *   preview=0                  Hide the Python pane beside the blocks.
+ *   preview=open               Start with the Python pane open.
+ *   view=1                     Show a program, read-only: no toolbar, task
+ *                              panel, toolbox or cheatsheet, and the Python
+ *                              pane open. The host loads the program with
+ *                              proto-ide:load. Embed page only.
  */
 
 /**
@@ -23,6 +28,8 @@
  *   maxBlocks: number|undefined,
  *   maxInstances: Record<string, number>|undefined,
  *   codePreview: boolean,
+ *   codeOpen: boolean,
+ *   view: boolean,
  * }} Parsed options. Lists are null when the parameter is absent.
  */
 export const readEditorParams = (params) => {
@@ -50,6 +57,7 @@ export const readEditorParams = (params) => {
     }
 
     const preview = (params.get('preview') ?? '').toLowerCase()
+    const view = (params.get('view') ?? '').toLowerCase()
 
     return {
         mode: params.get('mode') === 'line' ? 'line' : 'block',
@@ -58,6 +66,8 @@ export const readEditorParams = (params) => {
         maxBlocks: Number.isFinite(maxBlocks) && maxBlocks > 0 ? maxBlocks : undefined,
         maxInstances,
         codePreview: !['0', 'false', 'off', 'no'].includes(preview),
+        codeOpen: preview === 'open',
+        view: ['1', 'true', 'on', 'yes'].includes(view),
     }
 }
 

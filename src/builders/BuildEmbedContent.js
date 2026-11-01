@@ -1,7 +1,7 @@
 import { button, on, span, tag } from 'ellipsi'
 
 import buildBlockMode from './buildBlockMode'
-import buildLineMode from './buildLineMode'
+import { buildBrainButton } from './buildBrainButton'
 import buildTaskPanel from './buildTaskPanel'
 import { watchHeaderHeight } from './buildSiteChrome'
 import { watchPhoneLayout } from '../helpers/phoneLayoutHelper'
@@ -14,13 +14,14 @@ import { ensureProjectName } from '../helpers/popUpHelper'
 import { setDrawerOpen, toggleDrawer } from '../helpers/drawerHelper'
 
 /**
- * Message types exchanged with the page that embeds the editor in an iframe
+ * Message types exchanged with a page that embeds the editor in an iframe
  * (open the editor with `?embed`). Every message is `{ type, ...detail }`.
  *
  * Sent to the parent:
  *   proto-ide:ready      The editor is mounted and can accept a task/state.
  *   proto-ide:change     { code, blockTypes, state } after every edit. In
  *                        line mode `state` is the source and blockTypes [].
+ *   proto-ide:escape     Escape was pressed inside the editor.
  * Accepted from the parent:
  *   proto-ide:task       { goal, markdown, requiredBlocks, hints,
  *                        projectName } fills the task panel beside the
@@ -30,9 +31,15 @@ import { setDrawerOpen, toggleDrawer } from '../helpers/drawerHelper'
  *   proto-ide:cheatsheet { open? } opens or closes the cheatsheet drawer;
  *                        without `open` it toggles.
  *
- * Nothing is kept in local storage in this mode; the parent owns the state.
+ * A site that can run the editor's code itself (the library build in
+ * src/lib.js) uses createEmbedEditor directly instead and gets these as
+ * plain function calls and callbacks.
+ *
+ * Nothing is kept in local storage in this mode; the host owns the state.
  * The URL parameters in editorParamsHelper.js choose the mode, narrow the
- * toolbox, and cap the block count.
+ * toolbox, and cap the block count. With `view=1` the editor is a read-only
+ * viewer: no toolbar, task panel, toolbox or cheatsheet, and the Python
+ * pane open. It still reports ready and change.
  */
 export const embedMessage = {
     ready: 'proto-ide:ready',
@@ -41,23 +48,42 @@ export const embedMessage = {
     load: 'proto-ide:load',
     clear: 'proto-ide:clear',
     cheatsheet: 'proto-ide:cheatsheet',
+    escape: 'proto-ide:escape',
 }
 
 /**
- * Builds the embedded editor page: a toolbar, the task panel, one editor,
- * and the cheatsheet drawer, wired to the host page with postMessage.
+ * Builds the embedded editor: a toolbar (with Send to Brain, the way
+ * programs reach the robot), the task drawer on the left, one editor, and
+ * the cheatsheet drawer. The host drives it through the returned functions
+ * and hears from it through the callbacks.
  * @param {object} toolbox Blockly toolbox configuration (already narrowed).
  * @param {object} options Parsed editor parameters (readEditorParams).
- * @returns {HTMLElement[]} Top-level page elements.
+ * @param {object} host
+ * @param {HTMLElement} host.root The element that carries the layout
+ *     classes: the body on the embed page, the editor's root element in a
+ *     library mount.
+ * @param {(detail: {code: string, blockTypes: string[], state: object}) => void} [host.onChange]
+ * @param {() => void} [host.onEscape]
+ * @returns {Promise<{
+ *   elements: HTMLElement[],
+ *   setTask: (task: object) => void,
+ *   setState: (state: object|null) => void,
+ *   setCheatsheet: (open?: boolean) => void,
+ *   dispose: () => void,
+ * }>} The elements to put on the page, in order, and the controls.
  */
-export default (
+export const createEmbedEditor = async (
     toolbox,
-    { mode = 'block', maxBlocks, maxInstances, codePreview = true } = {},
+    {
+        mode = 'block',
+        maxBlocks,
+        maxInstances,
+        codePreview = true,
+        codeOpen = false,
+        view = false,
+    } = {},
+    { root, onChange = () => {}, onEscape = () => {} },
 ) => {
-    // Messages carry only the learner's own program, so any embedding origin
-    // may receive them. Incoming messages are accepted from the parent only.
-    const post = (message) => window.parent.postMessage(message, '*')
-
     const taskPanel = buildTaskPanel({ maxBlocks })
     const TaskBadge = span({ id: 'task-badge' })
     TaskBadge.hidden = true
@@ -72,38 +98,36 @@ export default (
         TaskBadge.hidden = missing === 0
     }
 
-    const editor =
-        mode === 'line'
-            ? buildLineMode({
-                  persist: false,
-                  onChange: ({ code, state }) => {
-                      post({
-                          type: embedMessage.change,
-                          code,
-                          blockTypes: [],
-                          state,
-                      })
-                  },
-              })
-            : buildBlockMode(toolbox, {
-                  persist: false,
-                  lineEditorButton: false,
-                  maxBlocks,
-                  maxInstances,
-                  codePreview,
-                  onChange: ({ code, state }) => {
-                      const blockTypes = (state.blocks?.blocks ?? []).flatMap(
-                          blockTypesIn,
-                      )
-                      updateTaskStatus(blockTypes)
-                      post({
-                          type: embedMessage.change,
-                          code,
-                          blockTypes,
-                          state,
-                      })
-                  },
-              })
+    let editor
+    if (mode === 'line') {
+        // the line editor brings CodeMirror and the Python checker with it,
+        // so it is only loaded when asked for
+        const { default: buildLineMode } = await import('./buildLineMode')
+        editor = buildLineMode({
+            persist: false,
+            onChange: ({ code, state }) =>
+                onChange({ code, blockTypes: [], state }),
+        })
+    } else {
+        editor = buildBlockMode(toolbox, {
+            persist: false,
+            lineEditorButton: false,
+            maxBlocks,
+            maxInstances,
+            codePreview,
+            codeOpen,
+            view,
+            // an AudioContext takes seconds to open in an iframe
+            sounds: false,
+            onChange: ({ code, state }) => {
+                const blockTypes = (state.blocks?.blocks ?? []).flatMap(
+                    blockTypesIn,
+                )
+                updateTaskStatus(blockTypes)
+                onChange({ code, blockTypes, state })
+            },
+        })
+    }
 
     const CheatSheetDrawer = createCheatSheetDrawer(
         () =>
@@ -116,33 +140,45 @@ export default (
         },
     )
 
-    // ---- toolbar ---------------------------------------------------------
+    // ---- the task drawer ---------------------------------------------------
 
     /**
-     * Opens or closes the task panel.
-     * @param {boolean} open Whether the panel should be visible.
+     * Opens or closes the task drawer.
+     * @param {boolean} open Whether the task should show.
      */
     const setTaskOpen = (open) => {
-        document.body.classList.toggle('task-closed', !open)
+        root.classList.toggle('task-closed', !open)
+        TaskDrawer.classList.toggle('open', open)
         TaskToggle.setAttribute('aria-expanded', String(open))
-        TaskToggle.classList.toggle('active', open)
     }
 
+    // The task panel is a drawer on the editor's left, open by default,
+    // with a Task tab on its edge like the Code and Cheatsheet drawers on
+    // the right. The whole drawer stays hidden until the host sends a task.
     const TaskToggle = button(
         {
             type: 'button',
             id: 'task-toggle',
+            class: 'drawer-tab',
             'aria-controls': 'task-panel',
             'aria-expanded': 'false',
         },
         'Task',
         TaskBadge,
         on('click', () =>
-            setTaskOpen(document.body.classList.contains('task-closed')),
+            setTaskOpen(root.classList.contains('task-closed')),
         ),
     )
-    TaskToggle.hidden = true
+    const TaskDrawer = tag(
+        'task-drawer',
+        { class: 'drawer' },
+        TaskToggle,
+        taskPanel.element,
+    )
+    TaskDrawer.hidden = true
     setTaskOpen(false)
+
+    // ---- toolbar -----------------------------------------------------------
 
     const ProjectNameInput = tag('input', {
         type: 'text',
@@ -153,7 +189,6 @@ export default (
 
     const Toolbar = tag(
         'tool-bar',
-        TaskToggle,
         ProjectNameInput,
         button(
             'Save',
@@ -163,6 +198,11 @@ export default (
                 }
             }),
         ),
+        buildBrainButton({
+            getProjectName: () => ProjectNameInput.value,
+            getProjectFiles: (projectName) =>
+                editor.getProjectFiles(projectName),
+        }),
         button(
             'Load',
             on('click', () => editor.loadCode(ProjectNameInput)),
@@ -181,7 +221,87 @@ export default (
         ),
     )
 
-    // ---- messages from the host --------------------------------------------
+    // ---- the host's controls -----------------------------------------------
+
+    const setTask = (task) => {
+        taskPanel.setTask(task)
+        if (typeof task.projectName === 'string') {
+            ProjectNameInput.value = task.projectName
+        }
+        TaskDrawer.hidden = false
+        updateTaskStatus([])
+        setTaskOpen(true)
+    }
+
+    const setState = (state) => editor.setState(state ?? null)
+
+    const setCheatsheet = (open) => {
+        if (typeof open === 'boolean') {
+            setDrawerOpen(CheatSheetDrawer, open)
+        } else {
+            toggleDrawer(CheatSheetDrawer)
+        }
+    }
+
+    // The host cannot always see keys pressed in the editor (an iframe hides
+    // them, and the workspace takes focus whenever it is resized), so Escape
+    // is reported for the host to act on (leaving a full-screen layout, say).
+    const onKeyDown = (event) => {
+        if (event.key === 'Escape') {
+            onEscape()
+        }
+    }
+    root.addEventListener('keydown', onKeyDown)
+
+    const dispose = () => {
+        root.removeEventListener('keydown', onKeyDown)
+        editor.dispose?.()
+    }
+
+    const EditorContainer = span(
+        { id: 'editor-container' },
+        TaskDrawer,
+        editor.EditorElement,
+    )
+
+    root.classList.add('embed', `embed-${mode}`)
+    if (view) {
+        root.classList.add('embed-view')
+    }
+
+    const controls = { setTask, setState, setCheatsheet, dispose }
+
+    if (view) {
+        // just the editor: the host's page is the chrome
+        root.style.setProperty('--header-height', '0px')
+        return { elements: [EditorContainer], ...controls }
+    }
+
+    const Header = tag('header', Toolbar)
+    watchHeaderHeight(Header, root)
+    return {
+        elements: [Header, EditorContainer, CheatSheetDrawer],
+        ...controls,
+    }
+}
+
+/**
+ * Builds the embedded editor page (`?embed`), wired to the page that holds
+ * the iframe with postMessage.
+ * @param {object} toolbox Blockly toolbox configuration (already narrowed).
+ * @param {object} options Parsed editor parameters (readEditorParams).
+ * @returns {Promise<HTMLElement[]>} Top-level page elements.
+ */
+export default async (toolbox, options = {}) => {
+    // Messages carry only the learner's own program, so any embedding origin
+    // may receive them. Incoming messages are accepted from the parent only.
+    const post = (message) => window.parent.postMessage(message, '*')
+
+    const api = await createEmbedEditor(toolbox, options, {
+        root: document.body,
+        onChange: (detail) => post({ type: embedMessage.change, ...detail }),
+        onEscape: () => post({ type: embedMessage.escape }),
+    })
 
     window.addEventListener('message', (event) => {
         if (event.source !== window.parent || !event.data?.type) {
@@ -190,33 +310,15 @@ export default (
         const { type, ...detail } = event.data
 
         if (type === embedMessage.task) {
-            taskPanel.setTask(detail)
-            if (typeof detail.projectName === 'string') {
-                ProjectNameInput.value = detail.projectName
-            }
-            TaskToggle.hidden = false
-            updateTaskStatus([])
-            setTaskOpen(true)
+            api.setTask(detail)
         } else if (type === embedMessage.load) {
-            editor.setState(detail.state ?? null)
+            api.setState(detail.state ?? null)
         } else if (type === embedMessage.clear) {
-            editor.setState(null)
+            api.setState(null)
         } else if (type === embedMessage.cheatsheet) {
-            if (typeof detail.open === 'boolean') {
-                setDrawerOpen(CheatSheetDrawer, detail.open)
-            } else {
-                toggleDrawer(CheatSheetDrawer)
-            }
+            api.setCheatsheet(detail.open)
         }
     })
-
-    const EditorContainer = span(
-        { id: 'editor-container' },
-        taskPanel.element,
-        editor.EditorElement,
-    )
-
-    document.body.classList.add('embed', `embed-${mode}`)
 
     // The parent may only send a state once the workspace exists. Blockly
     // mounts on the first resize, so wait a frame after the elements land.
@@ -224,10 +326,8 @@ export default (
         requestAnimationFrame(() => post({ type: embedMessage.ready }))
     })
 
-    const Header = tag('header', Toolbar)
-    watchHeaderHeight(Header)
-    watchPhoneLayout()
-    return [Header, EditorContainer, CheatSheetDrawer]
+    watchPhoneLayout(document.body)
+    return api.elements
 }
 
 /**
@@ -235,7 +335,7 @@ export default (
  * @param {object} block One entry of Blockly's serialized `blocks.blocks`.
  * @returns {string[]} Block type names, including nested and following blocks.
  */
-const blockTypesIn = (block) => {
+export const blockTypesIn = (block) => {
     const types = [block.type]
     for (const input of Object.values(block.inputs ?? {})) {
         if (input.block) {

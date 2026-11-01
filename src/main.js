@@ -36,7 +36,7 @@ const main = async () => {
     const PageContent = params.has('cheatsheet')
         ? BuildCheatSheet()
         : params.has('embed')
-          ? BuildEmbedContent(toolbox, editorParams)
+          ? await BuildEmbedContent(toolbox, editorParams)
           : BuildPageContent(toolbox, editorParams)
 
     document.body.replaceChildren(...PageContent)

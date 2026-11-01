@@ -69,6 +69,9 @@ const searchCategory = {
  *     flyout follows it, so this sets the block size in the toolbox too.
  * @param {number} [options.maxBlocks] Cap on blocks in the workspace.
  * @param {Record<string, number>} [options.maxInstances] Per-type caps.
+ * @param {boolean} [options.sounds=true] Blockly's click and delete sounds.
+ *     Off, the workspace is built without an AudioContext, which can take
+ *     seconds to open inside an embedding page (see mountBlocklyWorkspace).
  * @returns {object} Canvas, workspace slot, options, and cleanup handles.
  *     `editor` says whether this is the full editor (toolbox and plugins),
  *     `phone` whether it was built for the phone layout, `multiselect`
@@ -84,6 +87,7 @@ export const createBlocklyInstance = (
         startScale = 0.65,
         maxBlocks = undefined,
         maxInstances = undefined,
+        sounds = true,
     } = {},
 ) => {
     const canvas = div({ id })
@@ -137,6 +141,7 @@ export const createBlocklyInstance = (
             : { scrollbars: true, drag: true, wheel: true },
         maxBlocks,
         maxInstances,
+        sounds,
     }
 
     return {
@@ -145,9 +150,35 @@ export const createBlocklyInstance = (
         workspaceOptions,
         editor,
         phone,
+        sounds,
         multiselect: null,
         resizeObservers: [],
         cleanupCallbacks: [],
+    }
+}
+
+/**
+ * Injects a workspace, hiding the AudioContext constructor from Blockly
+ * while it does. Blockly's `sounds` option only skips loading the sound
+ * files: every workspace (the flyout too) still opens an AudioContext in
+ * its constructor, and inside an iframe that has measured at 2 to 3
+ * seconds, most of the editor's start-up time. With no AudioContext there
+ * is nothing to play and Blockly stays silent.
+ * @param {HTMLElement} canvas Element to inject into.
+ * @param {object} options Blockly injection options.
+ * @param {boolean} silent Whether to hide the AudioContext.
+ * @returns {object} The workspace.
+ */
+const injectWithoutAudio = (canvas, options, silent) => {
+    if (!silent) {
+        return inject(canvas, options)
+    }
+    const AudioContext = window.AudioContext
+    window.AudioContext = undefined
+    try {
+        return inject(canvas, options)
+    } finally {
+        window.AudioContext = AudioContext
     }
 }
 
@@ -180,9 +211,10 @@ export const mountBlocklyWorkspace = (
     const injectedDetached = !container.isConnected
     let userOnReady = onReady
     if (!blocklyInstance.workspace) {
-        blocklyInstance.workspace = inject(
+        blocklyInstance.workspace = injectWithoutAudio(
             blocklyInstance.canvas,
             blocklyInstance.workspaceOptions,
+            !blocklyInstance.sounds,
         )
         if (injectedDetached && blocklyInstance.workspaceOptions.toolbox) {
             const workspace = blocklyInstance.workspace

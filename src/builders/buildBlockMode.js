@@ -29,12 +29,13 @@ import {
     PROGRAM_PREAMBLE,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
-import { createDrawer } from '../helpers/drawerHelper'
+import { createDrawer, openDrawer } from '../helpers/drawerHelper'
 import { createMinimapController } from '../helpers/minimapHelper'
 import { onPhoneLayoutChange } from '../helpers/phoneLayoutHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import { createToolboxDrawer } from '../helpers/toolboxDrawerHelper'
 import { saveFilesInZip } from '../helpers/zipHelper'
+import { getRoot } from '../helpers/rootHelper'
 
 /** The workspace events after which the program is regenerated and saved. */
 const programChangeEvents = new Set([
@@ -60,6 +61,12 @@ const programChangeEvents = new Set([
  * @param {Record<string, number>} [options.maxInstances] Per-type caps.
  * @param {boolean} [options.codePreview=true] Show the code drawer beside
  *     the blocks. Code is still generated for saving and for the host.
+ * @param {boolean} [options.sounds=true] Blockly's click sounds. The embed
+ *     turns them off: opening an AudioContext in an iframe is slow.
+ * @param {boolean} [options.codeOpen=false] Start with the code drawer open.
+ * @param {boolean} [options.view=false] Show a program without editing it:
+ *     no toolbox, trashcan, zoom controls or selection, and the code
+ *     drawer starts open. The host still loads a program with setState.
  * @returns {EditorMode} The block editor mode, with `setMinimap`.
  */
 export default (
@@ -71,15 +78,18 @@ export default (
         maxBlocks = undefined,
         maxInstances = undefined,
         codePreview: showCodePreview = true,
+        codeOpen = false,
+        view = false,
+        sounds = true,
     } = {},
 ) => {
     const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
 
-    const blocklyInstance = createBlocklyInstance(toolbox, {
-        maxBlocks,
-        maxInstances,
-    })
+    const instanceOptions = view
+        ? { readonly: true, hideToolbox: true, startScale: 1, sounds }
+        : { maxBlocks, maxInstances, sounds }
+    const blocklyInstance = createBlocklyInstance(toolbox, instanceOptions)
 
     // ---- the elements ------------------------------------------------------
 
@@ -107,6 +117,10 @@ export default (
             ...(lineEditorButton ? [OpenInLineEditorButton] : []),
         ],
     })
+
+    if ((view || codeOpen) && showCodePreview) {
+        openDrawer(CodeDrawer)
+    }
 
     const capacity = createBlockCapacity(blocklyInstance, maxBlocks)
 
@@ -193,7 +207,9 @@ export default (
                 if (!BlockEditor.parentElement) {
                     return false
                 }
-                startMultiselect(blocklyInstance)
+                if (!view) {
+                    startMultiselect(blocklyInstance)
+                }
                 loadState(restoredState)
                 capacity?.update()
                 minimap.apply()
@@ -235,12 +251,12 @@ export default (
         destroyBlocklyInstance(blocklyInstance)
         Object.assign(
             blocklyInstance,
-            createBlocklyInstance(toolbox, { maxBlocks, maxInstances }),
+            createBlocklyInstance(toolbox, instanceOptions),
         )
         oldCanvas.replaceWith(blocklyInstance.canvas)
         mount(state)
     }
-    onPhoneLayoutChange(rebuildWorkspace)
+    const stopPhoneLayout = onPhoneLayoutChange(rebuildWorkspace)
 
     // ---- the project ---------------------------------------------------------
 
@@ -310,7 +326,7 @@ export default (
             FileInput,
             LoadButton,
         )
-        document.body.appendChild(LoadPopUp)
+        getRoot().appendChild(LoadPopUp)
     }
 
     const mode = new EditorMode({
@@ -336,6 +352,12 @@ export default (
      * @param {boolean} wanted Whether the minimap should be shown.
      */
     mode.setMinimap = minimap.setWanted
+
+    /** Disposes of the workspace, for a host that removes the editor. */
+    mode.dispose = () => {
+        stopPhoneLayout()
+        destroyBlocklyInstance(blocklyInstance)
+    }
 
     return mode
 }

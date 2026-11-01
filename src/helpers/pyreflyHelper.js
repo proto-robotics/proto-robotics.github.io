@@ -1,4 +1,4 @@
-import pythonLibraryVocab from '../data/pythonLibraryVocab.json'
+import { getVocab } from '../data/vocab'
 import * as pyrefly from '../pyrefly/pyrefly_wasm'
 
 // Browser-side bridge between the editor and Pyrefly's WebAssembly API.
@@ -8,7 +8,7 @@ import * as pyrefly from '../pyrefly/pyrefly_wasm'
 const MAIN_FILE_NAME = 'main.py'
 const API_STUB_FILE_NAME = 'make.pyi'
 const CONFIG_FILE_NAME = 'pyrefly.toml'
-const PYTHON_VERSION = pythonLibraryVocab.lint?.pythonVersion ?? '3.12'
+const PYTHON_VERSION = getVocab().lint?.pythonVersion ?? '3.12'
 
 const INFORMATIONAL_DIAGNOSTICS = new Set([
     'unused-import',
@@ -65,7 +65,7 @@ function formatMethodParameters(parameters = []) {
  * @returns {string} Non-executable Python stub source.
  */
 function buildPublicApiStub() {
-    const autocomplete = pythonLibraryVocab.autocomplete ?? {}
+    const autocomplete = getVocab().autocomplete ?? {}
     const definitions = ['from typing import Any', '']
 
     for (const member of autocomplete.members ?? []) {
