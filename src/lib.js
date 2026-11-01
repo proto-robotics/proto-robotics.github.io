@@ -42,6 +42,7 @@ import { filterToolbox } from './helpers/editorParamsHelper'
 import { whenEditorFontsReady } from './helpers/fontHelper'
 import { watchPhoneLayout } from './helpers/phoneLayoutHelper'
 import { setRoot } from './helpers/rootHelper'
+import { setWidgetHost } from './helpers/blocklyHelper'
 
 export { addVocab, pythonGenerator, whenEditorFontsReady }
 
@@ -137,6 +138,9 @@ export const mountEditor = async (
     // Blockly measures text as soon as a workspace is injected, so the font
     // must be loaded before the editor is built.
     await whenEditorFontsReady()
+    // dropdowns and text inputs are positioned in page coordinates, so they
+    // live on the page's body, not inside the editor's positioned root
+    setWidgetHost(document.body)
     if (vocab) {
         addVocab(vocab)
     }

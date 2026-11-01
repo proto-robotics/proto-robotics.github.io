@@ -379,11 +379,53 @@ export const destroyBlocklyInstance = (blocklyInstance) => {
 }
 
 /**
+ * Where Blockly's dropdowns, text inputs and tooltips live when a host page
+ * has said so (the library build: see setWidgetHost). Null means the active
+ * editor's container.
+ * @type {HTMLElement|null}
+ */
+let widgetHost = null
+
+/**
+ * Keeps Blockly's widgets (dropdowns, text inputs, tooltips) in one element
+ * instead of moving them into whichever editor is active. Blockly positions
+ * them in page coordinates, so inside a positioned editor root (the library
+ * build's) they land in the wrong place; the host's body is where they
+ * belong there. The element gets the `proto-ide-widgets` class so the
+ * editor's styles reach them.
+ * @param {HTMLElement|null} element The host, or null for the default.
+ */
+export const setWidgetHost = (element) => {
+    widgetHost = element
+    if (element) {
+        setParentContainer(element)
+    }
+}
+
+/** Marks Blockly's widget layers so the editor's scoped styles apply to them. */
+const tagWidgetLayers = () => {
+    if (!widgetHost) {
+        return
+    }
+    for (const layer of widgetHost.querySelectorAll(
+        ':scope > .blocklyDropDownDiv, :scope > .blocklyWidgetDiv, :scope > .blocklyTooltipDiv',
+    )) {
+        layer.classList.add('proto-ide-widgets')
+    }
+}
+
+/**
  * Sets the shared Blockly widget parent so dropdowns and text inputs appear in
- * the active editor rather than a readonly preview.
+ * the active editor rather than a readonly preview, unless a host page has
+ * fixed the widget host.
  * @param {HTMLElement} container Active workspace container.
  */
 const setBlocklyParentContainer = (container) => {
+    if (widgetHost) {
+        setParentContainer(widgetHost)
+        tagWidgetLayers()
+        return
+    }
     if (container) {
         // Fixes Blockly blocks stealing focus from text inputs and context menus.
         setParentContainer(container)

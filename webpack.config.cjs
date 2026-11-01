@@ -108,6 +108,12 @@ const site = {
 
 /** The class of the library editor's root element. */
 const LIB_ROOT = '.proto-ide'
+/**
+ * Where a descendant rule applies: under the root, or under Blockly's widget
+ * layers (dropdowns, text inputs, tooltips), which sit on the host page's
+ * body and carry this second class (blocklyHelper.js, setWidgetHost).
+ */
+const LIB_SCOPE = ':is(.proto-ide, .proto-ide-widgets)'
 
 /**
  * Scopes the stylesheet to the editor's root element for the library build:
@@ -154,7 +160,7 @@ const scopeToRoot = () => ({
                 if (trimmed.startsWith(LIB_ROOT)) {
                     return trimmed
                 }
-                return `${LIB_ROOT} ${trimmed}`
+                return `${LIB_SCOPE} ${trimmed}`
             })
         })
     },
