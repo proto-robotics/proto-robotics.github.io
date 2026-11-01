@@ -14,6 +14,7 @@ import { div } from 'ellipsi'
 
 import { multiselectOffIcon, multiselectOnIcon } from '../assets'
 import { injectMods, SEARCH_CATEGORY_KIND } from '../mods/mods.js'
+import { bundleUrl } from '../assets'
 import { isPhoneLayout } from './phoneLayoutHelper'
 
 let modsInjected = false
@@ -142,6 +143,9 @@ export const createBlocklyInstance = (
         maxBlocks,
         maxInstances,
         sounds,
+        // Blockly's sounds and sprites, shipped next to the bundle so the
+        // editor works offline (the default is blockly-demo.appspot.com)
+        media: bundleUrl('media/'),
     }
 
     return {

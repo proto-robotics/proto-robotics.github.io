@@ -21,6 +21,14 @@ const bundleDir =
 
 export const asset = (path) => new URL(`assets/${path}`, bundleDir).href
 
+/**
+ * Resolves a path next to the bundle (Blockly's media folder, copied there
+ * by the build).
+ * @param {string} path Path relative to the bundle's folder.
+ * @returns {string} The absolute URL.
+ */
+export const bundleUrl = (path) => new URL(path, bundleDir).href
+
 /** The PROTO logo shown in the navbars. */
 export const protoLogo = asset('images/proto-logo.svg')
 

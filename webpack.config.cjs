@@ -34,6 +34,8 @@ const fontRule = {
 }
 
 const copyImages = { from: 'assets/images', to: 'assets/images' }
+// Blockly's sounds and sprites, so nothing is fetched from blockly-demo.appspot.com
+const copyBlocklyMedia = { from: 'node_modules/blockly/media', to: 'media' }
 
 const site = {
     name: 'site',
@@ -86,6 +88,7 @@ const site = {
                 // Images are looked up by path at runtime (see src/assets.js),
                 // so they keep their names.
                 copyImages,
+                copyBlocklyMedia,
                 { from: 'favicon.ico' },
                 { from: 'CNAME', to: 'CNAME', toType: 'file' },
             ],
@@ -198,7 +201,7 @@ const lib = {
     },
     plugins: [
         new MiniCssExtractPlugin({ filename: '[name].css' }),
-        new CopyWebpackPlugin({ patterns: [copyImages] }),
+        new CopyWebpackPlugin({ patterns: [copyImages, copyBlocklyMedia] }),
     ],
     mode: 'development',
 }
