@@ -1669,11 +1669,67 @@
         height: 100%;
     }
 
-    body.embed.task-closed #editor-container {
-        grid-template-columns: minmax(0, 1fr);
+    /* the editor stays in the wide column when there is no task drawer
+       (hidden until the host sends a task); as the only child it would
+       otherwise land in the `auto` column, 0 wide */
+    body.embed #editor-container > :last-child {
+        grid-column: 2;
+    }
+
+    /* The task drawer: the host's task on the editor's left, open by
+       default, closing to nothing but its tab. The tab hangs off the
+       drawer's right edge into the canvas, the mirror of the Code and
+       Cheatsheet tabs. */
+    body.embed task-drawer {
+        position: relative;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        display: block;
+        width: 320px;
+        min-height: 0;
+        height: 100%;
+        /* above the editor beside it, so the tab is clickable over the toolbox */
+        z-index: 895;
+        transition: width 180ms ease;
+    }
+
+    body.embed.task-closed task-drawer {
+        width: 0;
+    }
+
+    /* the tab sits at the foot of the edge, below the toolbox categories
+       it would otherwise cover */
+    body.embed task-drawer > .drawer-tab {
+        left: auto;
+        right: -44px;
+        top: auto;
+        bottom: 16px;
+        padding: 12px 0;
+        border: 1px solid var(--line);
+        border-left: none;
+        border-radius: 0 12px 12px 0;
+        box-shadow: 2px 2px 8px rgba(33, 36, 44, 0.12);
+        z-index: 5;
+    }
+
+    body.embed task-drawer > .drawer-tab #task-badge {
+        margin: 6px 0 0;
+    }
+
+    body.embed task-panel {
+        width: 100%;
+        height: 100%;
     }
 
     body.embed.task-closed task-panel {
+        display: none;
+    }
+
+    /* the read-only viewer (view=1): the code drawer has no tab to close
+       it, and the canvas keeps nothing pinned over it */
+    body.embed-view #code-drawer-tab,
+    body.embed-view #toolbox-drawer-tab {
         display: none;
     }
 
@@ -1942,6 +1998,11 @@
        away (--toolbox-height is set on block-editor by
        toolboxDrawerHelper.js) */
     .block-canvas-wrap > #toolbox-drawer-tab {
+        display: none;
+    }
+
+    /* never in the read-only viewer, however narrow it is */
+    body.embed-view.phone-layout .block-canvas-wrap > #toolbox-drawer-tab {
         display: none;
     }
 

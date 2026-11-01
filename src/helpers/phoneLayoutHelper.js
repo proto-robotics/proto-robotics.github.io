@@ -15,14 +15,17 @@ const mediaQuery = window.matchMedia(phoneLayoutQuery)
 export const isPhoneLayout = () => mediaQuery.matches
 
 /**
- * Keeps the body's `phone-layout` class in step with the window. Call once
- * when the page is built.
+ * Keeps the root's `phone-layout` class in step with the window. Call once
+ * when the page (or a library editor) is built.
+ * @param {HTMLElement} [root] The body, or the library editor's root.
+ * @returns {() => void} Stops watching.
  */
-export const watchPhoneLayout = () => {
+export const watchPhoneLayout = (root = document.body) => {
     const apply = () =>
-        document.body.classList.toggle('phone-layout', mediaQuery.matches)
+        root.classList.toggle('phone-layout', mediaQuery.matches)
     apply()
     mediaQuery.addEventListener('change', apply)
+    return () => mediaQuery.removeEventListener('change', apply)
 }
 
 /**

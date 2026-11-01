@@ -49,7 +49,10 @@ function scrollCheatSheetDrawerToBlockName(drawer, blockName, blockLookup) {
 }
 
 /**
- * Creates the slide-out cheatsheet drawer and wires its tab toggle.
+ * Creates the slide-out cheatsheet drawer and wires its tab toggle. The
+ * content (a Blockly preview for every block) is built the first time the
+ * drawer opens, however it is opened: building it up front was most of the
+ * editor's start-up time.
  * @param {() => Node} createContent Creates the drawer's cheatsheet content.
  * @param {object} options Drawer configuration.
  * @param {Record<string, number>} [options.blockLookup={}] Maps block names to items.
@@ -59,16 +62,31 @@ export default function createCheatSheetDrawer(
     createContent,
     { blockLookup = {} } = {},
 ) {
-    const { drawer } = createDrawer({
+    const { drawer, panel } = createDrawer({
         elementName: 'cheatsheet-drawer',
         tabId: 'cheatsheet-drawer-tab',
         panelId: 'cheatsheet-drawer-panel',
         tabLabel: 'Cheatsheet',
-        panelContent: createContent(),
+        panelContent: [],
     })
+
+    let built = false
+    const ensureContent = () => {
+        if (!built) {
+            built = true
+            panel.replaceChildren(createContent())
+        }
+    }
+    // every way of opening the drawer ends in the `open` class
+    new MutationObserver(() => {
+        if (drawer.classList.contains('open')) {
+            ensureContent()
+        }
+    }).observe(drawer, { attributes: true, attributeFilter: ['class'] })
 
     document.addEventListener(openCheatSheetDrawerEvent, (event) => {
         openDrawer(drawer)
+        ensureContent()
 
         requestAnimationFrame(() => {
             if (event.detail?.elementNumber !== undefined) {

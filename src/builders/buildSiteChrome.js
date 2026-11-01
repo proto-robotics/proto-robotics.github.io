@@ -28,10 +28,15 @@ const menuIcon =
  * Publishes the header's height as `--header-height` on the root element,
  * so fixed drawers can start right under it however the bar wraps.
  * @param {HTMLElement} headerElement The page header.
+ * @param {HTMLElement} [target] Where the variable goes: the document
+ *     element on the IDE's pages, the editor's root in a library mount.
  */
-export const watchHeaderHeight = (headerElement) => {
+export const watchHeaderHeight = (
+    headerElement,
+    target = document.documentElement,
+) => {
     const update = () => {
-        document.documentElement.style.setProperty(
+        target.style.setProperty(
             '--header-height',
             `${headerElement.getBoundingClientRect().height}px`,
         )

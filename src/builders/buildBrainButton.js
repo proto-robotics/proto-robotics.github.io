@@ -16,6 +16,7 @@ import {
     watchBrain,
 } from '../helpers/brainHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
+import { getRoot } from '../helpers/rootHelper'
 
 /**
  * Walks the learner through connecting the brain, then opens the folder
@@ -84,7 +85,7 @@ const connectBrainWithHelp = () =>
         // the dialog's close event, not the content's (PopUp hands its
         // children to the content element)
         Dialog.addEventListener('close', () => resolve(handle))
-        document.body.appendChild(Dialog)
+        getRoot().appendChild(Dialog)
     })
 
 /**
@@ -114,7 +115,7 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
     let unsupported = false
 
     const explainUnsupported = () => {
-        document.body.appendChild(
+        getRoot().appendChild(
             PopUp(
                 'This browser does not support sending programs ',
                 'to the brain, or has it switched off. ',
@@ -169,7 +170,7 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
             'Brain again, or pick its drive afresh.',
             ChooseButton,
         )
-        document.body.appendChild(Dialog)
+        getRoot().appendChild(Dialog)
     }
 
     const BrainButton = button(
@@ -187,7 +188,7 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
                 if (error.name === 'NotFoundError') {
                     explainMissing()
                 } else if (error.name !== 'AbortError') {
-                    document.body.appendChild(
+                    getRoot().appendChild(
                         PopUp(
                             'The program could not be sent. ' +
                                 describeSendError(error),

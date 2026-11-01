@@ -1,7 +1,8 @@
 /*
  * Single source of truth for the URLs of the files in ./assets. Every path is
- * resolved against the document base so the app keeps working whether it is
- * served from the site root or from a subdirectory.
+ * resolved against the bundle's own URL (the build copies assets/ next to
+ * it), so the app keeps working served from the site root, from a
+ * subdirectory, or as a library inside another site.
  */
 
 /**
@@ -9,7 +10,16 @@
  * @param {string} path Path relative to the assets folder.
  * @returns {string} The absolute URL of the asset.
  */
-export const asset = (path) => new URL(`assets/${path}`, document.baseURI).href
+/* global __webpack_public_path__ */
+// Webpack's public path: the folder the bundle was loaded from, worked out
+// at run time (publicPath 'auto'). Not import.meta.url, which webpack
+// rewrites in source files to the file's own path.
+const bundleDir =
+    typeof __webpack_public_path__ === 'string' && __webpack_public_path__
+        ? __webpack_public_path__
+        : document.baseURI
+
+export const asset = (path) => new URL(`assets/${path}`, bundleDir).href
 
 /** The PROTO logo shown in the navbars. */
 export const protoLogo = asset('images/proto-logo.svg')

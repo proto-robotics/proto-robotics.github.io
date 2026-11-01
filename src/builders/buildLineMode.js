@@ -10,6 +10,7 @@ import {
 } from '../helpers/codeMirrorHelper'
 import { createDrawer } from '../helpers/drawerHelper'
 import { checkWithPyrefly } from '../helpers/pyreflyHelper'
+import { getRoot } from '../helpers/rootHelper'
 
 /**
  * @param {object} [options] Embedding options (see BuildEmbedContent).
@@ -112,7 +113,7 @@ export default ({ persist = true, onChange = null } = {}) => {
             LoadButton,
         )
 
-        document.body.appendChild(LoadPopUp)
+        getRoot().appendChild(LoadPopUp)
     }
 
     const VerifyStatus = tag(

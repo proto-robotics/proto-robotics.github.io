@@ -1,6 +1,7 @@
 import { button, div, img, on, tag } from 'ellipsi'
 
 import { cancelIcon } from '../assets'
+import { getRoot } from './rootHelper'
 
 /** Event used to request that a popup dialog closes. */
 export const closePopUpEvent = 'close-pop-up'
@@ -104,6 +105,6 @@ export const ensureProjectName = (ProjectNameInput) => {
             button('Save', on('click', submit)),
         )
         Dialog.addEventListener('close', () => settle(false))
-        document.body.appendChild(Dialog)
+        getRoot().appendChild(Dialog)
     })
 }
