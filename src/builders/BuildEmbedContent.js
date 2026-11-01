@@ -85,17 +85,14 @@ export const createEmbedEditor = async (
     { root, onChange = () => {}, onEscape = () => {} },
 ) => {
     const taskPanel = buildTaskPanel({ maxBlocks })
-    const TaskBadge = span({ id: 'task-badge' })
-    TaskBadge.hidden = true
 
     /**
-     * Shows how many required blocks are still missing on the Task button.
+     * Ticks the required blocks that are in the workspace. The host shows
+     * how many are still missing in its own words; the tab carries no count.
      * @param {string[]} blockTypes Block types now in the workspace.
      */
     const updateTaskStatus = (blockTypes) => {
-        const missing = taskPanel.setBlockTypes(blockTypes)
-        TaskBadge.textContent = String(missing)
-        TaskBadge.hidden = missing === 0
+        taskPanel.setBlockTypes(blockTypes)
     }
 
     let editor
@@ -164,7 +161,6 @@ export const createEmbedEditor = async (
             'aria-expanded': 'false',
         },
         'Task',
-        TaskBadge,
         on('click', () =>
             setTaskOpen(root.classList.contains('task-closed')),
         ),
