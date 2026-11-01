@@ -1713,8 +1713,22 @@
         z-index: 5;
     }
 
+    /* the count sits under the vertical "Task" as an upright pill: the tab's
+       vertical writing mode would otherwise lay the pill on its side */
     body.embed task-drawer > .drawer-tab #task-badge {
-        margin: 6px 0 0;
+        writing-mode: horizontal-tb;
+        margin: 8px 0 0;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        line-height: 20px;
+        color: #fff;
+    }
+
+    /* on the open (red) tab the pill turns white so the count still reads */
+    body.embed task-drawer.open > .drawer-tab #task-badge {
+        background: #fff;
+        color: var(--red-dark);
     }
 
     body.embed task-panel {
