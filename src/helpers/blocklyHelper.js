@@ -13,7 +13,6 @@ import {
 } from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { ScrollOptions } from '@blockly/plugin-scroll-options'
-import { Backpack } from '@blockly/workspace-backpack'
 import { ZoomToFitControl } from '@blockly/zoom-to-fit'
 import { Multiselect } from '@mit-app-inventor/blockly-plugin-workspace-multiselect'
 import { div } from 'ellipsi'
@@ -21,6 +20,7 @@ import { div } from 'ellipsi'
 import { multiselectOffIcon, multiselectOnIcon } from '../assets'
 import { injectMods, SEARCH_CATEGORY_KIND } from '../mods/mods.js'
 import { bundleUrl } from '../assets'
+import { addSharedBackpack, takeSavedBackpack } from './backpackHelper'
 import { isPhoneLayout } from './phoneLayoutHelper'
 
 let modsInjected = false
@@ -254,14 +254,12 @@ export const mountBlocklyWorkspace = (
             new ScrollOptions(blocklyInstance.workspace).init()
             // a button above the zoom controls that fits every block on screen
             new TouchSafeZoomToFitControl(blocklyInstance.workspace).init()
-            // A backpack to carry blocks between projects: "Copy to
-            // Backpack" in a block's menu, click the backpack to take them
-            // out. Its contents are saved with the workspace. Started
-            // before the multiselect plugin so that one can extend its menu
-            // entry to a whole selection.
-            new Backpack(blocklyInstance.workspace, {
-                useFilledBackpackImage: true,
-            }).init()
+            // The backpack, shared by every editor (see backpackHelper.js).
+            // Started before the multiselect plugin so that one can extend
+            // its menu entry to a whole selection.
+            blocklyInstance.cleanupCallbacks.push(
+                addSharedBackpack(blocklyInstance.workspace),
+            )
         }
     }
 
@@ -369,7 +367,10 @@ export const getBlocklyState = (blocklyInstance) => {
  * @param {object} state Blockly serialization state to load.
  */
 export const setBlocklyState = (blocklyInstance, state) => {
-    serialization.workspaces.load(state, blocklyInstance.workspace)
+    serialization.workspaces.load(
+        takeSavedBackpack(state),
+        blocklyInstance.workspace,
+    )
 }
 
 /**

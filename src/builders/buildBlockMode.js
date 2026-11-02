@@ -8,7 +8,6 @@
 import { Events } from 'blockly'
 import { button, on, tag } from 'ellipsi'
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter'
-import { backpackChange } from '@blockly/workspace-backpack'
 
 import { EditorMode } from '../classes/editorMode'
 import { createBlockCapacity } from '../helpers/blockCapacityHelper'
@@ -43,7 +42,6 @@ const programChangeEvents = new Set([
     Events.BLOCK_CREATE,
     Events.BLOCK_DELETE,
     Events.BLOCK_MOVE,
-    backpackChange, // the backpack is saved with the workspace
 ])
 
 /**
