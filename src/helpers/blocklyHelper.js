@@ -4,7 +4,13 @@
  * Our Blockly modifications themselves live in src/mods.
  */
 
-import { inject, serialization, setParentContainer, svgResize } from 'blockly'
+import {
+    inject,
+    serialization,
+    setParentContainer,
+    svgResize,
+    Touch,
+} from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { ScrollOptions } from '@blockly/plugin-scroll-options'
 import { Backpack } from '@blockly/workspace-backpack'
@@ -18,6 +24,22 @@ import { bundleUrl } from '../assets'
 import { isPhoneLayout } from './phoneLayoutHelper'
 
 let modsInjected = false
+
+/**
+ * The zoom-to-fit button, letting go of the touch that pressed it. Blockly
+ * claims a touch's pointer id on pointerdown and ignores every other pointer
+ * until its gesture code lets go; the plugin stops the event before that
+ * code runs and never lets go itself. A mouse reuses one pointer id, but on
+ * a touchscreen each touch has its own, so after one tap on the button the
+ * workspace ignored every touch (no dragging, no field editing) until the
+ * page was reloaded. Blockly's own zoom buttons clear the id the same way.
+ */
+class TouchSafeZoomToFitControl extends ZoomToFitControl {
+    onClick(event) {
+        super.onClick(event)
+        Touch.clearTouchIdentifier()
+    }
+}
 
 /**
  * The plugin classes for an editable workspace (registered in mods.js):
@@ -231,7 +253,7 @@ export const mountBlocklyWorkspace = (
         if (blocklyInstance.editor) {
             new ScrollOptions(blocklyInstance.workspace).init()
             // a button above the zoom controls that fits every block on screen
-            new ZoomToFitControl(blocklyInstance.workspace).init()
+            new TouchSafeZoomToFitControl(blocklyInstance.workspace).init()
             // A backpack to carry blocks between projects: "Copy to
             // Backpack" in a block's menu, click the backpack to take them
             // out. Its contents are saved with the workspace. Started
