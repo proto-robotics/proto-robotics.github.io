@@ -90,7 +90,11 @@ public class BrainFolderPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDel
      * names. Takes `files`: an array of `{name, text}`.
      */
     @objc func write(_ call: CAPPluginCall) {
-        guard let url = Self.rememberedURL(), Self.isReachable(url) else {
+        guard let url = Self.rememberedURL() else {
+            call.reject("No brain has been picked yet.", "NotFoundError")
+            return
+        }
+        guard Self.isReachable(url) else {
             call.reject("The brain is not plugged in.", "NotFoundError")
             return
         }
@@ -109,8 +113,19 @@ public class BrainFolderPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDel
             }
             call.resolve()
         } catch {
-            call.reject("The brain could not be written to: \(error.localizedDescription)", "NotAllowedError")
+            let access = accessed ? "" : " The iPad did not grant access to the drive; choose it again."
+            call.reject("The brain could not be written to (\(url.lastPathComponent)): \(Self.explain(error)).\(access)", "NotAllowedError")
         }
+    }
+
+    /** An error's text plus its domain and code, and the error under it, for reporting. */
+    private static func explain(_ error: Error) -> String {
+        let ns = error as NSError
+        var text = "\(ns.localizedDescription) [\(ns.domain) \(ns.code)]"
+        if let under = ns.userInfo[NSUnderlyingErrorKey] as? NSError {
+            text += " [\(under.domain) \(under.code): \(under.localizedDescription)]"
+        }
+        return text
     }
 
     /** Writes one file, through the file coordinator the drive's provider expects. */
@@ -120,15 +135,21 @@ public class BrainFolderPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDel
         var writeError: Error?
         NSFileCoordinator().coordinate(writingItemAt: target, options: .forReplacing, error: &coordinationError) { url in
             do {
-                try Data(text.utf8).write(to: url, options: .atomic)
+                // not atomic: a USB drive's provider may refuse the
+                // temporary file and rename an atomic write makes
+                try Data(text.utf8).write(to: url)
             } catch {
                 writeError = error
             }
         }
-        if let error = coordinationError {
-            throw error
+        guard let coordinated = coordinationError ?? writeError else {
+            return
         }
-        if let error = writeError {
+        // some drives refuse the coordinated write; try a plain one before giving up
+        do {
+            try Data(text.utf8).write(to: target)
+        } catch {
+            NSLog("BrainFolder: coordinated write of %@ failed: %@", name, Self.explain(coordinated))
             throw error
         }
     }
@@ -142,15 +163,17 @@ public class BrainFolderPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDel
         return try? URL(resolvingBookmarkData: bookmark, bookmarkDataIsStale: &stale)
     }
 
-    /** Whether the folder is there and writable right now. */
+    /**
+     * Whether the folder is there right now. Not whether it is writable:
+     * for a USB drive in Files, isWritableFile says no even when writing
+     * works, so the write itself reports a drive that refuses it.
+     */
     private static func isReachable(_ url: URL) -> Bool {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         var isDirectory: ObjCBool = false
-        let manager = FileManager.default
-        return manager.fileExists(atPath: url.path, isDirectory: &isDirectory)
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
             && isDirectory.boolValue
-            && manager.isWritableFile(atPath: url.path)
     }
 
     private static func describe(_ url: URL, reachable: Bool) -> [String: Any] {
