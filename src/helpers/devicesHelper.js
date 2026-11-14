@@ -33,9 +33,11 @@ export const deviceKinds = {
  * the kind of device each one is. Programs saved with them, and the
  * cheatsheet's examples, still have them; they are turned into devices when
  * they are loaded (liftDeviceBlocks) or pasted (adoptDeviceBlocks). The
- * fields are the device's: name, port, direction.
+ * fields are the device's: name, port, direction. `largemotor` is the
+ * motor block's name from before the make library called it drive_motor;
+ * programs saved with it load as drive motors.
  */
-const deviceBlocks = { drive_motor: 'drive_motor' }
+const deviceBlocks = { drive_motor: 'drive_motor', largemotor: 'drive_motor' }
 
 /** The devices of each workspace. */
 const devicesByWorkspace = new WeakMap()

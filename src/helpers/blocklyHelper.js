@@ -363,6 +363,62 @@ export const getBlocklyState = (blocklyInstance) => {
 }
 
 /**
+ * Button ports from before the make library named the brain's buttons by
+ * their letters (ports 10 to 13), as the letters that replace them.
+ */
+const OLD_BUTTON_PORTS = { 10: 'A', 11: 'B', 12: 'C', 13: 'D' }
+
+/**
+ * Brings the blocks of a program saved with an older block set up to date:
+ * for now, a button block on port 10 to 13 gets the matching letter.
+ * @param {object} state A serialized workspace.
+ * @returns {object} The state, changed only where a block needed it.
+ */
+const upgradeOldBlocks = (state) => {
+    const upgrade = (blockState) => {
+        if (!blockState || typeof blockState !== 'object') {
+            return blockState
+        }
+        let upgraded = blockState
+        const oldPort = OLD_BUTTON_PORTS[blockState.fields?.port]
+        if (blockState.type === 'button' && oldPort) {
+            upgraded = {
+                ...upgraded,
+                fields: { ...blockState.fields, port: oldPort },
+            }
+        }
+        if (blockState.inputs) {
+            upgraded = {
+                ...upgraded,
+                inputs: Object.fromEntries(
+                    Object.entries(blockState.inputs).map(([name, input]) => [
+                        name,
+                        input?.block
+                            ? { ...input, block: upgrade(input.block) }
+                            : input,
+                    ]),
+                ),
+            }
+        }
+        if (blockState.next?.block) {
+            upgraded = {
+                ...upgraded,
+                next: {
+                    ...blockState.next,
+                    block: upgrade(blockState.next.block),
+                },
+            }
+        }
+        return upgraded
+    }
+    const tops = state?.blocks?.blocks
+    if (!Array.isArray(tops)) {
+        return state
+    }
+    return { ...state, blocks: { ...state.blocks, blocks: tops.map(upgrade) } }
+}
+
+/**
  * Loads a previously serialized Blockly JSON state into the workspace.
  * @param {object} blocklyInstance Value returned by createBlocklyInstance.
  * @param {object} state Blockly serialization state to load.
@@ -376,7 +432,7 @@ export const setBlocklyState = (
     state,
     { liftDevices = true } = {},
 ) => {
-    const saved = takeSavedBackpack(state)
+    const saved = upgradeOldBlocks(takeSavedBackpack(state))
     serialization.workspaces.load(
         liftDevices ? liftDeviceBlocks(saved) : saved,
         blocklyInstance.workspace,

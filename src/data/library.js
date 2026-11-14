@@ -24,11 +24,13 @@ const drivePorts = [
     ['3', '3'],
 ]
 
+// the brain's four buttons, as the make library names their ports; A is
+// also the start button, which make frees once the program has started
 const buttonPorts = [
-    ['10', '10'],
-    ['11', '11'],
-    ['12', '12'],
-    ['13', '13'],
+    ['A', 'A'],
+    ['B', 'B'],
+    ['C', 'C'],
+    ['D', 'D'],
 ]
 
 const directionOptions = [
@@ -717,7 +719,7 @@ export const library = [
                         name: 'name',
                     },
                     {
-                        text: 'is a button on port',
+                        text: 'is button',
                     },
                     {
                         field: () => gridDropdown(buttonPorts),
@@ -730,7 +732,7 @@ export const library = [
                     )
                     const port = block.getFieldValue('port')
 
-                    return `${name} = make.button(port=${port})\n`
+                    return `${name} = make.button(port='${port}')\n`
                 },
             },
             {
@@ -796,8 +798,8 @@ export const library = [
                                 x: 12,
                                 y: 12,
                                 fields: {
-                                    name: 'start_button',
-                                    port: '10',
+                                    name: 'go_button',
+                                    port: 'B',
                                 },
                                 next: {
                                     block: {
@@ -807,7 +809,7 @@ export const library = [
                                                 block: {
                                                     type: 'isPressed',
                                                     fields: {
-                                                        name: 'start_button',
+                                                        name: 'go_button',
                                                     },
                                                 },
                                             },
@@ -1251,14 +1253,14 @@ export const library = [
                                 y: 12,
                                 fields: {
                                     name: 'left_button',
-                                    port: '10',
+                                    port: 'B',
                                 },
                                 next: {
                                     block: {
                                         type: 'button',
                                         fields: {
                                             name: 'right_button',
-                                            port: '11',
+                                            port: 'C',
                                         },
                                         next: {
                                             block: {
@@ -1337,7 +1339,7 @@ export const library = [
                                 y: 12,
                                 fields: {
                                     name: 'reverse_button',
-                                    port: '10',
+                                    port: 'B',
                                 },
                                 next: {
                                     block: {
@@ -1465,7 +1467,7 @@ export const library = [
                                 y: 12,
                                 fields: {
                                     name: 'stop_button',
-                                    port: '10',
+                                    port: 'B',
                                 },
                                 next: {
                                     block: {
