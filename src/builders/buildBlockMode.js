@@ -264,8 +264,11 @@ export default (
         )
         addBlocklyChangeListener(blocklyInstance, onWorkspaceChange)
         // a motor block from an old program or a cheatsheet copy, pasted
-        // in, becomes a device
-        addBlocklyChangeListener(blocklyInstance, adoptDeviceBlocks)
+        // in, becomes a device; a viewer has no Devices section, so it
+        // keeps showing the block
+        if (!view) {
+            addBlocklyChangeListener(blocklyInstance, adoptDeviceBlocks)
+        }
 
         // The editor watches its own size, but the code drawer changes only
         // the canvas's share of it, so the canvas is watched too.
