@@ -145,7 +145,7 @@ export const buildSiteNav = ({ tagline, controls = [], links = [] }) => {
         Controls,
         span(
             { class: 'site-nav__copy' },
-            `© ${new Date().getFullYear()} PROTO Robotics LLC`,
+            `© ${new Date().getFullYear()} PROTO LLC`,
         ),
         span(
             { class: 'site-nav__actions' },
