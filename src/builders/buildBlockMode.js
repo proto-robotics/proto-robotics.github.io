@@ -379,7 +379,9 @@ export default (
         getProjectFiles,
         setState: (state) => {
             if (state) {
-                setBlocklyState(blocklyInstance, state)
+                // a viewer has no Devices section, so it shows a saved
+                // motor block as a block rather than lifting it out
+                setBlocklyState(blocklyInstance, state, { liftDevices: !view })
             } else {
                 blocklyInstance.workspace.clear()
             }

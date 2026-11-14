@@ -115,6 +115,9 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {number} [options.maxBlocks] Cap on blocks, with a counter.
  * @param {Record<string, number>} [options.maxInstances] Per-type caps.
  * @param {boolean} [options.view=false] Read-only viewer.
+ * @param {boolean} [options.devices=false] Put the Devices section first in
+ *     the toolbox, where the program's motors are set up. A device counts
+ *     in `blockTypes` under its kind (for now `drive_motor`).
  * @param {boolean} [options.codePreview=false] Show the Python pane.
  * @param {boolean} [options.codeOpen=false] Start with the pane open.
  * @param {(detail: {code: string, blockTypes: string[], state: object}) => void} [options.onChange]
@@ -138,6 +141,7 @@ export const mountEditor = async (
         maxBlocks,
         maxInstances,
         view = false,
+        devices = false,
         codePreview = false,
         codeOpen = false,
         onChange,
@@ -162,7 +166,15 @@ export const mountEditor = async (
 
     const api = await createEmbedEditor(
         buildToolbox(categories, { toolbox, blocks }),
-        { mode: 'block', maxBlocks, maxInstances, codePreview, codeOpen, view },
+        {
+            mode: 'block',
+            maxBlocks,
+            maxInstances,
+            codePreview,
+            codeOpen,
+            view,
+            devices,
+        },
         { root, onChange, onEscape },
     )
     root.append(...api.elements)

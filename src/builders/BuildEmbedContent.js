@@ -81,6 +81,7 @@ export const createEmbedEditor = async (
         codePreview = true,
         codeOpen = false,
         view = false,
+        devices = false,
     } = {},
     { root, onChange = () => {}, onEscape = () => {} },
 ) => {
@@ -114,12 +115,16 @@ export const createEmbedEditor = async (
             codePreview,
             codeOpen,
             view,
+            devices,
             // an AudioContext takes seconds to open in an iframe
             sounds: false,
             onChange: ({ code, state }) => {
-                const blockTypes = (state.blocks?.blocks ?? []).flatMap(
-                    blockTypesIn,
-                )
+                // a device (a motor set up in Devices) counts as its kind,
+                // so a task can still require a drive_motor
+                const blockTypes = [
+                    ...(state.blocks?.blocks ?? []).flatMap(blockTypesIn),
+                    ...(state.devices ?? []).map((device) => device.kind),
+                ]
                 updateTaskStatus(blockTypes)
                 onChange({ code, blockTypes, state })
             },
@@ -161,9 +166,7 @@ export const createEmbedEditor = async (
             'aria-expanded': 'false',
         },
         'Task',
-        on('click', () =>
-            setTaskOpen(root.classList.contains('task-closed')),
-        ),
+        on('click', () => setTaskOpen(root.classList.contains('task-closed'))),
     )
     const TaskDrawer = tag(
         'task-drawer',
