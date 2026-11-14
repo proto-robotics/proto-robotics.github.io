@@ -47,8 +47,7 @@
 
         --radius: 14px;
         --shadow:
-            0 1px 2px rgba(20, 30, 50, 0.06),
-            0 6px 20px rgba(20, 30, 50, 0.06);
+            0 1px 2px rgba(20, 30, 50, 0.06), 0 6px 20px rgba(20, 30, 50, 0.06);
         --shadow-lg: 0 10px 40px rgba(20, 30, 50, 0.14);
         /* the site's hard bottom edge under every pill */
         --edge: 0 3px 0 var(--gray-brand);
@@ -526,9 +525,7 @@
 
     nav.site-nav tool-bar button,
     .nav-btn {
-        box-shadow:
-            var(--edge),
-            var(--halo);
+        box-shadow: var(--edge), var(--halo);
     }
 
     nav.site-nav tool-bar input[type='text'] {
@@ -544,9 +541,7 @@
         padding: 0;
         border: 1px solid var(--line);
         background: #fff;
-        box-shadow:
-            var(--edge),
-            var(--halo);
+        box-shadow: var(--edge), var(--halo);
         color: var(--text);
     }
 
@@ -823,7 +818,10 @@
     }
 
     .cm-editor .cm-selectionBackground,
-    .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+    .cm-editor.cm-focused
+        > .cm-scroller
+        > .cm-selectionLayer
+        .cm-selectionBackground {
         background-color: #2f80ed66 !important;
     }
 
@@ -973,7 +971,8 @@
     }
 
     @keyframes capacity-flash {
-        0%, 40% {
+        0%,
+        40% {
             background: var(--red);
             transform: translateX(-50%) scale(1.1);
         }
@@ -1064,7 +1063,9 @@
         border-radius: 999px;
         background: #fff;
         box-shadow: var(--shadow);
-        font: 600 12px / 1.2 Montserrat, sans-serif;
+        font:
+            600 12px / 1.2 Montserrat,
+            sans-serif;
         color: var(--text);
     }
 
@@ -1080,6 +1081,150 @@
     /* the native clear button is replaced by Escape */
     input.toolbox-search-field::-webkit-search-cancel-button {
         display: none;
+    }
+
+    /* The Devices section's panel (src/mods/devicesPanel.js): an item in
+       the flyout drawn inside its SVG, sized and scaled there. Each device
+       is a card: its name, then the motor block's words with selects. */
+    .toolbox-devices {
+        box-sizing: border-box;
+        padding: 2px 2px 6px;
+        font:
+            500 12px / 1.4 Montserrat,
+            sans-serif;
+        color: var(--text);
+    }
+
+    .toolbox-devices-empty {
+        margin: 0 0 8px;
+        color: var(--text-muted);
+    }
+
+    /* the fold: a plain line, not a button of the site's kind */
+    .toolbox-devices-toggle {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        width: 100%;
+        margin: 0 0 6px;
+        padding: 4px 6px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        background: none;
+        box-shadow: none;
+        transition: none;
+    }
+
+    .toolbox-devices-toggle::before {
+        content: none;
+    }
+
+    .toolbox-devices-toggle:hover {
+        background: rgba(20, 30, 50, 0.06);
+    }
+
+    .toolbox-devices-toggle-arrow {
+        display: inline-block;
+        transition: transform 0.15s ease;
+    }
+
+    .toolbox-devices-toggle.closed .toolbox-devices-toggle-arrow {
+        transform: rotate(-90deg);
+    }
+
+    .toolbox-devices-list {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .toolbox-device {
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--shadow);
+    }
+
+    .toolbox-device-head {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .toolbox-device-head input[type='text'] {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .toolbox-device-remove {
+        flex: none;
+        padding: 0 9px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .toolbox-device-fields {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 6px;
+        align-items: center;
+        margin-top: 6px;
+    }
+
+    .toolbox-device-fields select {
+        font: inherit;
+        font-weight: 600;
+        padding: 2px 6px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+    }
+
+    /* the help icon, as on the blocks, at the end of the card's last line:
+       the icon is white, drawn for the blocks, so it sits on a disc of the
+       Motor blocks' colour */
+    .toolbox-device-help {
+        margin-left: auto;
+        padding: 3px;
+        border-radius: 50%;
+        line-height: 0;
+        background: var(--red);
+        box-shadow: none;
+        transition: none;
+    }
+
+    .toolbox-device-help:hover {
+        background: var(--red-dark);
+    }
+
+    .toolbox-device-help::before {
+        content: none;
+    }
+
+    .toolbox-device-help img {
+        display: block;
+        width: 15px;
+        height: 15px;
+    }
+
+    .toolbox-device-fields select:focus-visible,
+    .toolbox-devices-toggle:focus-visible,
+    .toolbox-device-help:focus-visible,
+    .toolbox-devices-add:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
+    }
+
+    .toolbox-devices-add {
+        padding: 5px 14px;
+        font-size: 12px;
     }
 
     /* the plugin's "Type to search for blocks" and "No matching blocks
@@ -1799,7 +1944,8 @@
             display: none;
         }
 
-        h2, h3 {
+        h2,
+        h3 {
             font-size: 0.9rem;
             text-transform: none;
             letter-spacing: 0;
@@ -1807,11 +1953,14 @@
             margin: 14px 0 6px;
         }
 
-        p, ul, ol {
+        p,
+        ul,
+        ol {
             margin: 0 0 10px;
         }
 
-        ul, ol {
+        ul,
+        ol {
             padding-left: 18px;
         }
 

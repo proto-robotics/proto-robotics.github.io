@@ -40,6 +40,29 @@ export class ContinuousColumnFlyout extends ContinuousFlyout {
         keepingSearchFocus(this, () => super.show(contents))
         this.targetWorkspace?.resize()
     }
+
+    /**
+     * Highlights the toolbox tab of the category scrolled to. The plugin's
+     * own version rounds the position, and the scrollbar lands on whole
+     * pixels, so a category scrolled to can fall a fraction short of its
+     * heading and the tab before it lights up. A pixel of slack, in
+     * workspace units, counts it as reached.
+     * @param {number} position The flyout's scroll position, in pixels.
+     */
+    selectCategoryByScrollPosition(position) {
+        if (this.scrollTarget) {
+            return
+        }
+        const scale = this.getWorkspace().scale
+        const scaledPosition = position / scale + 1 / scale + 1
+        const entries = [...this.scrollPositions.entries()].reverse()
+        for (const [name, start] of entries) {
+            if (scaledPosition >= start) {
+                this.getParentToolbox()?.selectCategoryByName(name)
+                return
+            }
+        }
+    }
 }
 
 /**

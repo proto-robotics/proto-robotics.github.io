@@ -2,15 +2,16 @@ import '../styles.css'
 import { processJengaTower } from '@protorobotics/jenga'
 import { pythonGenerator } from 'blockly/python'
 
-import { hiddenCategoryNames, jengaBlocks } from './data/library'
+import {
+    hiddenCategoryNames,
+    jengaBlocks,
+    toolboxHiddenBlockTypes,
+} from './data/library'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 import BuildEmbedContent from './builders/BuildEmbedContent'
 import { whenEditorFontsReady } from './helpers/fontHelper'
-import {
-    filterToolbox,
-    readEditorParams,
-} from './helpers/editorParamsHelper'
+import { filterToolbox, readEditorParams } from './helpers/editorParamsHelper'
 
 /**
  * Builds the coding page, the full cheatsheet (`?cheatsheet`), or the bare
@@ -31,6 +32,7 @@ const main = async () => {
     const toolbox = filterToolbox(fullToolbox, {
         ...editorParams,
         hidden: hiddenCategoryNames,
+        hiddenBlocks: toolboxHiddenBlockTypes,
     })
 
     const PageContent = params.has('cheatsheet')

@@ -75,9 +75,9 @@ export const library = [
                 type: 'function',
                 description: 'Creates a servo on a port.',
             },
-            'make.largemotor': {
+            'make.drive_motor': {
                 type: 'function',
-                description: 'Creates a large motor on a drivetrain port.',
+                description: 'Creates a drive motor on a drivetrain port.',
             },
         },
         entries: [
@@ -150,15 +150,15 @@ export const library = [
                 },
             },
             {
-                name: 'largemotor',
-                description: 'Creates a largemotor',
+                name: 'drive_motor',
+                description: 'Creates a drive_motor',
                 blocklyTemplate: [
                     {
-                        field: () => new FieldTextInput('largemotor'),
+                        field: () => new FieldTextInput('motor'),
                         name: 'name',
                     },
                     {
-                        text: 'is a largemotor \non port',
+                        text: 'is a drive_motor \non port',
                     },
                     {
                         field: () => new FieldDropdown(drivePorts),
@@ -186,7 +186,7 @@ export const library = [
 
                     const directionSnippet =
                         dropdown_direction == 1 ? '' : ', direction=-1'
-                    const code = `${text_name} = make.largemotor(port=${dropdown_port}${directionSnippet})\n`
+                    const code = `${text_name} = make.drive_motor(port=${dropdown_port}${directionSnippet})\n`
                     return code
                 },
             },
@@ -581,15 +581,15 @@ export const library = [
                 },
             },
             {
-                name: 'Large motor launcher',
+                name: 'Drive motor launcher',
                 preamble:
-                    'Creates a large motor, spins it up, waits, and stops it.',
+                    'Creates a drive motor, spins it up, waits, and stops it.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drive_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -1017,7 +1017,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drive_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -1026,7 +1026,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'largemotor',
+                                        type: 'drive_motor',
                                         fields: {
                                             name: 'right_motor',
                                             port: '1',

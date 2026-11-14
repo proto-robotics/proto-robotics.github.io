@@ -13,6 +13,7 @@ import {
 } from './blocklyHelper'
 import { whenEditorFontsReady } from './fontHelper'
 import { createCodeMirrorView, setCodeMirrorText } from './codeMirrorHelper'
+import { devicesCode, getDevices } from './devicesHelper'
 
 let previewId = 0
 const previewScale = 0.65 // the toolbox flyout's zoom (FLYOUT_SCALE in src/mods/flyouts.js)
@@ -169,7 +170,9 @@ function createBlocklyPreview(workspaceState) {
                     return
                 }
 
-                setBlocklyState(blocklyInstance, normalizedWorkspaceState)
+                setBlocklyState(blocklyInstance, normalizedWorkspaceState, {
+                    liftDevices: false,
+                })
                 requestAnimationFrame(() => {
                     fitPreviewToBlocks(blocklyInstance, preview)
                 })
@@ -177,8 +180,14 @@ function createBlocklyPreview(workspaceState) {
         },
     })
 
-    setBlocklyState(blocklyInstance, normalizedWorkspaceState)
-    const code = getBlocklyCode(blocklyInstance)
+    // a preview shows the state as given: an entry's block is the old
+    // device block itself, and an example has its devices lifted already
+    setBlocklyState(blocklyInstance, normalizedWorkspaceState, {
+        liftDevices: false,
+    })
+    const code =
+        devicesCode(getDevices(blocklyInstance.workspace)) +
+        getBlocklyCode(blocklyInstance)
 
     return {
         element: preview,

@@ -1,6 +1,7 @@
 /*
  * The coding page: the top bar with the toolbar, one of the two editors
- * (block or line, switchable), and the cheatsheet drawer.
+ * (block or line, switchable, the block editor with its Devices section),
+ * and the cheatsheet drawer.
  */
 
 import { button, header, on, span, tag } from 'ellipsi'
@@ -34,6 +35,7 @@ export default (
         maxBlocks,
         maxInstances,
         codePreview,
+        devices: true,
     })
     const lineMode = buildLineMode()
 

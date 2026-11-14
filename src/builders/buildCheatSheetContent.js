@@ -7,6 +7,7 @@ import { hr, on, tag } from 'ellipsi'
 
 import { cheatSheetBlocks as blocks } from '../data/library'
 import { copyWorkspaceStateToClipboard } from '../helpers/blockClipboardHelper'
+import { liftDeviceBlocks } from '../helpers/devicesHelper'
 import { animateScrollTo } from '../helpers/scrollHelper'
 import {
     CheatSheetPreviewMode,
@@ -176,9 +177,12 @@ function buildExampleItem(example, settings, elementNumber) {
         item.appendChild(tag('h3', example.name))
     }
 
+    // The example is shown as a program is now: its motors as devices,
+    // lines at the top of the code. Copy keeps the blocks that set them
+    // up, which become devices when pasted (devicesHelper.js).
     item.append(
         tag('p', example.preamble),
-        createCheatSheetPreview(example.workspace, settings),
+        createCheatSheetPreview(liftDeviceBlocks(example.workspace), settings),
         ...(settings.showCopy ? [buildCopyButton(example.workspace)] : []),
     )
     return item

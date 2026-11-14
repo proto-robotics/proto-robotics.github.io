@@ -1,8 +1,9 @@
 /*
  * Our changes to Blockly, registered once before the first workspace is
  * created (injectMods): the block renderer, the always-open toolbox with
- * its flyouts (flyouts.js), the toolbox tabs (categories.js) and the search
- * field in the flyout (searchField.js), the metrics that make room for the
+ * its flyouts (flyouts.js), the toolbox tabs (categories.js), the search
+ * field and the devices panel in the flyout (searchField.js,
+ * devicesPanel.js), the metrics that make room for the
  * flyout, and the dragger that scrolls the canvas. Block shapes are the
  * renderer's business; everything else here is chrome.
  */
@@ -19,6 +20,7 @@ import {
     ProtoSearchCategory,
     SEARCH_CATEGORY_KIND,
 } from './categories.js'
+import { DEVICES_PANEL_KIND, DevicesPanelInflater } from './devicesPanel.js'
 import { ContinuousColumnFlyout, ContinuousRowFlyout } from './flyouts.js'
 import { ProtoRenderer } from './proto_renderer/proto_renderer.js'
 import { SEARCH_FIELD_KIND, SearchFieldInflater } from './searchField.js'
@@ -142,6 +144,12 @@ export function injectMods() {
         Blockly.registry.Type.FLYOUT_INFLATER,
         SEARCH_FIELD_KIND,
         SearchFieldInflater,
+    )
+    // The Devices section (see the devices option of buildBlockMode.js).
+    Blockly.registry.register(
+        Blockly.registry.Type.FLYOUT_INFLATER,
+        DEVICES_PANEL_KIND,
+        DevicesPanelInflater,
     )
     Blockly.registry.register(
         Blockly.registry.Type.FLYOUTS_VERTICAL_TOOLBOX,

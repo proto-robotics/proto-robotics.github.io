@@ -7,7 +7,7 @@
  *   import { mountEditor, fields } from './proto-ide.js'
  *   const editor = await mountEditor(container, {
  *       categories: [myCategory],   // extra block categories, library.js shape
- *       toolbox: ['Motor', 'Time'], // or blocks: ['largemotor', 'spin']
+ *       toolbox: ['Motor', 'Time'], // or blocks: ['drive_motor', 'spin']
  *       maxBlocks: 4,
  *       onChange: ({ code, blockTypes, state }) => {},
  *   })
@@ -35,6 +35,7 @@ import {
     gridDropdown,
     hiddenCategoryNames,
     jengaBlocks,
+    toolboxHiddenBlockTypes,
 } from './data/library'
 import { createEmbedEditor } from './builders/BuildEmbedContent'
 import { addVocab } from './data/vocab'
@@ -43,6 +44,7 @@ import { whenEditorFontsReady } from './helpers/fontHelper'
 import { watchPhoneLayout } from './helpers/phoneLayoutHelper'
 import { setRoot } from './helpers/rootHelper'
 import { setWidgetHost } from './helpers/blocklyHelper'
+import { deviceField } from './mods/deviceField'
 
 export { addVocab, pythonGenerator, whenEditorFontsReady }
 
@@ -60,6 +62,12 @@ export const fields = {
     text: (value) => () => new FieldTextInput(value),
     /** @param {Array<[string, string]>} options Choices as [label, value]. */
     dropdown: (options) => () => gridDropdown(options),
+    /**
+     * A choice of the program's devices of a kind, by name.
+     * @param {string} kind For now 'drive_motor'.
+     * @param {{placeholder?: string, nth?: number}} [options]
+     */
+    device: deviceField,
 }
 
 /**
@@ -85,6 +93,7 @@ const buildToolbox = (categories, { toolbox, blocks }) => {
         categories: toolbox ?? null,
         blocks: blocks ?? null,
         hidden: [...hiddenCategoryNames, ...categories.map((c) => c.name)],
+        hiddenBlocks: toolboxHiddenBlockTypes,
     })
 }
 

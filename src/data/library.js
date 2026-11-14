@@ -2,6 +2,7 @@ import { FieldImage, FieldNumber, FieldTextInput } from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
+import { deviceField } from '../mods/deviceField'
 import { helpIcon } from '../assets'
 
 /**
@@ -83,15 +84,22 @@ export const library = [
         entries: [
             {
                 entryType: 'block',
-                name: 'largemotor',
-                description: 'Creates a DC motor.',
+                name: 'drive_motor',
+                // set up in the Devices section now; the block stays
+                // defined for programs saved with it, which load it as a
+                // device, and for the cheatsheet
+                toolbox: false,
+                description:
+                    'A drive motor, as the Devices tab sets one up: its name, ' +
+                    'the port it is plugged into and the direction it spins. ' +
+                    'This line goes at the top of your program.',
                 blocklyTemplate: [
                     {
-                        field: () => new FieldTextInput('largemotor'),
+                        field: () => new FieldTextInput('motor'),
                         name: 'name',
                     },
                     {
-                        text: 'is a large motor\non port',
+                        text: 'is a drive motor\non port',
                     },
                     {
                         field: () => gridDropdown(drivePorts),
@@ -114,7 +122,7 @@ export const library = [
                     const directionSnippet =
                         direction === '1' ? '' : ', direction=-1'
 
-                    return `${name} = make.largemotor(port=${port}${directionSnippet})\n`
+                    return `${name} = make.drive_motor(port=${port}${directionSnippet})\n`
                 },
             },
             {
@@ -126,7 +134,7 @@ export const library = [
                         text: 'Spin',
                     },
                     {
-                        field: () => new FieldTextInput('motor'),
+                        field: deviceField('drive_motor'),
                         name: 'name',
                     },
                     {
@@ -158,7 +166,7 @@ export const library = [
                         text: 'Spin',
                     },
                     {
-                        field: () => new FieldTextInput('motor'),
+                        field: deviceField('drive_motor'),
                         name: 'name',
                     },
                     {
@@ -190,7 +198,7 @@ export const library = [
                         text: 'Spin',
                     },
                     {
-                        field: () => new FieldTextInput('motor'),
+                        field: deviceField('drive_motor'),
                         name: 'name',
                     },
                     {
@@ -230,7 +238,7 @@ export const library = [
                         text: 'Spin',
                     },
                     {
-                        field: () => new FieldTextInput('motor'),
+                        field: deviceField('drive_motor'),
                         name: 'name',
                     },
                     {
@@ -270,7 +278,7 @@ export const library = [
                         text: 'Stop',
                     },
                     {
-                        field: () => new FieldTextInput('motor'),
+                        field: deviceField('drive_motor'),
                         name: 'name',
                     },
                 ],
@@ -284,15 +292,15 @@ export const library = [
             },
             {
                 entryType: 'example',
-                name: 'Timed large motor',
+                name: 'Timed drive motor',
                 preamble:
-                    'Runs a large motor forward, reverses it, then stops it.',
+                    'Runs a drive motor forward, reverses it, then stops it.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drive_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -351,14 +359,14 @@ export const library = [
                         text: 'is a drivetrain\nfrom motors',
                     },
                     {
-                        field: () => new FieldTextInput('leftmotor'),
+                        field: deviceField('drive_motor'),
                         name: 'left',
                     },
                     {
                         text: 'and',
                     },
                     {
-                        field: () => new FieldTextInput('rightmotor'),
+                        field: deviceField('drive_motor', { nth: 1 }),
                         name: 'right',
                     },
                     {
@@ -644,13 +652,13 @@ export const library = [
                 entryType: 'example',
                 name: 'Straight drive',
                 preamble:
-                    'Creates two large motors, combines them into a drivetrain, then drives forward briefly.',
+                    'Creates two drive motors, combines them into a drivetrain, then drives forward briefly.',
                 workspace: {
                     blocks: {
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drive_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -659,7 +667,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'largemotor',
+                                        type: 'drive_motor',
                                         fields: {
                                             name: 'right_motor',
                                             port: '1',
@@ -1254,7 +1262,7 @@ export const library = [
                                         },
                                         next: {
                                             block: {
-                                                type: 'largemotor',
+                                                type: 'drive_motor',
                                                 fields: {
                                                     name: 'intake',
                                                     port: '2',
@@ -1333,7 +1341,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'largemotor',
+                                        type: 'drive_motor',
                                         fields: {
                                             name: 'arm',
                                             port: '2',
@@ -1397,7 +1405,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drive_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -1461,7 +1469,7 @@ export const library = [
                                 },
                                 next: {
                                     block: {
-                                        type: 'largemotor',
+                                        type: 'drive_motor',
                                         fields: {
                                             name: 'conveyor',
                                             port: '2',
@@ -1511,7 +1519,7 @@ export const library = [
                         languageVersion: 0,
                         blocks: [
                             {
-                                type: 'largemotor',
+                                type: 'drive_motor',
                                 x: 12,
                                 y: 12,
                                 fields: {
@@ -1558,6 +1566,15 @@ export const library = [
 export const hiddenCategoryNames = library
     .filter((category) => category.hidden)
     .map((category) => category.name)
+
+/** Types of the blocks left out of the toolbox unless an embed asks for them. */
+export const toolboxHiddenBlockTypes = library.flatMap((category) =>
+    category.entries
+        .filter(
+            (entry) => entry.entryType === 'block' && entry.toolbox === false,
+        )
+        .map((entry) => entry.name),
+)
 
 /**
  * Extracts block-only categories for the interactive Jenga toolbox.

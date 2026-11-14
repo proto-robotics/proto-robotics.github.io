@@ -9,7 +9,7 @@
       {
         "name": "wait",
         "kind": "function",
-        "description": "Wait for the given number of seconds; the default is 0.05 seconds.",
+        "description": "Wait the given number of seconds before moving on. If no time is given,\nwaits for 0.05 seconds.\n\nMotors only move and hold while the program is waiting here, so always\nwait with this (or wait_until / wait_while), never with time.sleep or\nan empty loop.",
         "parameters": [
           {
             "name": "seconds",
@@ -25,7 +25,7 @@
       {
         "name": "wait_until",
         "kind": "function",
-        "description": "Wait until the given condition returns true.",
+        "description": "Wait until the given condition (type: () -> bool) is satisfied.",
         "parameters": [
           {
             "name": "condition",
@@ -41,7 +41,7 @@
       {
         "name": "wait_while",
         "kind": "function",
-        "description": "Wait while the given condition returns true.",
+        "description": "Wait while the given condition (type: () -> bool) is satisfied.",
         "parameters": [
           {
             "name": "condition",
@@ -55,9 +55,9 @@
         "category": "Time"
       },
       {
-        "name": "largemotor",
+        "name": "simple_motor",
         "kind": "constructor",
-        "description": "A DC motor connected to a drive port.",
+        "description": "A continuous servo plugged into a general port.",
         "parameters": [
           {
             "name": "port",
@@ -72,24 +72,64 @@
             "required": false
           }
         ],
-        "resultType": "largemotor",
-        "path": "make.largemotor",
+        "resultType": "simple_motor",
+        "path": "make.simple_motor",
+        "category": "Motor"
+      },
+      {
+        "name": "drive_motor",
+        "kind": "constructor",
+        "description": "A DC gear motor with an encoder, plugged in to a drive port.",
+        "parameters": [
+          {
+            "name": "port",
+            "annotation": "int",
+            "default": null,
+            "required": true
+          },
+          {
+            "name": "direction",
+            "annotation": "int",
+            "default": "1",
+            "required": false
+          },
+          {
+            "name": "holding",
+            "annotation": "str",
+            "default": "HOLD",
+            "required": false
+          },
+          {
+            "name": "max_power",
+            "annotation": "float",
+            "default": "85",
+            "required": false
+          },
+          {
+            "name": "move_speed",
+            "annotation": "float",
+            "default": "60",
+            "required": false
+          }
+        ],
+        "resultType": "drive_motor",
+        "path": "make.drive_motor",
         "category": "Motor"
       },
       {
         "name": "drivetrain",
         "kind": "constructor",
-        "description": "A drivetrain made from two DC motors.",
+        "description": "A drivetrain made from 2 DC motors or continuous servos.",
         "parameters": [
           {
             "name": "left_motor",
-            "annotation": "largemotor",
+            "annotation": "simple_motor | drive_motor",
             "default": null,
             "required": true
           },
           {
             "name": "right_motor",
-            "annotation": "largemotor",
+            "annotation": "simple_motor | drive_motor",
             "default": null,
             "required": true
           },
@@ -107,7 +147,7 @@
       {
         "name": "button",
         "kind": "constructor",
-        "description": "A button built into the board or connected to a GROVE port.",
+        "description": "A button, either built into the board or plugged into a GROVE port.",
         "parameters": [
           {
             "name": "port",
@@ -123,7 +163,7 @@
       {
         "name": "light",
         "kind": "constructor",
-        "description": "A single LED connected to a board port.",
+        "description": "A single LED.",
         "parameters": [
           {
             "name": "port",
@@ -138,10 +178,10 @@
       }
     ],
     "methodsByType": {
-      "largemotor": [
+      "simple_motor": [
         {
           "name": "spin",
-          "description": "Spin at the given power, optionally stopping after a number of seconds.",
+          "description": "Spin the servo at the given power for the given time period; if\nno period is given then it spins until stopped.",
           "parameters": [
             {
               "name": "power",
@@ -160,7 +200,7 @@
         },
         {
           "name": "spin_back",
-          "description": "Spin backward at the given power, optionally stopping after a number\nof seconds.",
+          "description": "Spin the servo backwards at the given power for the given time\nperiod; if no period is given then it spins until stopped.",
           "parameters": [
             {
               "name": "power",
@@ -179,7 +219,216 @@
         },
         {
           "name": "stop",
-          "description": "Stop the motor.",
+          "description": "Stops the servo.",
+          "parameters": [],
+          "resultType": "None"
+        }
+      ],
+      "drive_motor": [
+        {
+          "name": "set_holding",
+          "description": "Sets what the motor does when not being driven: HOLD, BRAKE or\nCOAST.  Takes effect at once if the motor is stopped, else at the\nnext stop.",
+          "parameters": [
+            {
+              "name": "mode",
+              "annotation": "str",
+              "default": null,
+              "required": true
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "get_holding",
+          "description": "Returns what the motor does when not being driven: HOLD, BRAKE or COAST.",
+          "parameters": [],
+          "resultType": "str"
+        },
+        {
+          "name": "set_max_power",
+          "description": "Sets the most a move or hold may push, out of 100.",
+          "parameters": [
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "get_max_power",
+          "description": "Returns the most a move or hold may push, out of 100.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "set_move_speed",
+          "description": "Sets how fast the motor moves to an angle, in degrees per second; 0 jumps.",
+          "parameters": [
+            {
+              "name": "speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "get_move_speed",
+          "description": "Returns how fast the motor moves to an angle, in degrees per second.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "set_tolerance",
+          "description": "Sets how many degrees off still counts as being at an angle.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "get_tolerance",
+          "description": "Returns how many degrees off still counts as being at an angle.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "get_power",
+          "description": "Returns the power the motor is being given right now, out of 100.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "get_degrees",
+          "description": "Returns how far the motor has turned, in degrees, since the last reset.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "reset_degrees",
+          "description": "Makes the angle the motor is at now zero.",
+          "parameters": [],
+          "resultType": "None"
+        },
+        {
+          "name": "running",
+          "description": "Returns true while a move started with wait=False is going.",
+          "parameters": [],
+          "resultType": "bool"
+        },
+        {
+          "name": "spin",
+          "description": "Spin the motor at the given power for the given time period; if no\nperiod is given then it spins until stopped.",
+          "parameters": [
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "spin_back",
+          "description": "Spin the motor backwards at the given power for the given time\nperiod; if no period is given then it spins until stopped.",
+          "parameters": [
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "spin_at",
+          "description": "Spin the motor at the given speed, in degrees per second, negative\nfor backwards, using the encoder to keep that speed whatever the\nload or the battery.  A motor that is slowed catches up afterwards,\nso it covers the same ground as one that was not.  Stops after the\ntime period if one is given.",
+          "parameters": [
+            {
+              "name": "speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "stop",
+          "description": "Stops the motor and leaves it the way `holding` says.",
+          "parameters": [],
+          "resultType": "None"
+        },
+        {
+          "name": "set_degrees",
+          "description": "Moves to the given angle, measured from the last reset, at\n`move_speed` with no more than `max_power`, then leaves the motor the\nway `holding` says.  With `wait=False` it returns at once and\n`running()` says when the move is done.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "wait",
+              "annotation": "bool",
+              "default": "True",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "turn_degrees",
+          "description": "Turns through the given number of degrees, positive forward and\nnegative back; like `set_degrees` otherwise.  Measured from where\nthe motor was last told to go, so repeated turns add up exactly.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "wait",
+              "annotation": "bool",
+              "default": "True",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "free_port",
+          "description": "Frees the port for use by other components, disabling this motor.",
           "parameters": [],
           "resultType": "None"
         }
@@ -187,7 +436,7 @@
       "drivetrain": [
         {
           "name": "curve",
-          "description": "Drive each motor at a different power, optionally for a duration.",
+          "description": "Spins both motors at different powers. If a time is given, stops after\nthe time has elapsed.",
           "parameters": [
             {
               "name": "left_power",
@@ -212,7 +461,7 @@
         },
         {
           "name": "drive",
-          "description": "Drive both motors at the same power, optionally for a duration.",
+          "description": "Spins both motors at the same power. If a time is given, stops after\nthe time has elapsed.",
           "parameters": [
             {
               "name": "power",
@@ -231,7 +480,7 @@
         },
         {
           "name": "turn",
-          "description": "Turn in place at the given power, optionally for a duration.",
+          "description": "Rotates on the spot at the given power. If a time is given, stops\nafter that time has elapsed.",
           "parameters": [
             {
               "name": "power",
@@ -250,7 +499,7 @@
         },
         {
           "name": "curve_back",
-          "description": "Drive backward with different motor powers, optionally for a duration.",
+          "description": "Spins both motors at different powers. If a time is given, stops after\nthe time has elapsed.",
           "parameters": [
             {
               "name": "left_power",
@@ -275,7 +524,7 @@
         },
         {
           "name": "drive_back",
-          "description": "Drive backward at one power, optionally for a duration.",
+          "description": "Spins both motors back at the same power. If a time is given, stops\nafter the time has elapsed.",
           "parameters": [
             {
               "name": "power",
@@ -294,7 +543,7 @@
         },
         {
           "name": "turn_back",
-          "description": "Turn in the reverse direction, optionally for a duration.",
+          "description": "Rotates on the spot at the given power. If a time is given, stops\nafter that time has elapsed.",
           "parameters": [
             {
               "name": "power",
@@ -312,8 +561,134 @@
           "resultType": "None"
         },
         {
+          "name": "curve_at",
+          "description": "Spins both motors at different speeds, in degrees per second, each\nmotor using its encoder to keep its speed and catch up if it is\nslowed.  Needs drive motors.  If a time is given, stops after the\ntime has elapsed.",
+          "parameters": [
+            {
+              "name": "left_speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "drive_at",
+          "description": "Spins both motors at the same speed, in degrees per second. If a\ntime is given, stops after the time has elapsed.",
+          "parameters": [
+            {
+              "name": "speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "turn_at",
+          "description": "Rotates on the spot with each wheel at the given speed, in degrees\nper second. If a time is given, stops after that time has elapsed.",
+          "parameters": [
+            {
+              "name": "speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "curve_back_at",
+          "description": "Spins both motors back at different speeds, in degrees per second.\nIf a time is given, stops after the time has elapsed.",
+          "parameters": [
+            {
+              "name": "left_speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "drive_back_at",
+          "description": "Spins both motors back at the same speed, in degrees per second.\nIf a time is given, stops after the time has elapsed.",
+          "parameters": [
+            {
+              "name": "speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "turn_back_at",
+          "description": "Rotates on the spot the other way with each wheel at the given\nspeed, in degrees per second. If a time is given, stops after that\ntime has elapsed.",
+          "parameters": [
+            {
+              "name": "speed",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "None",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
           "name": "stop",
-          "description": "Stop both motors.",
+          "description": "Stops both motors.",
           "parameters": [],
           "resultType": "None"
         }
@@ -321,7 +696,7 @@
       "button": [
         {
           "name": "pressed",
-          "description": "Return whether the button was newly pressed or remains pressed.",
+          "description": "Returns true if the button is pressed, false otherwise.",
           "parameters": [
             {
               "name": "debounce",
@@ -334,13 +709,13 @@
         },
         {
           "name": "held",
-          "description": "Return whether the button is currently held down.",
+          "description": "Returns true if the button is held, false otherwise.",
           "parameters": [],
           "resultType": "bool"
         },
         {
           "name": "free_port",
-          "description": "Disable this button and release its port.",
+          "description": "Frees the port for use by other buttons, disabling this one.",
           "parameters": [],
           "resultType": "None"
         }
@@ -348,7 +723,7 @@
       "light": [
         {
           "name": "on",
-          "description": "Turn the LED on, optionally for a number of seconds.",
+          "description": "Turns the LED on.",
           "parameters": [
             {
               "name": "seconds",
@@ -361,7 +736,7 @@
         },
         {
           "name": "off",
-          "description": "Turn the LED off, optionally for a number of seconds.",
+          "description": "Turns the LED off.",
           "parameters": [
             {
               "name": "seconds",
@@ -373,14 +748,27 @@
           "resultType": null
         },
         {
+          "name": "flash",
+          "description": "Turns the LED on and, without waiting, off again after the given time.",
+          "parameters": [
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "0.2",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
           "name": "toggle",
-          "description": "Toggle the LED between on and off.",
+          "description": "Toggles the LED on or off, whichever it currently isn't.",
           "parameters": [],
           "resultType": null
         },
         {
           "name": "free_port",
-          "description": "Disable this light and release its port.",
+          "description": "Frees the port for use by other LEDs, disabling this one.",
           "parameters": [],
           "resultType": "None"
         }

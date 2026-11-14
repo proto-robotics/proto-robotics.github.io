@@ -1,6 +1,7 @@
 /*
- * The block editor: the Blockly canvas with its toolbox, the code drawer
- * showing the generated Python, and the controls over the canvas. The
+ * The block editor: the Blockly canvas with its toolbox (with the Devices
+ * section when asked for), the code drawer showing the generated Python,
+ * and the controls over the canvas. The
  * workspace is rebuilt in place when the window enters or leaves the phone
  * layout, since Blockly fixes the toolbox's side when it is created.
  */
@@ -28,6 +29,12 @@ import {
     PROGRAM_PREAMBLE,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
+import {
+    adoptDeviceBlocks,
+    devicesCode,
+    getDevices,
+    watchDevices,
+} from '../helpers/devicesHelper'
 import { createDrawer, openDrawer } from '../helpers/drawerHelper'
 import { createMinimapController } from '../helpers/minimapHelper'
 import { onPhoneLayoutChange } from '../helpers/phoneLayoutHelper'
@@ -35,6 +42,7 @@ import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import { createToolboxDrawer } from '../helpers/toolboxDrawerHelper'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { getRoot } from '../helpers/rootHelper'
+import { devicesCategory } from '../mods/devicesPanel'
 
 /** The workspace events after which the program is regenerated and saved. */
 const programChangeEvents = new Set([
@@ -65,6 +73,10 @@ const programChangeEvents = new Set([
  * @param {boolean} [options.view=false] Show a program without editing it:
  *     no toolbox, trashcan, zoom controls or selection, and the code
  *     drawer starts open. The host still loads a program with setState.
+ * @param {boolean} [options.devices=false] Put the Devices section first
+ *     in the toolbox, where the motors a program uses are set up
+ *     (devicesHelper.js, mods/devicesPanel.js). Devices saved in a
+ *     program are honoured either way.
  * @returns {EditorMode} The block editor mode, with `setMinimap`.
  */
 export default (
@@ -79,6 +91,7 @@ export default (
         codeOpen = false,
         view = false,
         sounds = true,
+        devices: showDevices = false,
     } = {},
 ) => {
     const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
@@ -87,7 +100,14 @@ export default (
     const instanceOptions = view
         ? { readonly: true, hideToolbox: true, startScale: 1, sounds }
         : { maxBlocks, maxInstances, sounds }
-    const blocklyInstance = createBlocklyInstance(toolbox, instanceOptions)
+    const editorToolbox =
+        showDevices && !view && toolbox
+            ? { ...toolbox, contents: [devicesCategory, ...toolbox.contents] }
+            : toolbox
+    const blocklyInstance = createBlocklyInstance(
+        editorToolbox,
+        instanceOptions,
+    )
 
     // ---- the elements ------------------------------------------------------
 
@@ -170,6 +190,28 @@ export default (
     }
 
     /**
+     * Regenerates the program (the imports, the devices, then the blocks'
+     * code) and saves it.
+     */
+    const refreshProgram = () => {
+        if (!blocklyInstance.workspace) {
+            return
+        }
+        const code = getBlocklyCode(blocklyInstance)
+        const setup = devicesCode(getDevices(blocklyInstance.workspace))
+        setCodeMirrorText(codePreview, PROGRAM_PREAMBLE + setup + code)
+        saveState()
+        capacity?.update()
+    }
+    // the devices are part of the program: a change to them, by the
+    // learner or by a program loading, regenerates it
+    const stopWatchingDevices = watchDevices((workspace) => {
+        if (workspace === blocklyInstance.workspace) {
+            refreshProgram()
+        }
+    })
+
+    /**
      * Regenerates the program and saves after every change to the blocks.
      * @param {object} event A workspace change event.
      */
@@ -186,10 +228,7 @@ export default (
         ) {
             return
         }
-        const code = getBlocklyCode(blocklyInstance)
-        setCodeMirrorText(codePreview, PROGRAM_PREAMBLE + code)
-        saveState()
-        capacity?.update()
+        refreshProgram()
     }
 
     // ---- the workspace -------------------------------------------------------
@@ -224,6 +263,9 @@ export default (
             shadowBlockConversionChangeListener,
         )
         addBlocklyChangeListener(blocklyInstance, onWorkspaceChange)
+        // a motor block from an old program or a cheatsheet copy, pasted
+        // in, becomes a device
+        addBlocklyChangeListener(blocklyInstance, adoptDeviceBlocks)
 
         // The editor watches its own size, but the code drawer changes only
         // the canvas's share of it, so the canvas is watched too.
@@ -249,7 +291,7 @@ export default (
         destroyBlocklyInstance(blocklyInstance)
         Object.assign(
             blocklyInstance,
-            createBlocklyInstance(toolbox, instanceOptions),
+            createBlocklyInstance(editorToolbox, instanceOptions),
         )
         oldCanvas.replaceWith(blocklyInstance.canvas)
         mount(state)
@@ -354,6 +396,7 @@ export default (
     /** Disposes of the workspace, for a host that removes the editor. */
     mode.dispose = () => {
         stopPhoneLayout()
+        stopWatchingDevices()
         destroyBlocklyInstance(blocklyInstance)
     }
 

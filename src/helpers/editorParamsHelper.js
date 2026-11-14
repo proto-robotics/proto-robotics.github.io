@@ -5,7 +5,7 @@
  *   mode=block|line            Which editor to show. Default block.
  *   toolbox=Motor,Time         Keep only these toolbox categories (by name,
  *                              case-insensitive). Default all.
- *   blocks=largemotor,spin     Keep only these block types. Categories left
+ *   blocks=drive_motor,spin     Keep only these block types. Categories left
  *                              empty are dropped. Default all.
  *   maxBlocks=5                Cap on blocks in the workspace. A counter shows
  *                              how many are left.
@@ -63,7 +63,8 @@ export const readEditorParams = (params) => {
         mode: params.get('mode') === 'line' ? 'line' : 'block',
         categories: list('toolbox'),
         blocks: list('blocks'),
-        maxBlocks: Number.isFinite(maxBlocks) && maxBlocks > 0 ? maxBlocks : undefined,
+        maxBlocks:
+            Number.isFinite(maxBlocks) && maxBlocks > 0 ? maxBlocks : undefined,
         maxInstances,
         codePreview: !['0', 'false', 'off', 'no'].includes(preview),
         codeOpen: preview === 'open',
@@ -74,23 +75,29 @@ export const readEditorParams = (params) => {
 /**
  * Narrows a category toolbox to the requested categories and block types.
  * Hidden categories are dropped unless `categories` names them or `blocks`
- * names one of their block types.
+ * names one of their block types; hidden blocks unless `blocks` names them.
  * @param {object} toolbox Toolbox from processJengaTower.
  * @param {object} options
  * @param {string[]|null} [options.categories] Category names to keep, or null for all.
  * @param {string[]|null} [options.blocks] Block types to keep, or null for all.
  * @param {string[]} [options.hidden] Category names left out by default.
+ * @param {string[]} [options.hiddenBlocks] Block types left out by default.
  * @returns {object} A new toolbox with the same shape.
  */
 export const filterToolbox = (
     toolbox,
-    { categories = null, blocks = null, hidden = [] } = {},
+    { categories = null, blocks = null, hidden = [], hiddenBlocks = [] } = {},
 ) => {
     const wantedCategories = categories
         ? new Set(categories.map((name) => name.toLowerCase()))
         : null
     const wantedBlocks = blocks ? new Set(blocks) : null
     const hiddenCategories = new Set(hidden.map((name) => name.toLowerCase()))
+    const hiddenBlockTypes = new Set(hiddenBlocks)
+    const wanted = (block) =>
+        wantedBlocks
+            ? wantedBlocks.has(block.type)
+            : !hiddenBlockTypes.has(block.type)
 
     const contents = toolbox.contents
         .filter((category) => {
@@ -110,9 +117,7 @@ export const filterToolbox = (
         })
         .map((category) => ({
             ...category,
-            contents: category.contents.filter(
-                (block) => !wantedBlocks || wantedBlocks.has(block.type),
-            ),
+            contents: category.contents.filter(wanted),
         }))
         .filter((category) => category.contents.length > 0)
 

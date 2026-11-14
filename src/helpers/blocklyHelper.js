@@ -21,6 +21,7 @@ import { multiselectOffIcon, multiselectOnIcon } from '../assets'
 import { injectMods, SEARCH_CATEGORY_KIND } from '../mods/mods.js'
 import { bundleUrl } from '../assets'
 import { addSharedBackpack, takeSavedBackpack } from './backpackHelper'
+import { liftDeviceBlocks } from './devicesHelper'
 import { isPhoneLayout } from './phoneLayoutHelper'
 
 let modsInjected = false
@@ -365,10 +366,19 @@ export const getBlocklyState = (blocklyInstance) => {
  * Loads a previously serialized Blockly JSON state into the workspace.
  * @param {object} blocklyInstance Value returned by createBlocklyInstance.
  * @param {object} state Blockly serialization state to load.
+ * @param {object} [options]
+ * @param {boolean} [options.liftDevices=true] Turn the motor blocks of a
+ *     program saved before the Devices section into devices
+ *     (devicesHelper.js). Off for the cheatsheet's previews.
  */
-export const setBlocklyState = (blocklyInstance, state) => {
+export const setBlocklyState = (
+    blocklyInstance,
+    state,
+    { liftDevices = true } = {},
+) => {
+    const saved = takeSavedBackpack(state)
     serialization.workspaces.load(
-        takeSavedBackpack(state),
+        liftDevices ? liftDeviceBlocks(saved) : saved,
         blocklyInstance.workspace,
     )
 }
