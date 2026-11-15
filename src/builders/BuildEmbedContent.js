@@ -268,7 +268,18 @@ export const createEmbedEditor = async (
         root.classList.add('embed-view')
     }
 
-    const controls = { setTask, setState, setCheatsheet, dispose }
+    // for a host that runs the program and lights up the running block
+    const highlight = (id) => editor.highlight?.(id ?? null)
+    const getTracedCode = () => editor.getTracedCode?.() ?? ''
+
+    const controls = {
+        setTask,
+        setState,
+        setCheatsheet,
+        highlight,
+        getTracedCode,
+        dispose,
+    }
 
     if (view) {
         // just the editor: the host's page is the chrome

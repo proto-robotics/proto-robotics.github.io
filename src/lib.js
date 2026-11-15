@@ -13,6 +13,8 @@
  *   })
  *   editor.setTask({ goal, markdown, requiredBlocks, hints, projectName })
  *   editor.load(state)
+ *   // a simulator runs editor.tracedCode(), and for each make._block(id)
+ *   // it reaches, editor.highlight(id); editor.highlight(null) when done
  *
  * The host's categories are plain objects in the same shape as the entries
  * in src/data/library.js, with `codeGenerator` functions of their own, so a
@@ -128,8 +130,13 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  *   load: (state: object|null) => void,
  *   clear: () => void,
  *   setCheatsheet: (open?: boolean) => void,
+ *   highlight: (id: string|null) => void,
+ *   tracedCode: () => string,
  *   destroy: () => void,
- * }>} The mounted editor, once the workspace exists.
+ * }>} The mounted editor, once the workspace exists. `tracedCode` is the
+ *     program with `make._block('<id>')` before each block's code, for a
+ *     simulator that reports which block is running; `highlight` lights up
+ *     that block (and the blocks it sits inside), or none with null.
  */
 export const mountEditor = async (
     container,
@@ -191,6 +198,8 @@ export const mountEditor = async (
         load: api.setState,
         clear: () => api.setState(null),
         setCheatsheet: api.setCheatsheet,
+        highlight: api.highlight,
+        tracedCode: api.getTracedCode,
         destroy: () => {
             stopPhoneLayout()
             api.dispose()

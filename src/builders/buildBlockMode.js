@@ -9,6 +9,7 @@
 import { Events } from 'blockly'
 import { button, on, tag } from 'ellipsi'
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter'
+import { pythonGenerator } from 'blockly/python'
 
 import { EditorMode } from '../classes/editorMode'
 import { createBlockCapacity } from '../helpers/blockCapacityHelper'
@@ -397,6 +398,49 @@ export default (
      * @param {boolean} wanted Whether the minimap should be shown.
      */
     mode.setMinimap = minimap.setWanted
+
+    /**
+     * The program with a `make._block('<block id>')` line before every
+     * block's code, for a host that runs it somewhere that can report which
+     * block is running (a simulator; the real make library has no
+     * `_block`). Pass each id it reports to `highlight`.
+     * @returns {string} The whole program: imports, devices, then the blocks.
+     */
+    mode.getTracedCode = () => {
+        const workspace = blocklyInstance.workspace
+        const before = pythonGenerator.STATEMENT_PREFIX
+        pythonGenerator.STATEMENT_PREFIX = 'make._block(%1)\n'
+        try {
+            return (
+                PROGRAM_PREAMBLE +
+                devicesCode(getDevices(workspace)) +
+                getBlocklyCode(blocklyInstance)
+            )
+        } finally {
+            pythonGenerator.STATEMENT_PREFIX = before
+        }
+    }
+
+    /**
+     * Lights up the block that is running, and the blocks it sits inside
+     * (a loop, an if), so they read as running too. A null id, or one that is
+     * not in the workspace, turns every light off.
+     * @param {string|null} id The running block's id.
+     */
+    mode.highlight = (id) => {
+        const workspace = blocklyInstance.workspace
+        if (!workspace) {
+            return
+        }
+        workspace.highlightBlock(null)
+        for (
+            let block = id ? workspace.getBlockById(id) : null;
+            block;
+            block = block.getSurroundParent()
+        ) {
+            workspace.highlightBlock(block.id, true)
+        }
+    }
 
     /** Disposes of the workspace, for a host that removes the editor. */
     mode.dispose = () => {
