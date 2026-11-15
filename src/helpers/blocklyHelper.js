@@ -374,6 +374,12 @@ const OLD_BUTTON_PORTS = { 10: 'A', 11: 'B', 12: 'C', 13: 'D' }
  * @param {object} state A serialized workspace.
  * @returns {object} The state, changed only where a block needed it.
  */
+/** Old backward spin blocks, and the block (set to backward) each is now. */
+const MERGED_SPIN_BLOCKS = {
+    spinBack: 'spin',
+    spinBackForTime: 'spinForTime',
+}
+
 const upgradeOldBlocks = (state) => {
     const upgrade = (blockState) => {
         if (!blockState || typeof blockState !== 'object') {
@@ -381,6 +387,15 @@ const upgradeOldBlocks = (state) => {
         }
         let upgraded = blockState
         const oldPort = OLD_BUTTON_PORTS[blockState.fields?.port]
+        // the backward spin blocks became the spin blocks' backward setting
+        const merged = MERGED_SPIN_BLOCKS[blockState.type]
+        if (merged) {
+            upgraded = {
+                ...upgraded,
+                type: merged,
+                fields: { ...blockState.fields, way: 'backward' },
+            }
+        }
         if (blockState.type === 'button' && oldPort) {
             upgraded = {
                 ...upgraded,

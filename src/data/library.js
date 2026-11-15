@@ -38,6 +38,20 @@ const directionOptions = [
     ['counter-clockwise ↺', '-1'],
 ]
 
+/** Which way a spin block turns its motor: one block for both ways. */
+const spinWays = [
+    ['forward', 'forward'],
+    ['backward', 'backward'],
+]
+
+/**
+ * The make method a spin block calls for the way it is set to.
+ * @param {object} block A spin block.
+ * @returns {string} spin or spin_back.
+ */
+const spinMethod = (block) =>
+    block.getFieldValue('way') === 'backward' ? 'spin_back' : 'spin'
+
 /**
  * Converts learner-entered names into valid Python identifiers.
  * @param {string} str Name entered in a Blockly text field.
@@ -130,7 +144,7 @@ export const library = [
             {
                 entryType: 'block',
                 name: 'spin',
-                description: 'Spins a motor until stopped.',
+                description: 'Spins a motor forward or backward until stopped.',
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -138,6 +152,10 @@ export const library = [
                     {
                         field: deviceField('drive_motor'),
                         name: 'name',
+                    },
+                    {
+                        field: () => gridDropdown(spinWays),
+                        name: 'way',
                     },
                     {
                         text: 'at',
@@ -156,45 +174,13 @@ export const library = [
                     )
                     const power = block.getFieldValue('power')
 
-                    return `${name}.spin(power=${power})\n`
-                },
-            },
-            {
-                entryType: 'block',
-                name: 'spinBack',
-                description: 'Spins a motor backward until stopped.',
-                blocklyTemplate: [
-                    {
-                        text: 'Spin',
-                    },
-                    {
-                        field: deviceField('drive_motor'),
-                        name: 'name',
-                    },
-                    {
-                        text: 'backward at',
-                    },
-                    {
-                        field: () => new FieldNumber(100, -100, 100, 0.1),
-                        name: 'power',
-                    },
-                    {
-                        text: 'power',
-                    },
-                ],
-                codeGenerator: (block) => {
-                    const name = spacesToUnderscores(
-                        block.getFieldValue('name'),
-                    )
-                    const power = block.getFieldValue('power')
-
-                    return `${name}.spin_back(power=${power})\n`
+                    return `${name}.${spinMethod(block)}(power=${power})\n`
                 },
             },
             {
                 entryType: 'block',
                 name: 'spinForTime',
-                description: 'Spins a motor for a number of seconds.',
+                description: 'Spins a motor forward or backward for a number of seconds.',
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -202,6 +188,10 @@ export const library = [
                     {
                         field: deviceField('drive_motor'),
                         name: 'name',
+                    },
+                    {
+                        field: () => gridDropdown(spinWays),
+                        name: 'way',
                     },
                     {
                         text: 'at',
@@ -228,47 +218,7 @@ export const library = [
                     const power = block.getFieldValue('power')
                     const time = block.getFieldValue('time')
 
-                    return `${name}.spin(power=${power}, seconds=${time})\n`
-                },
-            },
-            {
-                entryType: 'block',
-                name: 'spinBackForTime',
-                description: 'Spins a motor backward for a number of seconds.',
-                blocklyTemplate: [
-                    {
-                        text: 'Spin',
-                    },
-                    {
-                        field: deviceField('drive_motor'),
-                        name: 'name',
-                    },
-                    {
-                        text: 'backward at',
-                    },
-                    {
-                        field: () => new FieldNumber(100, -100, 100, 0.1),
-                        name: 'power',
-                    },
-                    {
-                        text: 'power\nfor',
-                    },
-                    {
-                        field: () => new FieldNumber(0, 0, Infinity, 0.01),
-                        name: 'time',
-                    },
-                    {
-                        text: 'seconds',
-                    },
-                ],
-                codeGenerator: (block) => {
-                    const name = spacesToUnderscores(
-                        block.getFieldValue('name'),
-                    )
-                    const power = block.getFieldValue('power')
-                    const time = block.getFieldValue('time')
-
-                    return `${name}.spin_back(power=${power}, seconds=${time})\n`
+                    return `${name}.${spinMethod(block)}(power=${power}, seconds=${time})\n`
                 },
             },
             {
@@ -319,8 +269,9 @@ export const library = [
                                         },
                                         next: {
                                             block: {
-                                                type: 'spinBackForTime',
+                                                type: 'spinForTime',
                                                 fields: {
+                                                    way: 'backward',
                                                     name: 'arm_motor',
                                                     power: '40',
                                                     time: '1',
@@ -1379,8 +1330,9 @@ export const library = [
                                                     },
                                                     input_else: {
                                                         block: {
-                                                            type: 'spinBackForTime',
+                                                            type: 'spinForTime',
                                                             fields: {
+                                                                way: 'backward',
                                                                 name: 'arm',
                                                                 power: '60',
                                                                 time: '1',
@@ -1542,8 +1494,9 @@ export const library = [
                                                     },
                                                     next: {
                                                         block: {
-                                                            type: 'spinBackForTime',
+                                                            type: 'spinForTime',
                                                             fields: {
+                                                                way: 'backward',
                                                                 name: 'sweeper',
                                                                 power: '50',
                                                                 time: '0.5',
