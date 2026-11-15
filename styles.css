@@ -1244,6 +1244,18 @@
         fill: var(--text-muted) !important;
     }
 
+    /* a block picked up or being dragged, and the outline showing where it
+       will snap: blue, so they never look like the gold running block below
+       (Blockly's own colour for both is yellow) */
+    .blocklySelected > .blocklyPath {
+        stroke: #6395cf !important;
+        stroke-width: 3px !important;
+    }
+
+    .blocklyHighlightedConnectionPath {
+        stroke: #6395cf !important;
+    }
+
     /* the block that is running, lit by highlight() in src/lib.js while a
        host (a simulator) plays a program back: a thick gold outline */
     .blocklyHighlighted > .blocklyPath {
