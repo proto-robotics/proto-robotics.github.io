@@ -79,5 +79,13 @@
     "bugs": {
         "url": "https://github.com/proto-robotics/proto-robotics.github.io/issues"
     },
-    "homepage": "https://github.com/proto-robotics/proto-robotics.github.io#readme"
+    "homepage": "https://github.com/proto-robotics/proto-robotics.github.io#readme",
+    "overrides": {
+        "glob@>=9.0.0 <14.0.2": "^14.0.6",
+        "minimatch@>=7.0.0 <11.0.8": "^11.0.8",
+        "rimraf@>=4.2.0 <6.1.4": "^6.1.4",
+        "tar@<7.5.23": "^7.5.23",
+        "sharp@<0.35.5": "^0.35.5",
+        "uuid@<11.1.1": "^11.1.1"
+    }
 }
