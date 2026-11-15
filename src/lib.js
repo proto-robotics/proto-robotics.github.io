@@ -118,9 +118,10 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {number} [options.maxBlocks] Cap on blocks, with a counter.
  * @param {Record<string, number>} [options.maxInstances] Per-type caps.
  * @param {boolean} [options.view=false] Read-only viewer.
- * @param {boolean} [options.devices=false] Put the Devices section first in
- *     the toolbox, where the program's motors are set up. A device counts
- *     in `blockTypes` under its kind (`drive_motor` or `drivetrain`).
+ * @param {boolean} [options.devices=false] Pin a Devices button to the
+ *     bottom right of the workspace: it opens the program's motors and
+ *     drivetrains in a pop-up, where they are set up. A device counts in
+ *     `blockTypes` under its kind (`drive_motor` or `drivetrain`).
  * @param {boolean} [options.codePreview=false] Show the Python pane.
  * @param {boolean} [options.codeOpen=false] Start with the pane open.
  * @param {(detail: {code: string, blockTypes: string[], state: object}) => void} [options.onChange]

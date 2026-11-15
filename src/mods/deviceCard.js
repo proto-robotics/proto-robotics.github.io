@@ -3,7 +3,7 @@
  * name, then what it is. A drive motor: "is a drive motor on port [0] in
  * direction [clockwise]". A drivetrain: "is a drivetrain from motors
  * [left] and [right] with drift [1]". Then a remove button and a help
- * button. The Devices panel (devicesPanel.js) draws one per device; the
+ * button. The Devices pop-up (devicesDialog.js) draws one per device; the
  * library (src/lib.js, mountDeviceCard) puts one on a host's page on its
  * own, so a lesson shows the real thing.
  */

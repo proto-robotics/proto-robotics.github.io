@@ -43,7 +43,7 @@ import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import { createToolboxDrawer } from '../helpers/toolboxDrawerHelper'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { getRoot } from '../helpers/rootHelper'
-import { devicesCategory } from '../mods/devicesPanel'
+import { devicesButton } from '../mods/devicesDialog'
 
 /** The workspace events after which the program is regenerated and saved. */
 const programChangeEvents = new Set([
@@ -74,10 +74,10 @@ const programChangeEvents = new Set([
  * @param {boolean} [options.view=false] Show a program without editing it:
  *     no toolbox, trashcan, zoom controls or selection, and the code
  *     drawer starts open. The host still loads a program with setState.
- * @param {boolean} [options.devices=false] Put the Devices section first
- *     in the toolbox, where the motors a program uses are set up
- *     (devicesHelper.js, mods/devicesPanel.js). Devices saved in a
- *     program are honoured either way.
+ * @param {boolean} [options.devices=false] Pin a Devices button to the
+ *     bottom right of the workspace; it opens the motors and drivetrains a
+ *     program sets up in a pop-up (devicesHelper.js, mods/devicesDialog.js).
+ *     Devices saved in a program are honoured either way.
  * @returns {EditorMode} The block editor mode, with `setMinimap`.
  */
 export default (
@@ -101,14 +101,7 @@ export default (
     const instanceOptions = view
         ? { readonly: true, hideToolbox: true, startScale: 1, sounds }
         : { maxBlocks, maxInstances, sounds }
-    const editorToolbox =
-        showDevices && !view && toolbox
-            ? { ...toolbox, contents: [devicesCategory, ...toolbox.contents] }
-            : toolbox
-    const blocklyInstance = createBlocklyInstance(
-        editorToolbox,
-        instanceOptions,
-    )
+    const blocklyInstance = createBlocklyInstance(toolbox, instanceOptions)
 
     // ---- the elements ------------------------------------------------------
 
@@ -153,10 +146,16 @@ export default (
         ...(showCodePreview ? [CodeDrawer] : []),
     )
     const toolboxDrawer = createToolboxDrawer(blocklyInstance, BlockEditor)
+    // the program's devices, in a pop-up from a button at the bottom right
+    const devices =
+        showDevices && !view
+            ? devicesButton(() => blocklyInstance.workspace ?? null)
+            : null
     CanvasWrap.append(
         blocklyInstance.canvas,
         toolboxDrawer.Tab,
         ...(capacity ? [capacity.element] : []),
+        ...(devices ? [devices.element] : []),
     )
 
     const minimap = createMinimapController(blocklyInstance, BlockEditor)
@@ -446,6 +445,7 @@ export default (
     mode.dispose = () => {
         stopPhoneLayout()
         stopWatchingDevices()
+        devices?.destroy()
         destroyBlocklyInstance(blocklyInstance)
     }
 

@@ -1083,9 +1083,51 @@
         display: none;
     }
 
-    /* The Devices section's panel (src/mods/devicesPanel.js): an item in
-       the flyout drawn inside its SVG, sized and scaled there. Each device
-       is a card: its name, then the motor block's words with selects. */
+    /* Devices (src/mods/devicesDialog.js): a button pinned to the bottom
+       right of the workspace, left of the zoom controls and the trashcan,
+       that opens the program's motors and drivetrains in a pop-up. Each
+       device is a card: its name, then what it is, with selects. */
+    .devices-button {
+        position: absolute;
+        right: 96px;
+        bottom: 18px;
+        z-index: 800;
+        gap: 8px;
+        padding: 6px 14px 6px 6px;
+        font-size: 14px;
+        background: #fff;
+        color: var(--text);
+        border: 1px solid var(--line-strong);
+        box-shadow: 0 3px 0 var(--line-strong);
+    }
+
+    .devices-button-icon {
+        width: 26px;
+        height: 26px;
+    }
+
+    /* how many devices there are, on the button */
+    .devices-button-count {
+        min-width: 20px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: #5f6b7a;
+        color: #fff;
+        font-size: 12px;
+        line-height: 18px;
+        text-align: center;
+    }
+
+    .devices-dialog .popup-content {
+        width: min(340px, calc(100vw - 64px));
+    }
+
+    .devices-dialog-title {
+        margin: 0 0 10px;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
     .toolbox-devices {
         box-sizing: border-box;
         padding: 2px 2px 6px;
@@ -1095,43 +1137,14 @@
         color: var(--text);
     }
 
+    /* in the pop-up there is room for a size that suits a finger */
+    .devices-editor {
+        font-size: 14px;
+    }
+
     .toolbox-devices-empty {
-        margin: 0 0 8px;
+        margin: 0 0 10px;
         color: var(--text-muted);
-    }
-
-    /* the fold: a plain line, not a button of the site's kind */
-    .toolbox-devices-toggle {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        width: 100%;
-        margin: 0 0 6px;
-        padding: 4px 6px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--text);
-        background: none;
-        box-shadow: none;
-        transition: none;
-    }
-
-    .toolbox-devices-toggle::before {
-        content: none;
-    }
-
-    .toolbox-devices-toggle:hover {
-        background: rgba(20, 30, 50, 0.06);
-    }
-
-    .toolbox-devices-toggle-arrow {
-        display: inline-block;
-        transition: transform 0.15s ease;
-    }
-
-    .toolbox-devices-toggle.closed .toolbox-devices-toggle-arrow {
-        transform: rotate(-90deg);
     }
 
     .toolbox-devices-list {
