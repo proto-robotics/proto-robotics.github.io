@@ -1,9 +1,11 @@
 /*
  * One device's card, as the Devices section of the toolbox shows it: its
- * name, then "is a drive motor on port [0] in direction [clockwise]", a
- * remove button and a help button. The Devices panel (devicesPanel.js)
- * draws one per device; the library (src/lib.js, mountDeviceCard) puts one
- * on a host's page on its own, so a lesson shows the real thing.
+ * name, then what it is. A drive motor: "is a drive motor on port [0] in
+ * direction [clockwise]". A drivetrain: "is a drivetrain from motors
+ * [left] and [right] with drift [1]". Then a remove button and a help
+ * button. The Devices panel (devicesPanel.js) draws one per device; the
+ * library (src/lib.js, mountDeviceCard) puts one on a host's page on its
+ * own, so a lesson shows the real thing.
  */
 
 import { button, div, on, tag } from 'ellipsi'
@@ -33,16 +35,84 @@ const select = (choices, value, onPick, label) => {
 }
 
 /**
+ * The card's middle: what the device is and how it is set up.
+ * @param {object} device
+ * @param {(patch: object) => void} change
+ * @param {string[]} motors The program's drive motors, by name.
+ * @returns {Array<HTMLElement>} The parts of the line.
+ */
+const fieldsOf = (device, change, motors) => {
+    const kind = deviceKinds[device.kind]
+    if (device.kind === 'drivetrain') {
+        // its motors, picked from the program's; one no longer there is kept and shown
+        const motorChoices = (current) =>
+            [...new Set([...motors, current].filter(Boolean))].map((name) => [
+                name,
+                name,
+            ])
+        const Drift = tag('input', {
+            type: 'number',
+            step: '0.01',
+            value: device.drift,
+            'aria-label': 'Drift',
+            class: 'toolbox-device-number',
+        })
+        Drift.addEventListener('change', () => change({ drift: Drift.value }))
+        return [
+            tag('span', 'is a drivetrain from motors'),
+            select(
+                motorChoices(device.left),
+                device.left,
+                (left) => change({ left }),
+                'Left motor',
+            ),
+            tag('span', 'and'),
+            select(
+                motorChoices(device.right),
+                device.right,
+                (right) => change({ right }),
+                'Right motor',
+            ),
+            tag('span', 'with drift'),
+            Drift,
+        ]
+    }
+    return [
+        tag('span', `is a ${kind.label} on port`),
+        select(
+            kind.ports.map((port) => [port, port]),
+            device.port,
+            (port) => change({ port }),
+            'Port',
+        ),
+        tag('span', 'in direction'),
+        select(
+            kind.directions,
+            device.direction,
+            (direction) => change({ direction }),
+            'Direction',
+        ),
+    ]
+}
+
+/**
  * Builds a device's card.
- * @param {{kind: string, name: string, port: string, direction: string}} device
+ * @param {{kind: string, name: string}} device With the kind's fields.
  * @param {object} [handlers] Leave one out and its control is not drawn.
  * @param {(patch: object) => void} [handlers.onChange] A field changed: the
- *     new port or direction, or a name (cleaned) with `renamedFrom`.
+ *     new value of it, or a name (cleaned) with `renamedFrom`.
  * @param {() => void} [handlers.onRemove] The remove button was pressed.
  * @param {() => void} [handlers.onHelp] The help button was pressed.
+ * @param {object} [context]
+ * @param {string[]} [context.motors] The program's drive motors by name, for
+ *     a drivetrain's choice of motors.
  * @returns {HTMLElement}
  */
-export const deviceCard = (device, { onChange, onRemove, onHelp } = {}) => {
+export const deviceCard = (
+    device,
+    { onChange, onRemove, onHelp } = {},
+    { motors = [] } = {},
+) => {
     const kind = deviceKinds[device.kind]
     const change = onChange ?? (() => {})
 
@@ -67,19 +137,12 @@ export const deviceCard = (device, { onChange, onRemove, onHelp } = {}) => {
         }
     })
 
-    const Port = select(
-        kind.ports.map((port) => [port, port]),
-        device.port,
-        (port) => change({ port }),
-        'Port',
-    )
-    const Direction = select(
-        kind.directions,
-        device.direction,
-        (direction) => change({ direction }),
-        'Direction',
-    )
-    Port.disabled = Direction.disabled = !onChange
+    const fields = fieldsOf(device, change, motors)
+    for (const field of fields) {
+        if (field.tagName === 'SELECT' || field.tagName === 'INPUT') {
+            field.disabled = !onChange
+        }
+    }
 
     return div(
         { class: 'toolbox-device', role: 'listitem' },
@@ -100,10 +163,7 @@ export const deviceCard = (device, { onChange, onRemove, onHelp } = {}) => {
         ),
         div(
             { class: 'toolbox-device-fields' },
-            tag('span', `is a ${kind.label} on port`),
-            Port,
-            tag('span', 'in direction'),
-            Direction,
+            ...fields,
             onHelp &&
                 button(
                     {

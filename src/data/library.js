@@ -302,6 +302,10 @@ export const library = [
             {
                 entryType: 'block',
                 name: 'drivetrain',
+                // set up in the Devices section now, like the drive motor; the
+                // block stays defined for programs saved with it, which load it
+                // as a device, and for the cheatsheet
+                toolbox: false,
                 description: 'Creates a drivetrain from two motors.',
                 blocklyTemplate: [
                     {
@@ -356,7 +360,7 @@ export const library = [
                         text: 'Drive',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                     {
@@ -388,7 +392,7 @@ export const library = [
                         text: 'Drive',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                     {
@@ -428,7 +432,7 @@ export const library = [
                         text: 'Turn',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                     {
@@ -460,7 +464,7 @@ export const library = [
                         text: 'Turn',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                     {
@@ -501,7 +505,7 @@ export const library = [
                         text: 'Curve',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                     {
@@ -541,7 +545,7 @@ export const library = [
                         text: 'Curve',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                     {
@@ -589,7 +593,7 @@ export const library = [
                         text: 'Stop',
                     },
                     {
-                        field: () => new FieldTextInput('drivetrain'),
+                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
                         name: 'name',
                     },
                 ],

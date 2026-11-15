@@ -23,6 +23,15 @@ import {
 import { deviceCard } from './deviceCard'
 import { renameDeviceInBlocks } from './deviceField'
 
+/**
+ * @param {object[]} devices
+ * @returns {string[]} The drive motors among them, by name.
+ */
+const motorNames = (devices) =>
+    devices
+        .filter((device) => device.kind === 'drive_motor' && device.name)
+        .map((device) => device.name)
+
 /** The flyout item kind, as named in a category's contents. */
 export const DEVICES_PANEL_KIND = 'devices_panel'
 
@@ -107,21 +116,42 @@ class DevicesPanel {
             this.Empty,
             this.Toggle,
             this.List,
-            button(
-                'Add drive motor',
-                { type: 'button', class: 'toolbox-devices-add' },
-                on('click', () => {
-                    const devices = this.devices()
-                    this.update([
-                        ...devices,
-                        {
-                            kind: 'drive_motor',
-                            name: nextName(devices, 'motor'),
-                            port: nextPort(devices, 'drive_motor'),
-                            direction: '1',
-                        },
-                    ])
-                }),
+            div(
+                { class: 'toolbox-devices-adds' },
+                button(
+                    'Add drive motor',
+                    { type: 'button', class: 'toolbox-devices-add' },
+                    on('click', () => {
+                        const devices = this.devices()
+                        this.update([
+                            ...devices,
+                            {
+                                kind: 'drive_motor',
+                                name: nextName(devices, 'motor'),
+                                port: nextPort(devices, 'drive_motor'),
+                                direction: '1',
+                            },
+                        ])
+                    }),
+                ),
+                button(
+                    'Add drivetrain',
+                    { type: 'button', class: 'toolbox-devices-add' },
+                    on('click', () => {
+                        const devices = this.devices()
+                        const motors = motorNames(devices)
+                        this.update([
+                            ...devices,
+                            {
+                                kind: 'drivetrain',
+                                name: nextName(devices, 'drivetrain'),
+                                left: motors[0] ?? 'left',
+                                right: motors[1] ?? motors[0] ?? 'right',
+                                drift: '1',
+                            },
+                        ])
+                    }),
+                ),
             ),
         )
         Object.assign(this.root.style, {
@@ -179,10 +209,15 @@ class DevicesPanel {
         )
         this.Empty.hidden = devices.length > 0
         this.Toggle.hidden = devices.length === 0
-        this.ToggleText.textContent =
-            devices.length === 1
-                ? '1 drive motor'
-                : `${devices.length} drive motors`
+        // how many of each kind: "2 drive motors, 1 drivetrain"
+        this.ToggleText.textContent = Object.keys(deviceKinds)
+            .map((kindName) => {
+                const n = devices.filter((d) => d.kind === kindName).length
+                const label = deviceKinds[kindName].label
+                return n ? `${n} ${label}${n === 1 ? '' : 's'}` : ''
+            })
+            .filter(Boolean)
+            .join(', ')
         this.Toggle.setAttribute('aria-expanded', String(this.open))
         this.Toggle.classList.toggle('closed', !this.open)
         this.List.hidden = !this.open || devices.length === 0
@@ -208,31 +243,55 @@ class DevicesPanel {
      */
     row(device, index) {
         const kind = deviceKinds[device.kind]
-        return deviceCard(device, {
-            onChange: ({ renamedFrom, ...patch }) => {
-                this.update(
-                    this.devices().map((other, i) =>
-                        i === index ? { ...other, ...patch } : other,
-                    ),
-                )
-                // the blocks using the device follow its new name
-                if (renamedFrom !== undefined) {
-                    renameDeviceInBlocks(
-                        this.flyout.targetWorkspace,
-                        renamedFrom,
-                        patch.name,
+        return deviceCard(
+            device,
+            {
+                onChange: ({ renamedFrom, ...patch }) => {
+                    this.update(
+                        this.devices().map((other, i) => {
+                            if (i === index) {
+                                return { ...other, ...patch }
+                            }
+                            // a drivetrain made from a renamed motor follows the new name
+                            if (
+                                renamedFrom !== undefined &&
+                                other.kind === 'drivetrain'
+                            ) {
+                                return {
+                                    ...other,
+                                    left:
+                                        other.left === renamedFrom
+                                            ? patch.name
+                                            : other.left,
+                                    right:
+                                        other.right === renamedFrom
+                                            ? patch.name
+                                            : other.right,
+                                }
+                            }
+                            return other
+                        }),
                     )
-                }
+                    // the blocks using the device follow its new name
+                    if (renamedFrom !== undefined) {
+                        renameDeviceInBlocks(
+                            this.flyout.targetWorkspace,
+                            renamedFrom,
+                            patch.name,
+                        )
+                    }
+                },
+                onRemove: () =>
+                    this.update(this.devices().filter((_, i) => i !== index)),
+                onHelp: () =>
+                    document.dispatchEvent(
+                        new CustomEvent(openCheatSheetDrawerEvent, {
+                            detail: { blockName: kind.help },
+                        }),
+                    ),
             },
-            onRemove: () =>
-                this.update(this.devices().filter((_, i) => i !== index)),
-            onHelp: () =>
-                document.dispatchEvent(
-                    new CustomEvent(openCheatSheetDrawerEvent, {
-                        detail: { blockName: kind.help },
-                    }),
-                ),
-        })
+            { motors: motorNames(this.devices()) },
+        )
     }
 
     // ---- IBoundedElement ----

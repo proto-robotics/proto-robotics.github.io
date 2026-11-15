@@ -25,6 +25,49 @@ export const deviceKinds = {
          */
         code: ({ name, port, direction }) =>
             `${name} = make.drive_motor(port=${port}${direction === '-1' ? ', direction=-1' : ''})`,
+        /** The fields besides the name, as on the old motor block. */
+        fields: ['port', 'direction'],
+        /**
+         * @param {object} device As saved or typed.
+         * @returns {object} Its port and direction, each one of the kind's.
+         */
+        clean(device) {
+            const directions = this.directions.map(([, value]) => value)
+            return {
+                port: this.ports.includes(String(device.port))
+                    ? String(device.port)
+                    : this.ports[0],
+                direction: directions.includes(String(device.direction))
+                    ? String(device.direction)
+                    : directions[0],
+            }
+        },
+    },
+    drivetrain: {
+        label: 'drivetrain',
+        help: 'drivetrain',
+        /** Made from two drive motors, so it is set up after them. */
+        after: true,
+        /**
+         * @param {{name: string, left: string, right: string, drift: string}} device
+         * @returns {string} The line that creates it, as the drivetrain block writes it.
+         */
+        code: ({ name, left, right, drift }) =>
+            `${name} = make.drivetrain(${left}, ${right}${drift === '1' ? '' : `, drift=${drift}`})`,
+        /** The fields besides the name, as on the old drivetrain block. */
+        fields: ['left', 'right', 'drift'],
+        /**
+         * @param {object} device As saved or typed.
+         * @returns {object} Its two motors by name, and its drift as a number.
+         */
+        clean(device) {
+            const drift = Number(device.drift)
+            return {
+                left: cleanName(device.left) || 'left',
+                right: cleanName(device.right) || 'right',
+                drift: Number.isFinite(drift) ? String(drift) : '1',
+            }
+        },
     },
 }
 
@@ -33,11 +76,15 @@ export const deviceKinds = {
  * the kind of device each one is. Programs saved with them, and the
  * cheatsheet's examples, still have them; they are turned into devices when
  * they are loaded (liftDeviceBlocks) or pasted (adoptDeviceBlocks). The
- * fields are the device's: name, port, direction. `largemotor` is the
+ * fields are the device's: its name and the kind's `fields`. `largemotor` is the
  * motor block's name from before the make library called it drive_motor;
  * programs saved with it load as drive motors.
  */
-const deviceBlocks = { drive_motor: 'drive_motor', largemotor: 'drive_motor' }
+const deviceBlocks = {
+    drive_motor: 'drive_motor',
+    largemotor: 'drive_motor',
+    drivetrain: 'drivetrain',
+}
 
 /** The devices of each workspace. */
 const devicesByWorkspace = new WeakMap()
@@ -59,7 +106,7 @@ export const getDevices = (workspace) => devicesByWorkspace.get(workspace) ?? []
 /**
  * Replaces a workspace's devices and tells the watchers.
  * @param {object} workspace A Blockly workspace.
- * @param {object[]} devices The devices, each { kind, name, port, direction }.
+ * @param {object[]} devices The devices, each { kind, name, ...the kind's fields }.
  */
 export const setDevices = (workspace, devices) => {
     devicesByWorkspace.set(workspace, devices.map(cleanDevice).filter(Boolean))
@@ -101,14 +148,11 @@ const cleanDevice = (device) => {
     if (!kind) {
         return null
     }
-    const port = kind.ports.includes(String(device.port))
-        ? String(device.port)
-        : kind.ports[0]
-    const directions = kind.directions.map(([, value]) => value)
-    const direction = directions.includes(String(device.direction))
-        ? String(device.direction)
-        : directions[0]
-    return { kind: device.kind, name: cleanName(device.name), port, direction }
+    return {
+        kind: device.kind,
+        name: cleanName(device.name),
+        ...kind.clean(device),
+    }
 }
 
 /**
@@ -154,7 +198,13 @@ export const nextPort = (devices, kindName) => {
  *     nothing when there are no devices.
  */
 export const devicesCode = (devices) => {
-    const lines = devices
+    // a drivetrain is made from motors, so the motors come first
+    const lines = [...devices]
+        .sort(
+            (a, b) =>
+                Number(!!deviceKinds[a.kind].after) -
+                Number(!!deviceKinds[b.kind].after),
+        )
         .filter((device) => device.name)
         .map((device) => deviceKinds[device.kind].code(device))
     return lines.length ? lines.join('\n') + '\n\n' : ''
@@ -194,10 +244,9 @@ export const liftDeviceBlocks = (state) => {
             found = true
             const fields = blockState.fields ?? {}
             addDevice(devices, {
+                ...fields,
                 kind: deviceBlocks[blockState.type],
                 name: cleanName(fields.name),
-                port: fields.port,
-                direction: fields.direction,
             })
             const rest = strip(blockState.next?.block)
             if (!rest || blockState.x === undefined) {
@@ -259,11 +308,16 @@ export const adoptDeviceBlocks = (event) => {
     Events.setGroup(event.group || true)
     try {
         for (const block of blocks) {
+            const kind = deviceBlocks[block.type]
             addDevice(devices, {
-                kind: deviceBlocks[block.type],
+                ...Object.fromEntries(
+                    deviceKinds[kind].fields.map((field) => [
+                        field,
+                        block.getFieldValue(field),
+                    ]),
+                ),
+                kind,
                 name: cleanName(block.getFieldValue('name')),
-                port: block.getFieldValue('port'),
-                direction: block.getFieldValue('direction'),
             })
             const next = block.getNextBlock()
             const place = block.getRelativeToSurfaceXY()

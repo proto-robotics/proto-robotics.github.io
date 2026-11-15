@@ -67,7 +67,7 @@ export const fields = {
     dropdown: (options) => () => gridDropdown(options),
     /**
      * A choice of the program's devices of a kind, by name.
-     * @param {string} kind For now 'drive_motor'.
+     * @param {string} kind 'drive_motor' or 'drivetrain'.
      * @param {{placeholder?: string, nth?: number}} [options]
      */
     device: deviceField,
@@ -120,7 +120,7 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {boolean} [options.view=false] Read-only viewer.
  * @param {boolean} [options.devices=false] Put the Devices section first in
  *     the toolbox, where the program's motors are set up. A device counts
- *     in `blockTypes` under its kind (for now `drive_motor`).
+ *     in `blockTypes` under its kind (`drive_motor` or `drivetrain`).
  * @param {boolean} [options.codePreview=false] Show the Python pane.
  * @param {boolean} [options.codeOpen=false] Start with the pane open.
  * @param {(detail: {code: string, blockTypes: string[], state: object}) => void} [options.onChange]
@@ -221,13 +221,18 @@ export const mountEditor = async (
  * @param {{kind?: string, name?: string, port?: string, direction?: string}} [options.device]
  *     The device; a drive motor named motor on port 0, clockwise, if left out.
  * @param {(device: object) => void} [options.onChange] The device, after a change.
+ * @param {string[]} [options.motors] For a drivetrain: the drive motors it
+ *     can be made from, by name.
  * @returns {Promise<{
  *   element: HTMLElement,
  *   set: (device: object) => void,
  *   destroy: () => void,
  * }>} `set` shows a changed device (from the host's own controls).
  */
-export const mountDeviceCard = async (container, { device, onChange } = {}) => {
+export const mountDeviceCard = async (
+    container,
+    { device, onChange, motors = [] } = {},
+) => {
     await whenEditorFontsReady()
     const root = div({ class: 'proto-ide proto-ide-card' })
     let current = {
@@ -253,6 +258,7 @@ export const mountDeviceCard = async (container, { device, onChange } = {}) => {
                               },
                           }
                         : {},
+                    { motors },
                 ),
             ),
         )
