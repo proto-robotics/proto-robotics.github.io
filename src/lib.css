@@ -21,3 +21,15 @@ body {
         sans-serif;
     text-align: left;
 }
+
+/* a device card on its own (mountDeviceCard in src/lib.js): as big as the
+   card, not the container, and none of the editor's page chrome */
+body.proto-ide-card {
+    display: inline-block;
+    /* the toolbox panel's width (PANEL_WIDTH in src/mods/devicesPanel.js) */
+    width: 250px;
+    height: auto;
+    overflow: visible;
+    contain: none;
+    background: none;
+}

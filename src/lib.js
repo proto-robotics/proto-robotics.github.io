@@ -47,6 +47,7 @@ import { watchPhoneLayout } from './helpers/phoneLayoutHelper'
 import { setRoot } from './helpers/rootHelper'
 import { setWidgetHost } from './helpers/blocklyHelper'
 import { deviceField } from './mods/deviceField'
+import { deviceCard } from './mods/deviceCard'
 
 export { addVocab, pythonGenerator, whenEditorFontsReady }
 
@@ -205,5 +206,64 @@ export const mountEditor = async (
             api.dispose()
             root.remove()
         },
+    }
+}
+
+/**
+ * Puts one device's card on a host's page, on its own: the same card the
+ * Devices section of the toolbox shows ("fan is a drive motor on port 0 in
+ * direction clockwise"), at the toolbox's size, so a lesson can show a
+ * motor's setup without an editor. With `onChange` the port and direction
+ * can be changed and the name typed; without it the card is read-only.
+ * There is no remove or help button.
+ * @param {HTMLElement} container Gets the card's root element appended.
+ * @param {object} [options]
+ * @param {{kind?: string, name?: string, port?: string, direction?: string}} [options.device]
+ *     The device; a drive motor named motor on port 0, clockwise, if left out.
+ * @param {(device: object) => void} [options.onChange] The device, after a change.
+ * @returns {Promise<{
+ *   element: HTMLElement,
+ *   set: (device: object) => void,
+ *   destroy: () => void,
+ * }>} `set` shows a changed device (from the host's own controls).
+ */
+export const mountDeviceCard = async (container, { device, onChange } = {}) => {
+    await whenEditorFontsReady()
+    const root = div({ class: 'proto-ide proto-ide-card' })
+    let current = {
+        kind: 'drive_motor',
+        name: 'motor',
+        port: '0',
+        direction: '1',
+        ...device,
+    }
+    const draw = () =>
+        root.replaceChildren(
+            div(
+                { class: 'toolbox-devices', role: 'list' },
+                deviceCard(
+                    current,
+                    onChange
+                        ? {
+                              // eslint-disable-next-line no-unused-vars
+                              onChange: ({ renamedFrom, ...patch }) => {
+                                  current = { ...current, ...patch }
+                                  draw()
+                                  onChange({ ...current })
+                              },
+                          }
+                        : {},
+                ),
+            ),
+        )
+    draw()
+    container.append(root)
+    return {
+        element: root,
+        set: (changed) => {
+            current = { ...current, ...changed }
+            draw()
+        },
+        destroy: () => root.remove(),
     }
 }

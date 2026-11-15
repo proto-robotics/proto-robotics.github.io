@@ -11,10 +11,8 @@
 import * as Blockly from 'blockly'
 import { button, div, on, p, tag } from 'ellipsi'
 
-import { helpIcon } from '../assets'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 import {
-    cleanName,
     deviceKinds,
     getDevices,
     nextName,
@@ -22,6 +20,7 @@ import {
     setDevices,
     watchDevices,
 } from '../helpers/devicesHelper'
+import { deviceCard } from './deviceCard'
 import { renameDeviceInBlocks } from './deviceField'
 
 /** The flyout item kind, as named in a category's contents. */
@@ -201,121 +200,39 @@ class DevicesPanel {
     }
 
     /**
-     * A select element with the given choices.
-     * @param {Array<[string, string]>} choices [label, value] pairs.
-     * @param {string} value The chosen value.
-     * @param {(value: string) => void} onPick
-     * @param {string} label What the select is for, for assistive tech.
-     * @returns {HTMLSelectElement}
-     */
-    select(choices, value, onPick, label) {
-        const element = tag(
-            'select',
-            { 'aria-label': label },
-            ...choices.map(([text, choice]) =>
-                tag('option', { value: choice }, text),
-            ),
-            on('change', () => onPick(element.value)),
-        )
-        element.value = value
-        return element
-    }
-
-    /**
-     * One editable device.
+     * One editable device: the shared card (deviceCard.js), wired to the
+     * workspace's list of devices.
      * @param {object} device
      * @param {number} index Its place in the list.
      * @returns {HTMLElement}
      */
     row(device, index) {
         const kind = deviceKinds[device.kind]
-        const change = (patch) =>
-            this.update(
-                this.devices().map((other, i) =>
-                    i === index ? { ...other, ...patch } : other,
-                ),
-            )
-
-        const NameInput = tag('input', {
-            type: 'text',
-            value: device.name,
-            placeholder: 'name',
-            'aria-label': 'Device name',
-            autocomplete: 'off',
-            autocorrect: 'off',
-            autocapitalize: 'off',
-            spellcheck: 'false',
-        })
-        // the name is taken when typing stops, not on every keystroke, and
-        // the blocks using the device follow it
-        NameInput.addEventListener('change', () => {
-            const name = cleanName(NameInput.value)
-            if (name !== device.name) {
-                change({ name })
-                renameDeviceInBlocks(
-                    this.flyout.targetWorkspace,
-                    device.name,
-                    name,
+        return deviceCard(device, {
+            onChange: ({ renamedFrom, ...patch }) => {
+                this.update(
+                    this.devices().map((other, i) =>
+                        i === index ? { ...other, ...patch } : other,
+                    ),
                 )
-            } else {
-                NameInput.value = name
-            }
+                // the blocks using the device follow its new name
+                if (renamedFrom !== undefined) {
+                    renameDeviceInBlocks(
+                        this.flyout.targetWorkspace,
+                        renamedFrom,
+                        patch.name,
+                    )
+                }
+            },
+            onRemove: () =>
+                this.update(this.devices().filter((_, i) => i !== index)),
+            onHelp: () =>
+                document.dispatchEvent(
+                    new CustomEvent(openCheatSheetDrawerEvent, {
+                        detail: { blockName: kind.help },
+                    }),
+                ),
         })
-
-        return div(
-            { class: 'toolbox-device', role: 'listitem' },
-            div(
-                { class: 'toolbox-device-head' },
-                NameInput,
-                button(
-                    '×',
-                    {
-                        type: 'button',
-                        class: 'toolbox-device-remove',
-                        'aria-label': `Remove ${device.name || kind.label}`,
-                        title: 'Remove',
-                    },
-                    on('click', () =>
-                        this.update(
-                            this.devices().filter((_, i) => i !== index),
-                        ),
-                    ),
-                ),
-            ),
-            div(
-                { class: 'toolbox-device-fields' },
-                tag('span', `is a ${kind.label} on port`),
-                this.select(
-                    kind.ports.map((port) => [port, port]),
-                    device.port,
-                    (port) => change({ port }),
-                    'Port',
-                ),
-                tag('span', 'in direction'),
-                this.select(
-                    kind.directions,
-                    device.direction,
-                    (direction) => change({ direction }),
-                    'Direction',
-                ),
-                button(
-                    {
-                        type: 'button',
-                        class: 'toolbox-device-help',
-                        title: 'Help',
-                        'aria-label': `Help with ${kind.label}s`,
-                    },
-                    tag('img', { src: helpIcon, alt: '' }),
-                    on('click', () =>
-                        document.dispatchEvent(
-                            new CustomEvent(openCheatSheetDrawerEvent, {
-                                detail: { blockName: kind.help },
-                            }),
-                        ),
-                    ),
-                ),
-            ),
-        )
     }
 
     // ---- IBoundedElement ----
