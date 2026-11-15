@@ -1235,6 +1235,14 @@
         fill: var(--text-muted) !important;
     }
 
+    /* the block that is running, lit by highlight() in src/lib.js while a
+       host (a simulator) plays a program back: a thick gold outline */
+    .blocklyHighlighted > .blocklyPath {
+        stroke: #f8bf41 !important;
+        stroke-width: 5px !important;
+        filter: drop-shadow(0 0 6px rgba(248, 191, 65, 0.9));
+    }
+
     .blocklyFlyoutBackground {
         fill: var(--bg-soft) !important;
         fill-opacity: 1 !important;
