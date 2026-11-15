@@ -1118,8 +1118,82 @@
         text-align: center;
     }
 
+    /* wide enough for a few cards side by side */
+    dialog.popup-dialog.devices-dialog {
+        max-width: min(900px, calc(100vw - 32px));
+    }
+
     .devices-dialog .popup-content {
-        width: min(340px, calc(100vw - 64px));
+        width: min(860px, calc(100vw - 64px));
+    }
+
+    /* a row per kind of device: its picture and name, then its cards */
+    .devices-row {
+        display: grid;
+        grid-template-columns: 112px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 12px 0;
+        border-top: 1px solid var(--line);
+    }
+
+    .devices-row-head {
+        display: grid;
+        justify-items: center;
+        gap: 4px;
+        text-align: center;
+    }
+
+    .devices-row-picture {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+    }
+
+    .devices-row-name {
+        font-weight: 800;
+        text-transform: capitalize;
+    }
+
+    /* the cards fill left to right, then wrap into a grid */
+    .devices-row-box {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 10px;
+        align-items: start;
+        min-height: 100px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--bg-soft);
+    }
+
+    /* the last tile in a box adds another of its kind */
+    .devices-add-tile {
+        flex-direction: column;
+        gap: 2px;
+        min-height: 96px;
+        border: 2px dashed var(--line-strong);
+        border-radius: 10px;
+        background: transparent;
+        box-shadow: none;
+        color: var(--text-muted);
+        font-size: 14px;
+        white-space: normal;
+    }
+
+    .devices-add-tile:hover {
+        background: #fff;
+        color: var(--text);
+    }
+
+    .devices-add-tile::before {
+        content: none;
+    }
+
+    .devices-add-plus {
+        font-size: 26px;
+        line-height: 1;
     }
 
     .devices-dialog-title {

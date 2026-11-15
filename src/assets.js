@@ -42,6 +42,20 @@ export const helpIcon = asset('images/help.svg')
 export const multiselectOnIcon = asset('images/multiselect-on.svg')
 export const multiselectOffIcon = asset('images/multiselect-off.svg')
 
+/** Each kind of device's picture: a cartoon render of the real parts. */
+const deviceIcons = {
+    drive_motor: 'images/devices/drive-motor-cartoon.png',
+    drivetrain: 'images/devices/drivetrain-cartoon.png',
+}
+
+/**
+ * The picture for a kind of device, in the Devices pop-up.
+ * @param {string} kind A key of deviceKinds.
+ * @returns {string|null} The picture's URL, or null when there is none.
+ */
+export const deviceIcon = (kind) =>
+    deviceIcons[kind] ? asset(deviceIcons[kind]) : null
+
 /** The toolbox categories that have an icon in images/category-icons. */
 const categoryIconNames = new Set([
     'devices',
