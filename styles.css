@@ -1190,9 +1190,17 @@
     /* the help icon, as on the blocks, at the end of the card's last line:
        the icon is white, drawn for the blocks, so it sits on a disc of the
        Motor blocks' colour */
+    /* a fixed round size: in a wrapping flex line Safari (the iPad) let the
+       button grow taller than wide, into an oval */
     .toolbox-device-help {
+        flex: none;
+        align-self: center;
+        box-sizing: border-box;
+        width: 22px;
+        height: 22px;
+        min-height: 0;
         margin-left: auto;
-        padding: 3px;
+        padding: 0;
         border-radius: 50%;
         line-height: 0;
         background: var(--red);
@@ -1210,6 +1218,7 @@
 
     .toolbox-device-help img {
         display: block;
+        flex: none;
         width: 15px;
         height: 15px;
     }
