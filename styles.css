@@ -532,6 +532,23 @@
         box-shadow: var(--halo);
     }
 
+    /* Undo and Redo (BuildPageContent.js): round, just the arrow; the
+       word shows in the phone's menu (the phone layer) */
+    nav.site-nav tool-bar button.history-button {
+        min-width: 40px;
+        padding: 6px 10px;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    nav.site-nav tool-bar button.history-button:disabled {
+        box-shadow: 0 3px 0 var(--line-strong);
+    }
+
+    .history-label {
+        display: none;
+    }
+
     /* the menu button: a round white pill with the hamburger, phone only */
     button.site-nav__menu {
         display: none;
@@ -680,7 +697,7 @@
         z-index: 900;
     }
 
-    /* the Cheatsheet and Code tabs sit together right under the backpack
+    /* the Cheatsheet and Code tabs sit together right under the clipboard
        in the canvas's top-right corner, clear of the controls stacked at
        the bottom even on short windows */
     #cheatsheet-drawer-tab {
@@ -891,6 +908,48 @@
         height: 100%;
     }
 
+    /* The Issues drawer (issuesDrawerHelper.js), as the line editor has
+       it, but held to the canvas: it slides out from the canvas's right
+       edge, left of the code drawer when that is open, its tab under the
+       Code tab. Closed, its panel is hidden, not just pushed off the edge,
+       where it would lie over the code drawer. */
+    .block-canvas-wrap > issues-drawer.drawer {
+        position: absolute;
+        top: 270px;
+        bottom: 16px;
+    }
+
+    .block-canvas-wrap > issues-drawer.drawer:not(.open) > .drawer-panel {
+        visibility: hidden;
+    }
+
+    body.phone-layout .block-canvas-wrap > issues-drawer.drawer {
+        top: calc(var(--toolbox-height, 0px) + 160px);
+    }
+
+    /* a problem in the Issues list that shows where it is when clicked */
+    button.verify-issue-link {
+        display: block;
+        width: 100%;
+        border: none;
+        border-radius: 8px;
+        box-shadow: none;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 500;
+        text-align: left;
+        white-space: normal;
+    }
+
+    button.verify-issue-link::before {
+        content: none;
+    }
+
+    button.verify-issue-link:hover {
+        transform: none;
+        text-decoration: underline;
+    }
+
     /* The code drawer, with the generated Python. It sits in the editor's
        layout and opens by growing from zero width, so the canvas shrinks to
        make room (buildBlockMode.js resizes Blockly as it does) and the bar
@@ -1084,37 +1143,71 @@
     }
 
     /* Devices (src/mods/devicesDialog.js): a button pinned to the bottom
-       right of the workspace, left of the zoom controls and the trashcan,
-       that opens the program's motors and drivetrains in a pop-up. Each
-       device is a card: its name, then what it is, with selects. */
-    .devices-button {
+       of the toolbox column, drawn like a category tab (icon over a small
+       label), that opens the program's motors and drivetrains in a pop-up.
+       Each device is a card: its name, then what it is, with selects.
+       --toolbox-width is set by devicesDialog.js. */
+    button.devices-button {
         position: absolute;
-        right: 96px;
-        bottom: 18px;
+        left: 0;
+        bottom: 0;
         z-index: 800;
-        gap: 8px;
-        padding: 6px 14px 6px 6px;
-        font-size: 14px;
+        box-sizing: border-box;
+        flex-direction: column;
+        gap: 2px;
+        width: var(--toolbox-width, 66px);
+        min-width: 66px;
+        padding: 8px 5px 10px;
+        border-top: 1px solid var(--line);
+        border-radius: 0;
         background: #fff;
+        box-shadow: none;
         color: var(--text);
-        border: 1px solid var(--line-strong);
-        box-shadow: 0 3px 0 var(--line-strong);
+        font:
+            600 10px / 1.2 Montserrat,
+            sans-serif;
+        transition: background 0.15s ease;
+    }
+
+    button.devices-button:hover {
+        transform: none;
+        background: var(--bg-soft);
+    }
+
+    button.devices-button::before {
+        content: none;
     }
 
     .devices-button-icon {
-        width: 26px;
-        height: 26px;
+        display: block;
+        width: 24px;
+        height: 24px;
+    }
+
+    /* on a phone the toolbox runs across the top, so the button floats at
+       the canvas's bottom left as a tab of its own */
+    body.phone-layout button.devices-button {
+        left: 8px;
+        bottom: 8px;
+        width: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 3px 0 var(--line-strong);
     }
 
     /* how many devices there are, on the button */
     .devices-button-count {
-        min-width: 20px;
-        padding: 1px 6px;
+        position: absolute;
+        top: 3px;
+        right: calc(50% - 22px);
+        min-width: 16px;
+        padding: 0 4px;
         border-radius: 999px;
         background: #5f6b7a;
         color: #fff;
-        font-size: 12px;
-        line-height: 18px;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 16px;
         text-align: center;
     }
 
@@ -1274,6 +1367,15 @@
         color: var(--text);
     }
 
+    /* a blank or missing choice, which the Issues list has as an error;
+       a blank select keeps the width of a short name */
+    .toolbox-device-fields select[aria-invalid='true'],
+    .toolbox-device-head input[aria-invalid='true'] {
+        min-width: 64px;
+        border-color: var(--red);
+        background: var(--red-soft);
+    }
+
     /* the help icon, as on the blocks, at the end of the card's last line:
        the icon is white, drawn for the blocks, so it sits on a disc of the
        Motor blocks' colour */
@@ -1402,10 +1504,12 @@
         fill: var(--blue-soft) !important;
     }
 
-    /* The backpack brightens on hover like the other canvas controls, and
-       "opens" (lifts, tilts, full strength) while a block is dragged over
-       it: the plugin only adds a darken class then. The scale and rotate
-       properties compose with the plugin's own positioning transform. */
+    /* The clipboard (src/helpers/clipboardHelper.js, the backpack plugin
+       holding one stack) brightens on hover like the other canvas
+       controls, and lifts and tilts at full strength while a block is
+       dragged over it: the plugin only adds a darken class then. The scale
+       and rotate properties compose with the plugin's own positioning
+       transform. */
     .blocklyBackpack {
         transform-box: fill-box;
         transform-origin: 50% 100%;
@@ -1424,6 +1528,25 @@
         opacity: 1 !important;
         scale: 1.1;
         rotate: -5deg;
+    }
+
+    /* the button above each stack in the open clipboard that takes it off
+       (a flyout button, clipboardHelper.js): dark gray, red on hover */
+    .blocklyClipboardRemove {
+        cursor: pointer;
+    }
+
+    .blocklyClipboardRemove .blocklyFlyoutButtonBackground {
+        fill: #5f6b7a !important;
+        transition: fill 0.15s ease;
+    }
+
+    .blocklyClipboardRemove:hover .blocklyFlyoutButtonBackground {
+        fill: var(--red-dark) !important;
+    }
+
+    .blocklyClipboardRemove .blocklyText {
+        fill: #fff !important;
     }
 
     /* The grid dropdowns (@blockly/field-grid-dropdown): the choices are
@@ -2245,6 +2368,14 @@
         margin: 0 0 3px;
     }
 
+    body.phone-layout .site-nav__controls tool-bar button.history-button {
+        font-size: 15px;
+    }
+
+    body.phone-layout .history-label {
+        display: inline;
+    }
+
     /* ---------- the toolbox drawer ----------
        The toolbox is one row of tabs across the top of the canvas (its
        flyout drops down below it, see src/mods/flyouts.js). The row scrolls
@@ -2319,7 +2450,7 @@
         --drawer-width: calc(100vw - 52px);
     }
 
-    /* below the flyout and the backpack under it (--toolbox-height is the
+    /* below the flyout and the clipboard under it (--toolbox-height is the
        toolbox row plus the flyout while they show, see
        toolboxDrawerHelper.js) */
     body.phone-layout #code-drawer-tab {

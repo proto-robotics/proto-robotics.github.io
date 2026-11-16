@@ -14,7 +14,7 @@ import { isPhoneLayout } from './phoneLayoutHelper'
 
 /**
  * The plugin's positioned minimap, in the canvas's top-left corner: its
- * default spot (top-right) is taken by the backpack and the drawer tabs.
+ * default spot (top-right) is taken by the clipboard and the drawer tabs.
  */
 class CornerMinimap extends PositionedMinimap {
     setPosition(metrics) {

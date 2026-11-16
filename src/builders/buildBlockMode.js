@@ -11,7 +11,7 @@ import { button, on, tag } from 'ellipsi'
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter'
 import { pythonGenerator } from 'blockly/python'
 
-import { EditorMode } from '../classes/editorMode'
+import { announceHistoryChange, EditorMode } from '../classes/editorMode'
 import { createBlockCapacity } from '../helpers/blockCapacityHelper'
 import {
     addBlocklyChangeListener,
@@ -44,6 +44,8 @@ import { createToolboxDrawer } from '../helpers/toolboxDrawerHelper'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { getRoot } from '../helpers/rootHelper'
 import { devicesButton } from '../mods/devicesDialog'
+import { lintBlocks } from '../mods/blockLinter'
+import { createIssuesDrawer } from '../helpers/issuesDrawerHelper'
 
 /** The workspace events after which the program is regenerated and saved. */
 const programChangeEvents = new Set([
@@ -75,9 +77,12 @@ const programChangeEvents = new Set([
  *     no toolbox, trashcan, zoom controls or selection, and the code
  *     drawer starts open. The host still loads a program with setState.
  * @param {boolean} [options.devices=false] Pin a Devices button to the
- *     bottom right of the workspace; it opens the motors and drivetrains a
+ *     bottom of the toolbox column; it opens the motors and drivetrains a
  *     program sets up in a pop-up (devicesHelper.js, mods/devicesDialog.js).
  *     Devices saved in a program are honoured either way.
+ * @param {boolean} [options.issues=true] An Issues tab on the right, like
+ *     the line editor's, listing what the block linter finds
+ *     (mods/blockLinter.js). The blocks are marked either way.
  * @returns {EditorMode} The block editor mode, with `setMinimap`.
  */
 export default (
@@ -93,6 +98,7 @@ export default (
         view = false,
         sounds = true,
         devices: showDevices = false,
+        issues: showIssues = true,
     } = {},
 ) => {
     const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
@@ -146,17 +152,48 @@ export default (
         ...(showCodePreview ? [CodeDrawer] : []),
     )
     const toolboxDrawer = createToolboxDrawer(blocklyInstance, BlockEditor)
-    // the program's devices, in a pop-up from a button at the bottom right
+    // the program's devices, in a pop-up from a button at the bottom of the toolbox
     const devices =
         showDevices && !view
             ? devicesButton(() => blocklyInstance.workspace ?? null)
             : null
+    // what the linter finds, listed in a drawer like the line editor's
+    const issues = showIssues && !view ? createIssuesDrawer() : null
     CanvasWrap.append(
         blocklyInstance.canvas,
         toolboxDrawer.Tab,
         ...(capacity ? [capacity.element] : []),
         ...(devices ? [devices.element] : []),
+        ...(issues ? [issues.drawer] : []),
     )
+
+    /**
+     * Shows a block that has a problem: scrolls to it and selects it.
+     * @param {object} block
+     */
+    const showBlock = (block) => {
+        const workspace = blocklyInstance.workspace
+        if (!workspace || block.isDisposed() || block.workspace !== workspace) {
+            return
+        }
+        workspace.centerOnBlock(block.id)
+        block.select()
+    }
+
+    /** Checks the program, marks its blocks and lists what is wrong. */
+    const lint = () => {
+        const found = lintBlocks(blocklyInstance.workspace)
+        issues?.show(
+            found.map(({ block, ...issue }) => ({
+                ...issue,
+                onClick: block
+                    ? () => showBlock(block)
+                    : devices
+                      ? () => devices.show()
+                      : undefined,
+            })),
+        )
+    }
 
     const minimap = createMinimapController(blocklyInstance, BlockEditor)
 
@@ -200,6 +237,10 @@ export default (
         const code = getBlocklyCode(blocklyInstance)
         const setup = devicesCode(getDevices(blocklyInstance.workspace))
         setCodeMirrorText(codePreview, PROGRAM_PREAMBLE + setup + code)
+        // the viewer only shows a program, so it marks nothing
+        if (!view) {
+            lint()
+        }
         saveState()
         capacity?.update()
     }
@@ -221,6 +262,10 @@ export default (
             setTimeout(toolboxDrawer.place)
         }
         capacity?.onEvent(event)
+        // any change may add to the undo history, or be an undo itself
+        if (!event.isUiEvent) {
+            announceHistoryChange()
+        }
 
         if (
             blocklyInstance.workspace.isDragging() ||
@@ -380,6 +425,15 @@ export default (
         saveState,
         loadState,
         getProjectFiles,
+        // the workspace's own undo stack, as Ctrl+Z and Ctrl+Y use it
+        history: {
+            undo: () => blocklyInstance.workspace?.undo(false),
+            redo: () => blocklyInstance.workspace?.undo(true),
+            canUndo: () =>
+                (blocklyInstance.workspace?.getUndoStack().length ?? 0) > 0,
+            canRedo: () =>
+                (blocklyInstance.workspace?.getRedoStack().length ?? 0) > 0,
+        },
         setState: (state) => {
             if (state) {
                 // a viewer has no Devices section, so it shows a saved

@@ -58,13 +58,14 @@ export const deviceKinds = {
         fields: ['left', 'right', 'drift'],
         /**
          * @param {object} device As saved or typed.
-         * @returns {object} Its two motors by name, and its drift as a number.
+         * @returns {object} Its two motors by name (blank when none is
+         *     picked), and its drift as a number.
          */
         clean(device) {
             const drift = Number(device.drift)
             return {
-                left: cleanName(device.left) || 'left',
-                right: cleanName(device.right) || 'right',
+                left: cleanName(device.left),
+                right: cleanName(device.right),
                 drift: Number.isFinite(drift) ? String(drift) : '1',
             }
         },
@@ -188,6 +189,29 @@ export const nextPort = (devices, kindName) => {
             .map((device) => device.port),
     )
     return ports.find((port) => !taken.has(port)) ?? ports[0]
+}
+
+/**
+ * The devices without one of them: those made from it (a drivetrain from a
+ * motor) lose it and are left blank there, to be picked again.
+ * @param {object[]} devices
+ * @param {number} index Which device goes.
+ * @returns {object[]} The devices left.
+ */
+export const removeDevice = (devices, index) => {
+    const left = devices.filter((_, i) => i !== index)
+    const name = devices[index]?.name
+    // another device of the same name still stands in for it
+    const gone = left.some((device) => device.name === name) ? '' : name
+    return left.map((device) =>
+        gone && device.kind === 'drivetrain'
+            ? {
+                  ...device,
+                  left: device.left === gone ? '' : device.left,
+                  right: device.right === gone ? '' : device.right,
+              }
+            : device,
+    )
 }
 
 /**

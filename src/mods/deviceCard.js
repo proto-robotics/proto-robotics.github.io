@@ -44,12 +44,27 @@ const select = (choices, value, onPick, label) => {
 const fieldsOf = (device, change, motors) => {
     const kind = deviceKinds[device.kind]
     if (device.kind === 'drivetrain') {
-        // its motors, picked from the program's; one no longer there is kept and shown
-        const motorChoices = (current) =>
-            [...new Set([...motors, current].filter(Boolean))].map((name) => [
-                name,
-                name,
-            ])
+        // its motors, picked from the program's; one no longer there is
+        // kept and shown, and with none picked the choice is blank
+        const motorChoices = (current) => {
+            const names = [...new Set([...motors, current].filter(Boolean))]
+            const choices = names.map((name) => [name, name])
+            return current ? choices : [['', ''], ...choices]
+        }
+        // a blank motor, or one that is not a drive motor (any more), is
+        // marked, as the Issues list has it (blockLinter.js)
+        const motorSelect = (side, label) => {
+            const element = select(
+                motorChoices(device[side]),
+                device[side],
+                (name) => change({ [side]: name }),
+                label,
+            )
+            if (!motors.includes(device[side])) {
+                element.setAttribute('aria-invalid', 'true')
+            }
+            return element
+        }
         const Drift = tag('input', {
             type: 'number',
             step: '0.01',
@@ -60,19 +75,9 @@ const fieldsOf = (device, change, motors) => {
         Drift.addEventListener('change', () => change({ drift: Drift.value }))
         return [
             tag('span', 'is a drivetrain from motors'),
-            select(
-                motorChoices(device.left),
-                device.left,
-                (left) => change({ left }),
-                'Left motor',
-            ),
+            motorSelect('left', 'Left motor'),
             tag('span', 'and'),
-            select(
-                motorChoices(device.right),
-                device.right,
-                (right) => change({ right }),
-                'Right motor',
-            ),
+            motorSelect('right', 'Right motor'),
             tag('span', 'with drift'),
             Drift,
         ]
@@ -127,6 +132,10 @@ export const deviceCard = (
         spellcheck: 'false',
     })
     NameInput.readOnly = !onChange
+    // a device with no name is an error (blockLinter.js)
+    if (!device.name) {
+        NameInput.setAttribute('aria-invalid', 'true')
+    }
     // the name is taken when typing stops, not on every keystroke
     NameInput.addEventListener('change', () => {
         const name = cleanName(NameInput.value)

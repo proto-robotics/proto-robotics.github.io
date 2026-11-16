@@ -180,7 +180,8 @@ export const library = [
             {
                 entryType: 'block',
                 name: 'spinForTime',
-                description: 'Spins a motor forward or backward for a number of seconds.',
+                description:
+                    'Spins a motor forward or backward for a number of seconds.',
                 blocklyTemplate: [
                     {
                         text: 'Spin',
@@ -360,7 +361,7 @@ export const library = [
                         text: 'Drive',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                     {
@@ -392,7 +393,7 @@ export const library = [
                         text: 'Drive',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                     {
@@ -432,7 +433,7 @@ export const library = [
                         text: 'Turn',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                     {
@@ -464,7 +465,7 @@ export const library = [
                         text: 'Turn',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                     {
@@ -505,7 +506,7 @@ export const library = [
                         text: 'Curve',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                     {
@@ -545,7 +546,7 @@ export const library = [
                         text: 'Curve',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                     {
@@ -593,7 +594,7 @@ export const library = [
                         text: 'Stop',
                     },
                     {
-                        field: deviceField('drivetrain', { placeholder: 'drivetrain' }),
+                        field: deviceField('drivetrain'),
                         name: 'name',
                     },
                 ],

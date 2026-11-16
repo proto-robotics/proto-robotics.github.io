@@ -1,5 +1,8 @@
 import { tag, button, on } from 'ellipsi'
-import { EditorMode } from '../classes/editorMode'
+import { announceHistoryChange, EditorMode } from '../classes/editorMode'
+import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
+import { StateEffect } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import {
@@ -8,7 +11,7 @@ import {
     PROGRAM_PREAMBLE,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
-import { createDrawer } from '../helpers/drawerHelper'
+import { createIssuesDrawer } from '../helpers/issuesDrawerHelper'
 import { checkWithPyrefly } from '../helpers/pyreflyHelper'
 import { getRoot } from '../helpers/rootHelper'
 
@@ -23,6 +26,16 @@ import { getRoot } from '../helpers/rootHelper'
 export default ({ persist = true, onChange = null } = {}) => {
     const view = createCodeMirrorView()
     view.dom.id = 'line-editor-canvas'
+    // every change may add to the undo history, or be an undo itself
+    view.dispatch({
+        effects: StateEffect.appendConfig.of(
+            EditorView.updateListener.of((update) => {
+                if (update.docChanged) {
+                    announceHistoryChange()
+                }
+            }),
+        ),
+    })
 
     /** Restores line-editor source from local storage. */
     const loadState = () => {
@@ -116,133 +129,20 @@ export default ({ persist = true, onChange = null } = {}) => {
         getRoot().appendChild(LoadPopUp)
     }
 
-    const VerifyStatus = tag(
-        'span',
-        {
-            id: 'verify-status',
-            role: 'status',
-            'aria-live': 'polite',
-        },
-        'Not checked',
-    )
-    const VerifyIssues = tag('div', { id: 'verify-issues' })
-    const {
-        drawer: IssuesDrawer,
-        tab: IssuesDrawerTab,
-    } = createDrawer({
-        elementName: 'issues-drawer',
-        tabId: 'issues-drawer-tab',
-        panelId: 'issues-drawer-panel',
-        tabLabel: 'Issues',
-        panelContent: [
-            tag('h2', 'Issues'),
-            VerifyStatus,
-            VerifyIssues,
-        ],
-    })
-
-    IssuesDrawer.addEventListener('click', (event) => {
-        event.stopPropagation()
-    })
+    // the Issues drawer (issuesDrawerHelper.js), filled from Pyrefly
+    const issues = createIssuesDrawer()
+    const IssuesDrawer = issues.drawer
 
     /**
-     * Updates visible and machine-readable verifier status.
-     * @param {string} status Status identifier used by CSS.
-     * @param {string} message Human-readable status text.
+     * @param {object[]} diagnostics Pyrefly's diagnostics.
+     * @returns {object[]} The drawer's issues, each at its line.
      */
-    const setVerifyStatus = (status, message) => {
-        VerifyStatus.textContent = message
-        VerifyStatus.dataset.status = status
-        IssuesDrawer.dataset.status = status
-    }
-
-    /**
-     * @param {object[]} diagnostics Verifier diagnostics.
-     * @returns {{error: number, warning: number, info: number}} Diagnostic totals.
-     */
-    const countBySeverity = (diagnostics = []) => {
-        const counts = { error: 0, warning: 0, info: 0 }
-
-        for (const diagnostic of diagnostics) {
-            if (diagnostic.severity === 'warning') {
-                counts.warning += 1
-            } else if (diagnostic.severity === 'info') {
-                counts.info += 1
-            } else {
-                counts.error += 1
-            }
-        }
-
-        return counts
-    }
-
-    /**
-     * @param {object[]} diagnostics Verifier diagnostics.
-     * @returns {string} Human-readable diagnostic summary.
-     */
-    const issueStatusText = (diagnostics = []) => {
-        const { error, warning, info } = countBySeverity(diagnostics)
-        const parts = []
-
-        if (error) {
-            parts.push(`${error} error${error === 1 ? '' : 's'}`)
-        }
-
-        if (warning) {
-            parts.push(`${warning} warning${warning === 1 ? '' : 's'}`)
-        }
-
-        if (info) {
-            parts.push(`${info} info${info === 1 ? '' : 's'}`)
-        }
-
-        return parts.length ? `${parts.join(', ')} found` : 'No issues'
-    }
-
-    /**
-     * Maps an arbitrary diagnostic severity to a supported CSS class.
-     * @param {string} severity Verifier severity.
-     * @returns {string} Supported issue class.
-     */
-    const issueSeverityClass = (severity) => {
-        if (severity === 'warning') return 'warning'
-        if (severity === 'info') return 'info'
-        return 'error'
-    }
-
-    /**
-     * Renders up to five diagnostics in the issues drawer.
-     * @param {object[]} diagnostics Verifier diagnostics.
-     */
-    const setVerifyIssues = (diagnostics) => {
-        VerifyIssues.replaceChildren()
-
-        if (!diagnostics?.length) {
-            return
-        }
-
-        VerifyIssues.append(
-            ...diagnostics.slice(0, 5).map((diagnostic) =>
-                tag(
-                    'div',
-                    {
-                        class: `verify-issue verify-issue-${issueSeverityClass(diagnostic.severity)}`,
-                    },
-                    `Line ${diagnostic.line ?? 1}: ${diagnostic.message}`,
-                ),
-            ),
-        )
-
-        if (diagnostics.length > 5) {
-            VerifyIssues.append(
-                tag(
-                    'div',
-                    { class: 'verify-issue verify-issue-more' },
-                    `${diagnostics.length - 5} more issue${diagnostics.length - 5 === 1 ? '' : 's'}`,
-                ),
-            )
-        }
-    }
+    const issuesOf = (diagnostics = []) =>
+        diagnostics.map((diagnostic) => ({
+            severity: diagnostic.severity,
+            message: diagnostic.message,
+            where: `Line ${diagnostic.line ?? 1}`,
+        }))
 
     let verifyTimeout = null
     let verifyRunId = 0
@@ -265,9 +165,7 @@ export default ({ persist = true, onChange = null } = {}) => {
         const runId = ++verifyRunId
 
         try {
-            setVerifyStatus('checking', 'Checking...')
-            IssuesDrawerTab.textContent = 'Checking'
-            setVerifyIssues([])
+            issues.checking()
 
             const result = await checkWithPyrefly(code)
 
@@ -276,31 +174,14 @@ export default ({ persist = true, onChange = null } = {}) => {
             }
 
             lastVerifiedCode = code
-            const issueCount =
-                result?.diagnostics?.length || (result?.error ? 1 : 0)
-            IssuesDrawerTab.textContent = issueCount
-                ? `Issues (${issueCount})`
-                : 'Issues'
-
-            const lintingEvent = new CustomEvent('perform-linting', {
-                detail: result,
-            })
-            view.dom.dispatchEvent(lintingEvent)
-            setVerifyIssues(result?.diagnostics)
-
-            const { error: errorCount, warning: warningCount } = countBySeverity(
-                result?.diagnostics ?? [],
+            view.dom.dispatchEvent(
+                new CustomEvent('perform-linting', { detail: result }),
             )
-            setVerifyStatus(
-                issueCount
-                    ? errorCount
-                        ? 'error'
-                        : warningCount
-                          ? 'warning'
-                          : 'info'
-                    : 'success',
-                issueStatusText(result?.diagnostics ?? []),
-            )
+            const found = issuesOf(result?.diagnostics)
+            if (!found.length && result?.error) {
+                found.push({ severity: 'error', message: result.error })
+            }
+            issues.show(found)
         } catch (error) {
             if (runId !== verifyRunId) {
                 return
@@ -321,9 +202,7 @@ export default ({ persist = true, onChange = null } = {}) => {
             view.dom.dispatchEvent(
                 new CustomEvent('perform-linting', { detail: result }),
             )
-            setVerifyIssues(result.diagnostics)
-            setVerifyStatus('error', '1 issue found')
-            IssuesDrawerTab.textContent = 'Issues (1)'
+            issues.show(issuesOf(result.diagnostics))
         }
     }
 
@@ -357,6 +236,13 @@ export default ({ persist = true, onChange = null } = {}) => {
         saveState,
         loadState,
         getProjectFiles,
+        // CodeMirror's history, as Ctrl+Z and Ctrl+Y use it
+        history: {
+            undo: () => undo(view),
+            redo: () => redo(view),
+            canUndo: () => undoDepth(view.state) > 0,
+            canRedo: () => redoDepth(view.state) > 0,
+        },
         setState: (state) => {
             setCodeMirrorText(
                 view,

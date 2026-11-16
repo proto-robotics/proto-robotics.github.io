@@ -1,7 +1,7 @@
 /*
  * Devices: the motors and drivetrains a program sets up at its top
- * (helpers/devicesHelper.js). A "Devices" button pinned to the bottom right
- * of the workspace opens them in a pop-up: a card per device
+ * (helpers/devicesHelper.js). A "Devices" button pinned to the bottom of
+ * the toolbox column, drawn like a category tab, opens them in a pop-up: a card per device
  * (deviceCard.js) and buttons to add a drive motor or a drivetrain. The
  * devices live with the workspace; the pop-up is a view of them, drawn
  * again whenever they change.
@@ -16,6 +16,7 @@ import {
     getDevices,
     nextName,
     nextPort,
+    removeDevice,
     setDevices,
     watchDevices,
 } from '../helpers/devicesHelper'
@@ -97,7 +98,19 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
                         renameDeviceInBlocks(workspace, renamedFrom, patch.name)
                     }
                 },
-                onRemove: () => update(devices().filter((_, i) => i !== index)),
+                onRemove: () => {
+                    const list = devices()
+                    const gone = list[index]?.name
+                    // what used it is left blank, to be picked again
+                    // (unless another device has its name)
+                    const blank = !list.some(
+                        (other, i) => i !== index && other.name === gone,
+                    )
+                    update(removeDevice(list, index))
+                    if (blank) {
+                        renameDeviceInBlocks(workspace, gone, '')
+                    }
+                },
                 onHelp: () => onHelp?.(kind.help),
             },
             { motors: motorNames(devices()) },
@@ -117,8 +130,8 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
             return {
                 kind: 'drivetrain',
                 name: nextName(list, 'drivetrain'),
-                left: motors[0] ?? 'left',
-                right: motors[1] ?? motors[0] ?? 'right',
+                left: motors[0] ?? '',
+                right: motors[1] ?? '',
                 drift: '1',
             }
         },
@@ -194,22 +207,29 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
 }
 
 /**
- * The Devices button, for the bottom right of the workspace. It shows how
- * many devices there are and opens them in a pop-up.
+ * The Devices button, for the bottom of the toolbox column, as wide as the
+ * column. It shows how many devices there are and opens them in a pop-up.
  * @param {() => object|null} getWorkspace The program's workspace now (the
  *     workspace is rebuilt when the layout changes).
- * @returns {{element: HTMLElement, destroy: () => void}}
+ * @returns {{element: HTMLElement, show: () => void, destroy: () => void}}
  */
 export const devicesButton = (getWorkspace) => {
     const Count = tag('span', { class: 'devices-button-count' })
     const icon = categoryIcon('devices')
 
+    // the open pop-up, if any: the button closes it again
+    let Dialog = null
+    const close = () => Dialog?.dispatchEvent(new Event(closePopUpEvent))
+
     const open = () => {
+        if (Dialog) {
+            close()
+            return
+        }
         const workspace = getWorkspace()
         if (!workspace) {
             return
         }
-        let Dialog = null
         const editor = devicesEditor(workspace, {
             // the cheatsheet opens beside the editor, so the pop-up closes first
             onHelp: (blockName) => {
@@ -226,7 +246,27 @@ export const devicesButton = (getWorkspace) => {
             editor.element,
         )
         Dialog.classList.add('devices-dialog')
-        Dialog.addEventListener('close', editor.destroy)
+        Dialog.addEventListener('close', () => {
+            editor.destroy()
+            Dialog = null
+        })
+        // a click outside the pop-up closes it. It is modal, so its
+        // backdrop takes every click outside it (the button's too), and
+        // they reach the dialog itself, outside its box.
+        Dialog.addEventListener('click', (event) => {
+            if (event.target !== Dialog) {
+                return
+            }
+            const box = Dialog.getBoundingClientRect()
+            const inside =
+                event.clientX >= box.left &&
+                event.clientX <= box.right &&
+                event.clientY >= box.top &&
+                event.clientY <= box.bottom
+            if (!inside) {
+                close()
+            }
+        })
         getRoot().appendChild(Dialog)
     }
 
@@ -243,6 +283,28 @@ export const devicesButton = (getWorkspace) => {
         on('click', open),
     )
 
+    // as wide as the toolbox column, which is as wide as its widest tab;
+    // the workspace (and its toolbox) is rebuilt when the layout changes
+    let watched = null
+    const sizer = new ResizeObserver(() => fit())
+    const fit = () => {
+        const toolbox = getWorkspace()?.getToolbox?.()
+        const column = toolbox?.HtmlDiv ?? null
+        if (column !== watched) {
+            sizer.disconnect()
+            if (column) {
+                sizer.observe(column)
+            }
+            watched = column
+        }
+        const width = column?.offsetWidth
+        if (width) {
+            Button.style.setProperty('--toolbox-width', `${width}px`)
+        }
+    }
+    const frame = requestAnimationFrame(fit)
+    window.addEventListener('resize', fit)
+
     const count = () => {
         const workspace = getWorkspace()
         const n = workspace ? getDevices(workspace).length : 0
@@ -257,5 +319,19 @@ export const devicesButton = (getWorkspace) => {
     }
     count()
     const stop = watchDevices(count)
-    return { element: Button, destroy: stop }
+    return {
+        element: Button,
+        /** Opens the pop-up, if it is not open. */
+        show: () => {
+            if (!Dialog) {
+                open()
+            }
+        },
+        destroy: () => {
+            stop()
+            cancelAnimationFrame(frame)
+            window.removeEventListener('resize', fit)
+            sizer.disconnect()
+        },
+    }
 }

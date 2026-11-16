@@ -14,7 +14,7 @@ import {
 } from './buildCheatSheetContent'
 import buildLineMode from './buildLineMode'
 import { buildSiteNav, watchHeaderHeight } from './buildSiteChrome'
-import { EditorMode } from '../classes/editorMode'
+import { EditorMode, historyChangeEvent } from '../classes/editorMode'
 import createCheatSheetDrawer from '../helpers/cheatSheetDrawerHelper'
 import { watchPhoneLayout } from '../helpers/phoneLayoutHelper'
 import { ensureProjectName } from '../helpers/popUpHelper'
@@ -64,6 +64,7 @@ export default (
         EditorContainer.replaceChildren(currentMode.EditorElement)
         localStorage.setItem('editorMode', currentMode.name)
         currentMode.loadState()
+        document.dispatchEvent(new Event(historyChangeEvent))
     }
 
     document.addEventListener('switch-editor', () => {
@@ -111,9 +112,39 @@ export default (
     )
     setMinimap(localStorage.getItem('minimap') === 'on')
 
+    // Undo and redo, for the editor on screen: what Ctrl+Z and Ctrl+Y do,
+    // within reach on a touch screen. Each is off while there is nothing
+    // to take back or bring back.
+    const historyButton = (label, symbol, act) =>
+        button(
+            {
+                type: 'button',
+                class: 'history-button',
+                'aria-label': label,
+                title: label,
+                disabled: true,
+            },
+            tag('span', { 'aria-hidden': 'true' }, symbol),
+            // the word shows where there is room: in the phone's menu
+            tag('span', { class: 'history-label', 'aria-hidden': 'true' }, label),
+            on('click', () => {
+                act(currentMode.history)
+                updateHistoryButtons()
+            }),
+        )
+    const UndoButton = historyButton('Undo', '↶', (history) => history.undo())
+    const RedoButton = historyButton('Redo', '↷', (history) => history.redo())
+    const updateHistoryButtons = () => {
+        UndoButton.disabled = !currentMode?.history.canUndo()
+        RedoButton.disabled = !currentMode?.history.canRedo()
+    }
+    document.addEventListener(historyChangeEvent, updateHistoryButtons)
+
     const Toolbar = tag(
         'tool-bar',
         ProjectNameInput,
+        UndoButton,
+        RedoButton,
         button(
             'Save',
             on('click', async () => {

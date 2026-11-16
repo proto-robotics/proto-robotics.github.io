@@ -43,6 +43,34 @@
  */
 
 /**
+ * Undo and redo for the toolbar's buttons: what each editor's own Ctrl+Z
+ * and Ctrl+Y do.
+ * @typedef {object} EditorHistory
+ * @property {() => void} undo
+ * @property {() => void} redo
+ * @property {() => boolean} canUndo
+ * @property {() => boolean} canRedo
+ */
+
+/**
+ * Fired on the document when an editor's undo history may have changed,
+ * so the toolbar can enable or disable its buttons.
+ */
+export const historyChangeEvent = 'editor-history-change'
+
+/** Tells the toolbar the undo history may have changed. */
+export const announceHistoryChange = () =>
+    document.dispatchEvent(new Event(historyChangeEvent))
+
+/** An editor with no history: nothing to undo or redo. */
+const noHistory = {
+    undo: () => {},
+    redo: () => {},
+    canUndo: () => false,
+    canRedo: () => false,
+}
+
+/**
  * One of the two editors, the block editor or the line editor, as the page
  * sees it: its element and the operations the toolbar needs.
  */
@@ -57,6 +85,7 @@ export class EditorMode {
      * @param {LoadStateProcedure} options.loadState
      * @param {GetProjectFilesProcedure} options.getProjectFiles
      * @param {SetStateProcedure} options.setState
+     * @param {EditorHistory} [options.history] Undo and redo.
      */
     constructor({
         name,
@@ -67,6 +96,7 @@ export class EditorMode {
         loadState,
         getProjectFiles,
         setState,
+        history = noHistory,
     }) {
         this.name = name
         this.EditorElement = EditorElement
@@ -76,5 +106,6 @@ export class EditorMode {
         this.loadState = loadState
         this.getProjectFiles = getProjectFiles
         this.setState = setState
+        this.history = history
     }
 }

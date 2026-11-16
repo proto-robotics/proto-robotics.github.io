@@ -11,7 +11,8 @@
         "app:sync": "npm run build && cap sync android",
         "app:apk": "npm run app:sync && cd android && gradlew assembleDebug",
         "app:java": "python scripts/vscode-java.py",
-        "app:ios": "npm run build && cap sync ios && cap open ios"
+        "app:ios": "npm run build && cap sync ios && cap open ios",
+        "test": "vitest run"
     },
     "dependencies": {
         "@blockly/continuous-toolbox": "^7.0.9",
@@ -59,6 +60,7 @@
         "postcss-prefix-selector": "^2.2.1",
         "prettier": "^3.6.2",
         "vite": "^7.3.1",
+        "vitest": "^5.1.0",
         "webpack": "^5.102.1",
         "webpack-cli": "^6.0.1",
         "webpack-dev-server": "^5.2.6"

@@ -20,7 +20,7 @@ import { div } from 'ellipsi'
 import { multiselectOffIcon, multiselectOnIcon } from '../assets'
 import { injectMods, SEARCH_CATEGORY_KIND } from '../mods/mods.js'
 import { bundleUrl } from '../assets'
-import { addSharedBackpack, takeSavedBackpack } from './backpackHelper'
+import { addSharedClipboard, takeSavedBackpack } from './clipboardHelper'
 import { liftDeviceBlocks } from './devicesHelper'
 import { isPhoneLayout } from './phoneLayoutHelper'
 
@@ -47,7 +47,7 @@ class TouchSafeZoomToFitControl extends ZoomToFitControl {
  * the continuous toolbox, whose flyout stays open and scrolls through every
  * category, and scroll options, which make the wheel scroll the canvas
  * (also mid-drag) and scroll it along when a block is dragged to an edge,
- * except over the trash and backpack (ProtoBlockDragger in mods.js).
+ * except over the trash and clipboard (ProtoBlockDragger in mods.js).
  * The cheatsheet previews have no toolbox and get none of this.
  */
 const editorPlugins = {
@@ -255,11 +255,11 @@ export const mountBlocklyWorkspace = (
             new ScrollOptions(blocklyInstance.workspace).init()
             // a button above the zoom controls that fits every block on screen
             new TouchSafeZoomToFitControl(blocklyInstance.workspace).init()
-            // The backpack, shared by every editor (see backpackHelper.js).
+            // The clipboard, shared by every editor (see clipboardHelper.js).
             // Started before the multiselect plugin so that one can extend
             // its menu entry to a whole selection.
             blocklyInstance.cleanupCallbacks.push(
-                addSharedBackpack(blocklyInstance.workspace),
+                addSharedClipboard(blocklyInstance.workspace),
             )
         }
     }

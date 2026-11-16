@@ -63,7 +63,7 @@ class ProtoMetrics extends ContinuousMetrics {
  * The scroll-options dragger (wheel scrolling mid-drag, and the canvas
  * scrolling along when a block is dragged to an edge), except that edge
  * scrolling pauses while the pointer is near a drop target: the trash, the
- * backpack, and the flyout all sit on the edges, and the canvas would
+ * clipboard, and the flyout all sit on the edges, and the canvas would
  * scroll away from under them.
  */
 class ProtoBlockDragger extends ScrollBlockDragger {

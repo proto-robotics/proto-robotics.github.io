@@ -68,7 +68,7 @@ export const fields = {
     /**
      * A choice of the program's devices of a kind, by name.
      * @param {string} kind 'drive_motor' or 'drivetrain'.
-     * @param {{placeholder?: string, nth?: number}} [options]
+     * @param {{nth?: number}} [options] Blank while there are none.
      */
     device: deviceField,
 }
@@ -119,9 +119,12 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {Record<string, number>} [options.maxInstances] Per-type caps.
  * @param {boolean} [options.view=false] Read-only viewer.
  * @param {boolean} [options.devices=false] Pin a Devices button to the
- *     bottom right of the workspace: it opens the program's motors and
+ *     bottom of the toolbox column: it opens the program's motors and
  *     drivetrains in a pop-up, where they are set up. A device counts in
  *     `blockTypes` under its kind (`drive_motor` or `drivetrain`).
+ * @param {boolean} [options.issues=false] An Issues tab on the right that
+ *     lists the program's problems (blank devices and the like). The
+ *     blocks with one are marked either way.
  * @param {boolean} [options.codePreview=false] Show the Python pane.
  * @param {boolean} [options.codeOpen=false] Start with the pane open.
  * @param {(detail: {code: string, blockTypes: string[], state: object}) => void} [options.onChange]
@@ -151,6 +154,7 @@ export const mountEditor = async (
         maxInstances,
         view = false,
         devices = false,
+        issues = false,
         codePreview = false,
         codeOpen = false,
         onChange,
@@ -183,6 +187,7 @@ export const mountEditor = async (
             codeOpen,
             view,
             devices,
+            issues,
         },
         { root, onChange, onEscape },
     )
