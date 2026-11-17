@@ -15,8 +15,13 @@ import {
     sendToBrain,
     watchBrain,
 } from '../helpers/brainHelper'
-import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
+import {
+    closeOnClickOutside,
+    closePopUpEvent,
+    PopUp,
+} from '../helpers/popUpHelper'
 import { getRoot } from '../helpers/rootHelper'
+import { showToast } from '../helpers/toastHelper'
 
 /**
  * Walks the learner through connecting the brain, then opens the folder
@@ -32,7 +37,7 @@ const connectBrainWithHelp = () =>
         Trouble.hidden = true
         const ChooseButton = button(
             'Choose the Brain',
-            { type: 'button' },
+            { type: 'button', class: 'brain-missing-choose' },
             on('click', async () => {
                 ChooseButton.disabled = true
                 Trouble.hidden = true
@@ -125,12 +130,13 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
         )
     }
 
+    /** @returns {Promise<boolean>} Whether the program was sent. */
     const send = async () => {
         if (!brainHandle) {
             brainHandle = await connectBrainWithHelp()
             watch.refresh()
             if (!brainHandle) {
-                return // the popup was closed
+                return false // the popup was closed
             }
         }
         const projectName = getProjectName() || 'proto'
@@ -139,14 +145,26 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
         setTimeout(() => {
             BrainButton.textContent = 'Send to Brain'
         }, 1500)
+        return true
     }
 
     /**
-     * The drive is not there: say so, and offer another pick (the way out
-     * of a wrong pick, too). The pick must start from the popup's own
-     * button, a click.
+     * The drive is not there: say what to check, and offer to try again
+     * or to pick the drive again (the way out of a wrong pick, too). The
+     * pick must start from the popup's own button, a click. A click
+     * outside the pop-up closes it.
      */
     const explainMissing = () => {
+        const close = () => Dialog.dispatchEvent(new Event(closePopUpEvent))
+        // the same as pressing Send to Brain again, once the pop-up is gone
+        const TryButton = button(
+            'Try Sending Again',
+            { type: 'button' },
+            on('click', () => {
+                close()
+                BrainButton.click()
+            }),
+        )
         const ChooseButton = button(
             'Choose a Different Drive',
             { type: 'button' },
@@ -155,7 +173,7 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
                 try {
                     brainHandle = await connectBrain()
                     watch.refresh()
-                    Dialog.dispatchEvent(new Event(closePopUpEvent))
+                    close()
                 } catch (error) {
                     if (error.name !== 'AbortError') {
                         throw error
@@ -165,11 +183,30 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
                 }
             }),
         )
+        // what to check, in the order a kid would check it
         const Dialog = PopUp(
-            'The brain is not plugged in. Plug it in and press Send to ',
-            'Brain again, or pick its drive afresh.',
-            ChooseButton,
+            tag('h2', { class: 'brain-missing-title' }, "Can't Find the Brain"),
+            tag('p', 'Check that the brain is:'),
+            tag(
+                'ol',
+                { class: 'brain-missing-checks' },
+                tag('li', 'Plugged in to this computer'),
+                tag('li', 'Switched on'),
+            ),
+            tag(
+                'p',
+                'If both are true, restart the brain: switch it off and on ',
+                'again, then press Send to Brain. If it still is not found, ',
+                'choose its drive again.',
+            ),
+            tag(
+                'div',
+                { class: 'brain-missing-buttons' },
+                TryButton,
+                ChooseButton,
+            ),
         )
+        closeOnClickOutside(Dialog)
         getRoot().appendChild(Dialog)
     }
 
@@ -183,8 +220,20 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
             }
             BrainButton.disabled = true
             try {
-                await send()
+                if (await send()) {
+                    showToast('success', 'Sent to the brain')
+                }
             } catch (error) {
+                // a toast says it failed; a pop-up says what to do
+                if (error.name !== 'AbortError') {
+                    showToast(
+                        'error',
+                        'Sending failed',
+                        error.name === 'NotFoundError'
+                            ? "Can't find the brain"
+                            : describeSendError(error),
+                    )
+                }
                 if (error.name === 'NotFoundError') {
                     explainMissing()
                 } else if (error.name !== 'AbortError') {

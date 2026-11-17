@@ -5,7 +5,11 @@
  * undo what only makes sense for a whole page.
  */
 
-body {
+/* (the second selector matches styles.css's page rule, which sets 100vw by
+   100vh and is more specific than a plain body; it made the editor as tall
+   as the window in any shorter container, cutting off its bottom edge) */
+body,
+body:not(.blocklyMinimalBody) {
     /* the host's container decides the size */
     width: 100%;
     height: 100%;

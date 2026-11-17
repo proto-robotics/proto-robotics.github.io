@@ -1,90 +1,133 @@
 /*
- * The devices a program sets up before its blocks run: for now drive
- * motors, each with a name, a port and a direction. They are part of the
- * workspace's state (a Blockly serializer under the key `devices`), so
- * they save and load with the blocks, in local storage and in a project
- * file, and the generated Python starts with one line per device.
+ * The devices a program sets up before its blocks run: drive motors, each
+ * with a name, a port and a direction, and motor groups: drive motors that
+ * turn together, each at its own ratio (make's motor_group(motors, ratios)). Its variables live here too, each a name and
+ * the number it starts at (the Variables pop-up shows them). They are part of the workspace's state (a
+ * Blockly serializer under the key `devices`), so they save and load with
+ * the blocks, in local storage and in a project file, and the generated
+ * Python starts with one line per device, in make's own words
+ * (`arm = drive_motor(port=0)`, from make import *).
  */
 
-import { Events, Workspace, serialization } from 'blockly'
+import { serialization } from 'blockly'
 
-/** The kinds of device there are, with how each one is written in Python. */
+/** The drive ports, for DC motors with encoders. */
+const DRIVE_PORTS = ['0', '1', '2', '3']
+
+const DIRECTIONS = [
+    ['clockwise ↻', '1'],
+    ['counter-clockwise ↺', '-1'],
+]
+
+/**
+ * A device's port and direction, each one its kind allows.
+ * @param {object} kind
+ * @param {object} device As saved or typed.
+ * @returns {{port: string, direction?: string}}
+ */
+const cleanPortAndDirection = (kind, device) => {
+    const port = kind.ports.includes(String(device.port))
+        ? String(device.port)
+        : kind.ports[0]
+    if (!kind.directions) {
+        return { port }
+    }
+    const directions = kind.directions.map(([, value]) => value)
+    return {
+        port,
+        direction: directions.includes(String(device.direction))
+            ? String(device.direction)
+            : directions[0],
+    }
+}
+
+/** `, direction=-1` for a reversed motor, nothing otherwise. */
+const directionArgument = (direction) =>
+    direction === '-1' ? ', direction=-1' : ''
+
+/**
+ * The kinds of device there are. Each has a label, the cheatsheet entry its
+ * help button opens, its ports, the fields it has besides its name, the
+ * name a new one starts with, how it is written in Python, and how a saved
+ * one is cleaned.
+ */
 export const deviceKinds = {
     drive_motor: {
         label: 'drive motor',
-        /** The cheatsheet entry that explains it. */
-        help: 'drive_motor',
-        ports: ['0', '1', '2', '3'],
-        directions: [
-            ['clockwise ↻', '1'],
-            ['counter-clockwise ↺', '-1'],
-        ],
-        /**
-         * @param {{name: string, port: string, direction: string}} device
-         * @returns {string} The line that creates it, as the motor block writes it.
-         */
-        code: ({ name, port, direction }) =>
-            `${name} = make.drive_motor(port=${port}${direction === '-1' ? ', direction=-1' : ''})`,
-        /** The fields besides the name, as on the old motor block. */
+        help: 'motorSpin',
+        base: 'motor',
+        ports: DRIVE_PORTS,
+        directions: DIRECTIONS,
         fields: ['port', 'direction'],
+        code: ({ name, port, direction }) =>
+            `${name} = drive_motor(port=${port}${directionArgument(direction)})`,
+        clean(device) {
+            return cleanPortAndDirection(this, device)
+        },
+    },
+    motor_group: {
+        label: 'motor group',
+        help: 'groupSpin',
+        base: 'robot',
+        /** Made from drive motors, so it is set up after them. */
+        order: 1,
+        fields: ['motors'],
         /**
-         * @param {object} device As saved or typed.
-         * @returns {object} Its port and direction, each one of the kind's.
+         * `robot = motor_group([left, right])`, with the ratios after the
+         * motors when they are not all 1: `motor_group([left, right], [1, -1])`.
+         */
+        code: ({ name, motors }) => {
+            // a motor not picked yet is left out (the Issues list has it)
+            const picked = motors.filter((motor) => motor.name)
+            const names = picked.map((motor) => motor.name).join(', ')
+            const ratios = picked.map((motor) => motor.ratio)
+            const same = ratios.every((ratio) => Number(ratio) === 1)
+            return `${name} = motor_group([${names}]${same ? '' : `, [${ratios.join(', ')}]`})`
+        },
+        /**
+         * @param {object} device As saved or typed. A drivetrain (a motor
+         *     group's old name) saved before make's drivetrains took a list (`left`, `right`,
+         *     `drift`) loads as those two motors, the right one at the
+         *     drift as its ratio.
+         * @returns {{motors: Array<{name: string, ratio: string}>}} Its
+         *     motors by name (blank when none is picked), each with its
+         *     ratio as a number.
          */
         clean(device) {
-            const directions = this.directions.map(([, value]) => value)
+            const motors = Array.isArray(device.motors)
+                ? device.motors
+                : [
+                      { name: device.left, ratio: '1' },
+                      { name: device.right, ratio: device.drift ?? '1' },
+                  ]
             return {
-                port: this.ports.includes(String(device.port))
-                    ? String(device.port)
-                    : this.ports[0],
-                direction: directions.includes(String(device.direction))
-                    ? String(device.direction)
-                    : directions[0],
+                motors: motors.map((motor) => {
+                    const ratio = Number(motor?.ratio)
+                    return {
+                        name: cleanName(motor?.name),
+                        ratio: Number.isFinite(ratio) ? String(ratio) : '1',
+                    }
+                }),
             }
         },
     },
-    drivetrain: {
-        label: 'drivetrain',
-        help: 'drivetrain',
-        /** Made from two drive motors, so it is set up after them. */
-        after: true,
-        /**
-         * @param {{name: string, left: string, right: string, drift: string}} device
-         * @returns {string} The line that creates it, as the drivetrain block writes it.
-         */
-        code: ({ name, left, right, drift }) =>
-            `${name} = make.drivetrain(${left}, ${right}${drift === '1' ? '' : `, drift=${drift}`})`,
-        /** The fields besides the name, as on the old drivetrain block. */
-        fields: ['left', 'right', 'drift'],
+    variable: {
+        label: 'variable',
+        help: 'varSet',
+        base: 'count',
+        /** Set after the devices, last at the top of the program. */
+        order: 2,
+        fields: ['value'],
+        code: ({ name, value }) => `${name} = ${value}`,
         /**
          * @param {object} device As saved or typed.
-         * @returns {object} Its two motors by name (blank when none is
-         *     picked), and its drift as a number.
+         * @returns {{value: string}} The number it starts at.
          */
         clean(device) {
-            const drift = Number(device.drift)
-            return {
-                left: cleanName(device.left),
-                right: cleanName(device.right),
-                drift: Number.isFinite(drift) ? String(drift) : '1',
-            }
+            const value = Number(device.value)
+            return { value: Number.isFinite(value) ? String(value) : '0' }
         },
     },
-}
-
-/**
- * The blocks that set a device up before the Devices section did, by type:
- * the kind of device each one is. Programs saved with them, and the
- * cheatsheet's examples, still have them; they are turned into devices when
- * they are loaded (liftDeviceBlocks) or pasted (adoptDeviceBlocks). The
- * fields are the device's: its name and the kind's `fields`. `largemotor` is the
- * motor block's name from before the make library called it drive_motor;
- * programs saved with it load as drive motors.
- */
-const deviceBlocks = {
-    drive_motor: 'drive_motor',
-    largemotor: 'drive_motor',
-    drivetrain: 'drivetrain',
 }
 
 /** The devices of each workspace. */
@@ -144,13 +187,17 @@ export const cleanName = (name) =>
  * @param {object} device
  * @returns {object|null} The device, or null if it is not one we know.
  */
+/** Device kinds by an old name: make called a motor group a drivetrain. */
+const OLD_KINDS = { drivetrain: 'motor_group' }
+
 const cleanDevice = (device) => {
-    const kind = deviceKinds[device?.kind]
+    const kindName = OLD_KINDS[device?.kind] ?? device?.kind
+    const kind = deviceKinds[kindName]
     if (!kind) {
         return null
     }
     return {
-        kind: device.kind,
+        kind: kindName,
         name: cleanName(device.name),
         ...kind.clean(device),
     }
@@ -175,8 +222,8 @@ export const nextName = (devices, base) => {
 }
 
 /**
- * The first port of the kind that no device of the kind is on yet, or the
- * first port when they are all taken.
+ * The first of the kind's ports that no device is on yet, or the first
+ * port when they are all taken.
  * @param {object[]} devices The devices there are.
  * @param {string} kindName The kind of device.
  * @returns {string}
@@ -184,15 +231,13 @@ export const nextName = (devices, base) => {
 export const nextPort = (devices, kindName) => {
     const ports = deviceKinds[kindName].ports
     const taken = new Set(
-        devices
-            .filter((device) => device.kind === kindName)
-            .map((device) => device.port),
+        devices.filter((device) => device.port).map((device) => device.port),
     )
     return ports.find((port) => !taken.has(port)) ?? ports[0]
 }
 
 /**
- * The devices without one of them: those made from it (a drivetrain from a
+ * The devices without one of them: those made from it (a motor group from a
  * motor) lose it and are left blank there, to be picked again.
  * @param {object[]} devices
  * @param {number} index Which device goes.
@@ -203,158 +248,50 @@ export const removeDevice = (devices, index) => {
     const name = devices[index]?.name
     // another device of the same name still stands in for it
     const gone = left.some((device) => device.name === name) ? '' : name
-    return left.map((device) =>
-        gone && device.kind === 'drivetrain'
-            ? {
-                  ...device,
-                  left: device.left === gone ? '' : device.left,
-                  right: device.right === gone ? '' : device.right,
-              }
-            : device,
-    )
+    return gone ? renameMotor(left, gone, '') : left
 }
 
 /**
- * The Python that sets the devices up, to go between the imports and the
+ * The devices with a drive motor's name changed in every motor group made
+ * from it (to blank, when the motor is gone).
+ * @param {object[]} devices
+ * @param {string} from The motor's old name.
+ * @param {string} to Its new name.
+ * @returns {object[]}
+ */
+export const renameMotor = (devices, from, to) =>
+    devices.map((device) =>
+        device.kind === 'motor_group'
+            ? {
+                  ...device,
+                  motors: device.motors.map((motor) =>
+                      motor.name === from ? { ...motor, name: to } : motor,
+                  ),
+              }
+            : device,
+    )
+
+/**
+ * The Python that sets the devices up, to go between the import and the
  * blocks' code.
  * @param {object[]} devices
  * @returns {string} One line per named device and a blank line after, or
  *     nothing when there are no devices.
  */
 export const devicesCode = (devices) => {
-    // a drivetrain is made from motors, so the motors come first
+    // a motor group is made from motors, so the motors come first, and the
+    // variables come last
     const lines = [...devices]
         .sort(
             (a, b) =>
-                Number(!!deviceKinds[a.kind].after) -
-                Number(!!deviceKinds[b.kind].after),
+                (deviceKinds[a.kind].order ?? 0) -
+                (deviceKinds[b.kind].order ?? 0),
         )
         .filter((device) => device.name)
-        .map((device) => deviceKinds[device.kind].code(device))
+        // cleaned first, so a device saved in an older shape still writes
+        // today's line
+        .map((device) => deviceKinds[device.kind].code(cleanDevice(device)))
     return lines.length ? lines.join('\n') + '\n\n' : ''
-}
-
-/**
- * Adds a device to a list unless one of the name is there already.
- * @param {object[]} devices
- * @param {object} device
- */
-const addDevice = (devices, device) => {
-    if (device.name && !devices.some((other) => other.name === device.name)) {
-        devices.push(device)
-    }
-}
-
-/**
- * Takes the device-setting blocks out of a saved program and puts them
- * among its devices. The rest of each stack keeps its place.
- * @param {object} state A serialized workspace.
- * @returns {object} The state with no such blocks, or the same state if it
- *     had none.
- */
-export const liftDeviceBlocks = (state) => {
-    const tops = state?.blocks?.blocks
-    if (!Array.isArray(tops)) {
-        return state
-    }
-    const devices = [...(state.devices ?? [])]
-    let found = false
-
-    const strip = (blockState) => {
-        if (!blockState) {
-            return blockState
-        }
-        if (deviceBlocks[blockState.type]) {
-            found = true
-            const fields = blockState.fields ?? {}
-            addDevice(devices, {
-                ...fields,
-                kind: deviceBlocks[blockState.type],
-                name: cleanName(fields.name),
-            })
-            const rest = strip(blockState.next?.block)
-            if (!rest || blockState.x === undefined) {
-                return rest
-            }
-            // the rest of a top stack takes the block's place
-            return { ...rest, x: blockState.x, y: blockState.y }
-        }
-        const stripped = { ...blockState }
-        if (blockState.inputs) {
-            stripped.inputs = Object.fromEntries(
-                Object.entries(blockState.inputs).map(([name, input]) =>
-                    input.block
-                        ? [name, { ...input, block: strip(input.block) }]
-                        : [name, input],
-                ),
-            )
-        }
-        if (blockState.next?.block) {
-            const rest = strip(blockState.next.block)
-            if (rest) {
-                stripped.next = { block: rest }
-            } else {
-                delete stripped.next
-            }
-        }
-        return stripped
-    }
-
-    const blocks = tops.map(strip).filter(Boolean)
-    if (!found) {
-        return state
-    }
-    return { ...state, devices, blocks: { ...state.blocks, blocks } }
-}
-
-/**
- * A workspace change listener: a device-setting block that turns up on the
- * workspace (pasted, say) becomes a device, and the stack it headed closes
- * up over it.
- * @param {object} event A workspace event.
- */
-export const adoptDeviceBlocks = (event) => {
-    if (event.type !== Events.BLOCK_CREATE) {
-        return
-    }
-    const workspace = Workspace.getById(event.workspaceId)
-    if (!workspace || workspace.isFlyout || workspace.isDragging()) {
-        return
-    }
-    const blocks = (event.ids ?? [])
-        .map((id) => workspace.getBlockById(id))
-        .filter((block) => block && deviceBlocks[block.type])
-    if (!blocks.length) {
-        return
-    }
-    const devices = [...getDevices(workspace)]
-    // one undo takes back the paste and this together
-    Events.setGroup(event.group || true)
-    try {
-        for (const block of blocks) {
-            const kind = deviceBlocks[block.type]
-            addDevice(devices, {
-                ...Object.fromEntries(
-                    deviceKinds[kind].fields.map((field) => [
-                        field,
-                        block.getFieldValue(field),
-                    ]),
-                ),
-                kind,
-                name: cleanName(block.getFieldValue('name')),
-            })
-            const next = block.getNextBlock()
-            const place = block.getRelativeToSurfaceXY()
-            block.dispose(true)
-            if (next && !next.getParent() && !next.isDisposed()) {
-                const was = next.getRelativeToSurfaceXY()
-                next.moveBy(place.x - was.x, place.y - was.y)
-            }
-        }
-    } finally {
-        Events.setGroup(false)
-    }
-    setDevices(workspace, devices)
 }
 
 // Devices are saved and loaded with the rest of the workspace. A higher

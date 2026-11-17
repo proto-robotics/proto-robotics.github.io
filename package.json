@@ -12,7 +12,8 @@
         "app:apk": "npm run app:sync && cd android && gradlew assembleDebug",
         "app:java": "python scripts/vscode-java.py",
         "app:ios": "npm run build && cap sync ios && cap open ios",
-        "test": "vitest run"
+        "test": "vitest run",
+        "vocab": "node scripts/make-vocab.mjs"
     },
     "dependencies": {
         "@blockly/continuous-toolbox": "^7.0.9",

@@ -1,6 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "module": "make",
+  "import": "from make import *",
   "lint": {
     "pythonVersion": "3.12"
   },
@@ -9,7 +10,7 @@
       {
         "name": "wait",
         "kind": "function",
-        "description": "Wait the given number of seconds before moving on. If no time is given,\nwaits for 0.05 seconds.",
+        "description": "Wait the given number of seconds before moving on. If no time is given,\nwaits for 0.05 seconds.  Motor control keeps running while it waits.",
         "parameters": [
           {
             "name": "seconds",
@@ -19,7 +20,7 @@
           }
         ],
         "resultType": "None",
-        "path": "make.wait",
+        "path": "wait",
         "category": "Time"
       },
       {
@@ -35,7 +36,7 @@
           }
         ],
         "resultType": "None",
-        "path": "make.wait_until",
+        "path": "wait_until",
         "category": "Time"
       },
       {
@@ -51,35 +52,29 @@
           }
         ],
         "resultType": "None",
-        "path": "make.wait_while",
+        "path": "wait_while",
         "category": "Time"
       },
       {
-        "name": "simple_motor",
-        "kind": "constructor",
-        "description": "A continuous servo plugged into a general port.",
+        "name": "repeat_for",
+        "kind": "function",
+        "description": "Repeats a loop for the given number of seconds, counting the times\nround from 0:\n\n    for i in repeat_for(2):\n        left.spin(30)\n        right.spin(30)",
         "parameters": [
           {
-            "name": "port",
-            "annotation": "int",
+            "name": "seconds",
+            "annotation": "float",
             "default": null,
             "required": true
-          },
-          {
-            "name": "direction",
-            "annotation": "int",
-            "default": "1",
-            "required": false
           }
         ],
-        "resultType": "simple_motor",
-        "path": "make.simple_motor",
-        "category": "Motor"
+        "resultType": "Any",
+        "path": "repeat_for",
+        "category": "Time"
       },
       {
         "name": "drive_motor",
         "kind": "constructor",
-        "description": "A DC motor plugged in to a drive port.",
+        "description": "A DC motor plugged in to a drive port, with or without an encoder.",
         "parameters": [
           {
             "name": "port",
@@ -95,137 +90,118 @@
           }
         ],
         "resultType": "drive_motor",
-        "path": "make.drive_motor",
+        "path": "drive_motor",
         "category": "Motor"
       },
       {
-        "name": "servo",
+        "name": "motor_group",
         "kind": "constructor",
-        "description": "A servo motor plugged into a small motor port or GROVE port.",
+        "description": "Motors that turn together, each at its own ratio.",
         "parameters": [
           {
-            "name": "port",
-            "annotation": "int",
-            "default": null,
-            "required": true
-          }
-        ],
-        "resultType": "servo",
-        "path": "make.servo",
-        "category": "Motor"
-      },
-      {
-        "name": "drivetrain",
-        "kind": "constructor",
-        "description": "A drivetrain made from 2 DC motors or continous servos.",
-        "parameters": [
-          {
-            "name": "left_motor",
-            "annotation": "simple_motor | drive_motor",
+            "name": "motors",
+            "annotation": "list",
             "default": null,
             "required": true
           },
           {
-            "name": "right_motor",
-            "annotation": "simple_motor | drive_motor",
-            "default": null,
-            "required": true
-          },
-          {
-            "name": "drift",
-            "annotation": "float",
-            "default": "1",
+            "name": "ratios",
+            "annotation": "list",
+            "default": "None",
             "required": false
           }
         ],
-        "resultType": "drivetrain",
-        "path": "make.drivetrain",
+        "resultType": "motor_group",
+        "path": "motor_group",
         "category": "Motor"
       },
       {
         "name": "button",
-        "kind": "constructor",
+        "kind": "type",
         "description": "A button, either built into the board or plugged into a GROVE port.",
-        "parameters": [
-          {
-            "name": "port",
-            "annotation": "int | str",
-            "default": null,
-            "required": true
-          }
-        ],
+        "parameters": [],
         "resultType": "button",
-        "path": "make.button",
-        "category": "Input"
+        "path": "button",
+        "category": "Board"
+      },
+      {
+        "name": "encoder",
+        "kind": "type",
+        "description": "The encoder built into a DC motor, plugged in to the signal pins of a\nport.  A drive motor makes its own; get it with `get_encoder()`.",
+        "parameters": [],
+        "resultType": "encoder",
+        "path": "encoder",
+        "category": "Motor"
       },
       {
         "name": "light",
-        "kind": "constructor",
+        "kind": "type",
         "description": "A single LED.",
-        "parameters": [
-          {
-            "name": "port",
-            "annotation": "int | str",
-            "default": null,
-            "required": true
-          }
-        ],
+        "parameters": [],
         "resultType": "light",
-        "path": "make.light",
-        "category": "Output"
+        "path": "light",
+        "category": "Board"
+      },
+      {
+        "name": "button_a",
+        "kind": "instance",
+        "description": "Button A, built into the board. It also starts the program.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "button_a",
+        "category": "Board"
+      },
+      {
+        "name": "button_b",
+        "kind": "instance",
+        "description": "Button B, built into the board.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "button_b",
+        "category": "Board"
+      },
+      {
+        "name": "button_c",
+        "kind": "instance",
+        "description": "Button C, built into the board.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "button_c",
+        "category": "Board"
+      },
+      {
+        "name": "button_d",
+        "kind": "instance",
+        "description": "Button D, built into the board.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "button_d",
+        "category": "Board"
+      },
+      {
+        "name": "light_l1",
+        "kind": "instance",
+        "description": "Light L1, built into the board.",
+        "parameters": [],
+        "resultType": "light",
+        "path": "light_l1",
+        "category": "Board"
+      },
+      {
+        "name": "light_l2",
+        "kind": "instance",
+        "description": "Light L2, built into the board.",
+        "parameters": [],
+        "resultType": "light",
+        "path": "light_l2",
+        "category": "Board"
       }
     ],
     "methodsByType": {
-      "simple_motor": [
-        {
-          "name": "spin",
-          "description": "Spin the servo at the given power for the given time period; if\nno period is given then it spins until stopped.",
-          "parameters": [
-            {
-              "name": "power",
-              "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "annotation": "float",
-              "default": "None",
-              "required": false
-            }
-          ],
-          "resultType": "None"
-        },
-        {
-          "name": "spin_back",
-          "description": "Spin the servo backwards at the given power for the given time\nperiod; if no period is given then it spins until stopped.",
-          "parameters": [
-            {
-              "name": "power",
-              "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "annotation": "float",
-              "default": "None",
-              "required": false
-            }
-          ],
-          "resultType": "None"
-        },
-        {
-          "name": "stop",
-          "description": "Stops the servo.",
-          "parameters": [],
-          "resultType": "None"
-        }
-      ],
       "drive_motor": [
         {
           "name": "spin",
-          "description": "Spin the motor at the given power for the given time period; if\nno period is given then it spins until stopped.",
+          "description": "Spin the motor at the given power, from -100 to 100, for the given\nnumber of seconds.  If no time is given, spins for 0.05 seconds.\nWith an encoder the motor keeps a steady speed whatever the load.\n\nThe motor stops when the time is up.  Calling `spin` again straight\naway carries on from where it was, so a loop of `spin` calls runs\nthe motor smoothly, and a loop that spins two motors in turn keeps\nboth running.",
           "parameters": [
             {
               "name": "power",
@@ -236,7 +212,7 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "None",
+              "default": "0.05",
               "required": false
             }
           ],
@@ -244,7 +220,7 @@
         },
         {
           "name": "spin_back",
-          "description": "Spin the motor backwards at the given power for the given time\nperiod; if no period is given then it spins until stopped.",
+          "description": "Spin the motor backwards; the same as `spin` with the power negated.",
           "parameters": [
             {
               "name": "power",
@@ -255,7 +231,45 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "None",
+              "default": "0.05",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "spin_degrees",
+          "description": "Spin the motor through the given number of degrees, negative for\nbackwards, at the given power, then brake.  Needs an encoder.\nTurns add up exactly: two `spin_degrees(90)` make a half turn.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": "50",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "spin_back_degrees",
+          "description": "Spin the motor backwards through the given number of degrees, then brake.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": "50",
               "required": false
             }
           ],
@@ -263,61 +277,33 @@
         },
         {
           "name": "stop",
-          "description": "Stops the motor.",
+          "description": "Stops the motor and lets it turn freely.",
+          "parameters": [],
+          "resultType": "None"
+        },
+        {
+          "name": "brake",
+          "description": "Stops the motor and holds it from turning freely.",
+          "parameters": [],
+          "resultType": "None"
+        },
+        {
+          "name": "get_encoder",
+          "description": "Returns the motor's encoder, or None if it has none.",
+          "parameters": [],
+          "resultType": "encoder"
+        },
+        {
+          "name": "free_port",
+          "description": "Frees the port for use by other components, disabling this motor.",
           "parameters": [],
           "resultType": "None"
         }
       ],
-      "servo": [
+      "motor_group": [
         {
-          "name": "moveto",
-          "description": "Rotates the servo to the given angle.",
-          "parameters": [
-            {
-              "name": "angle",
-              "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "annotation": "float",
-              "default": "None",
-              "required": false
-            }
-          ],
-          "resultType": "None"
-        }
-      ],
-      "drivetrain": [
-        {
-          "name": "curve",
-          "description": "Spins both motors at different powers. If a time is given, stops after\nthe time has elapsed.",
-          "parameters": [
-            {
-              "name": "left_power",
-              "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "right_power",
-              "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "annotation": "float",
-              "default": "None",
-              "required": false
-            }
-          ],
-          "resultType": "None"
-        },
-        {
-          "name": "drive",
-          "description": "Spins both motors at the same power. If a time is given, stops after\nthe time has elapsed.",
+          "name": "spin",
+          "description": "Spins every motor at its share of the given power, from -100 to\n100, for the given number of seconds.  If no time is given, spins\nfor 0.05 seconds.  With encoders the motors keep their ratios even\nif one is held back.\n\nThe motors stop when the time is up.  Calling this again straight\naway carries on, so a loop of calls drives smoothly.  Two\nmotor groups stepped in one loop add up.",
           "parameters": [
             {
               "name": "power",
@@ -328,15 +314,15 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "None",
+              "default": "0.05",
               "required": false
             }
           ],
           "resultType": "None"
         },
         {
-          "name": "turn",
-          "description": "Rotates on the spot at the given power. If a time is given, stops\nafter that time has elapsed.",
+          "name": "spin_back",
+          "description": "Spins backwards; the same as `spin` with the power negated.",
           "parameters": [
             {
               "name": "power",
@@ -347,70 +333,45 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "None",
+              "default": "0.05",
               "required": false
             }
           ],
           "resultType": "None"
         },
         {
-          "name": "curve_back",
-          "description": "Spins both motors at different powers. If a time is given, stops after\nthe time has elapsed.",
+          "name": "spin_degrees",
+          "description": "Turns the motor with the largest ratio through the given number of\ndegrees, negative for backwards, and every other motor through its\nshare, all finishing together, then brakes.  Needs encoders on\nevery motor.",
           "parameters": [
             {
-              "name": "left_power",
+              "name": "degrees",
               "annotation": "float",
               "default": null,
               "required": true
             },
-            {
-              "name": "right_power",
-              "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "annotation": "float",
-              "default": "None",
-              "required": false
-            }
-          ],
-          "resultType": "None"
-        },
-        {
-          "name": "drive_back",
-          "description": "Spins both motors back at the same power. If a time is given, stops\nafter the time has elapsed.",
-          "parameters": [
             {
               "name": "power",
               "annotation": "float",
-              "default": null,
-              "required": true
-            },
-            {
-              "name": "seconds",
-              "annotation": "float",
-              "default": "None",
+              "default": "50",
               "required": false
             }
           ],
           "resultType": "None"
         },
         {
-          "name": "turn_back",
-          "description": "Rotates on the spot at the given power. If a time is given, stops\nafter that time has elapsed.",
+          "name": "spin_back_degrees",
+          "description": "Spins backwards by degrees; the same as `spin_degrees` negated.",
           "parameters": [
             {
-              "name": "power",
+              "name": "degrees",
               "annotation": "float",
               "default": null,
               "required": true
             },
             {
-              "name": "seconds",
+              "name": "power",
               "annotation": "float",
-              "default": "None",
+              "default": "50",
               "required": false
             }
           ],
@@ -418,7 +379,13 @@
         },
         {
           "name": "stop",
-          "description": "Stops both motors.",
+          "description": "Stops every motor and lets them turn freely.",
+          "parameters": [],
+          "resultType": "None"
+        },
+        {
+          "name": "brake",
+          "description": "Stops every motor and holds them from turning freely.",
           "parameters": [],
           "resultType": "None"
         }
@@ -450,6 +417,26 @@
           "resultType": "None"
         }
       ],
+      "encoder": [
+        {
+          "name": "get_degrees",
+          "description": "Returns how far the shaft has turned, in degrees, since the program started.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "get_speed",
+          "description": "Returns how fast the shaft is turning, in degrees per second,\nnegative for backwards.",
+          "parameters": [],
+          "resultType": "float"
+        },
+        {
+          "name": "free_port",
+          "description": "Frees the port for use by other components, disabling this encoder.",
+          "parameters": [],
+          "resultType": "None"
+        }
+      ],
       "light": [
         {
           "name": "on",
@@ -462,7 +449,7 @@
               "required": false
             }
           ],
-          "resultType": null
+          "resultType": "None"
         },
         {
           "name": "off",
@@ -475,13 +462,26 @@
               "required": false
             }
           ],
-          "resultType": null
+          "resultType": "None"
+        },
+        {
+          "name": "flash",
+          "description": "Turns the LED on for the given number of seconds, then off.",
+          "parameters": [
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "0.2",
+              "required": false
+            }
+          ],
+          "resultType": "None"
         },
         {
           "name": "toggle",
           "description": "Toggles the LED on or off, whichever it currently isn't.",
           "parameters": [],
-          "resultType": null
+          "resultType": "None"
         },
         {
           "name": "free_port",

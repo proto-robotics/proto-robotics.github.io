@@ -1,9 +1,9 @@
 /*
- * Devices: the motors and drivetrains a program sets up at its top
- * (helpers/devicesHelper.js). A "Devices" button pinned to the bottom of
- * the toolbox column, drawn like a category tab, opens them in a pop-up: a card per device
- * (deviceCard.js) and buttons to add a drive motor or a drivetrain. The
- * devices live with the workspace; the pop-up is a view of them, drawn
+ * Devices and variables: what a program sets up at its top
+ * (helpers/devicesHelper.js). One button, pinned to the bottom of the
+ * toolbox column and drawn like a category tab, opens them in a pop-up: a
+ * row per kind (drive motors, motor groups, then variables) with a card per item (deviceCard.js) and a tile that adds
+ * one. They live with the workspace; the pop-up is a view of them, drawn
  * again whenever they change.
  */
 
@@ -19,11 +19,21 @@ import {
     removeDevice,
     setDevices,
     watchDevices,
+    renameMotor,
 } from '../helpers/devicesHelper'
-import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
+import {
+    closeOnClickOutside,
+    closePopUpEvent,
+    PopUp,
+} from '../helpers/popUpHelper'
 import { getRoot } from '../helpers/rootHelper'
 import { deviceCard } from './deviceCard'
 import { renameDeviceInBlocks } from './deviceField'
+
+/** The kinds the Devices pop-up shows, in its order. */
+export const DEVICE_KINDS = ['drive_motor', 'motor_group']
+/** The kinds the Variables pop-up shows. */
+export const VARIABLE_KINDS = ['variable']
 
 /**
  * @param {object[]} devices
@@ -36,10 +46,11 @@ const motorNames = (devices) =>
 
 /**
  * @param {object[]} devices
- * @returns {string} How many of each kind: "2 drive motors, 1 drivetrain".
+ * @param {string[]} [kinds] The kinds to count.
+ * @returns {string} How many of each kind: "2 drive motors, 1 motor group".
  */
-export const devicesSummary = (devices) =>
-    Object.keys(deviceKinds)
+export const devicesSummary = (devices, kinds = Object.keys(deviceKinds)) =>
+    kinds
         .map((kindName) => {
             const n = devices.filter((d) => d.kind === kindName).length
             const label = deviceKinds[kindName].label
@@ -48,17 +59,53 @@ export const devicesSummary = (devices) =>
         .filter(Boolean)
         .join(', ')
 
+/** A new item of each kind, given the ones there are. */
+const fresh = {
+    drive_motor: (list) => ({
+        kind: 'drive_motor',
+        name: nextName(list, deviceKinds.drive_motor.base),
+        port: nextPort(list, 'drive_motor'),
+        direction: '1',
+    }),
+    motor_group: (list) => {
+        const motors = motorNames(list)
+        return {
+            kind: 'motor_group',
+            name: nextName(list, deviceKinds.motor_group.base),
+            // the first two drive motors, turning together at the same speed
+            motors: [
+                { name: motors[0] ?? '', ratio: '1' },
+                { name: motors[1] ?? '', ratio: '1' },
+            ],
+        }
+    },
+    variable: (list) => ({
+        kind: 'variable',
+        name: nextName(list, deviceKinds.variable.base),
+        value: '0',
+    }),
+}
+
 /**
- * The devices of a workspace, editable: a row per kind (drive motors,
- * drivetrains), each a picture and a grid of cards with an add tile. Draws itself again when the devices change, from here or from a
- * program loading.
+ * The devices (or variables) of a workspace, editable: a row per kind, each
+ * a picture and a grid of cards with an add tile. Draws itself again when
+ * they change, from here or from a program loading.
  * @param {object} workspace The program's workspace.
  * @param {object} [options]
+ * @param {string[]} [options.kinds] The kinds to show, a row each.
+ * @param {string} [options.intro] The line above the rows.
  * @param {(blockName: string) => void} [options.onHelp] A card's help
  *     button was pressed, for the cheatsheet entry of this name.
  * @returns {{element: HTMLElement, destroy: () => void}}
  */
-export const devicesEditor = (workspace, { onHelp } = {}) => {
+export const devicesEditor = (
+    workspace,
+    {
+        kinds = DEVICE_KINDS,
+        intro = 'Devices are set up at the top of your program, so your blocks can use them by name.',
+        onHelp,
+    } = {},
+) => {
     const devices = () => getDevices(workspace)
     const update = (list) => setDevices(workspace, list)
 
@@ -68,32 +115,17 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
             device,
             {
                 onChange: ({ renamedFrom, ...patch }) => {
-                    update(
-                        devices().map((other, i) => {
-                            if (i === index) {
-                                return { ...other, ...patch }
-                            }
-                            // a drivetrain made from a renamed motor follows the new name
-                            if (
-                                renamedFrom !== undefined &&
-                                other.kind === 'drivetrain'
-                            ) {
-                                return {
-                                    ...other,
-                                    left:
-                                        other.left === renamedFrom
-                                            ? patch.name
-                                            : other.left,
-                                    right:
-                                        other.right === renamedFrom
-                                            ? patch.name
-                                            : other.right,
-                                }
-                            }
-                            return other
-                        }),
+                    const changed = devices().map((other, i) =>
+                        i === index ? { ...other, ...patch } : other,
                     )
-                    // the blocks using the device follow its new name
+                    // a motor group made from a renamed motor follows the new name
+                    update(
+                        renamedFrom !== undefined &&
+                            device.kind === 'drive_motor'
+                            ? renameMotor(changed, renamedFrom, patch.name)
+                            : changed,
+                    )
+                    // the blocks using it follow its new name
                     if (renamedFrom !== undefined) {
                         renameDeviceInBlocks(workspace, renamedFrom, patch.name)
                     }
@@ -102,7 +134,7 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
                     const list = devices()
                     const gone = list[index]?.name
                     // what used it is left blank, to be picked again
-                    // (unless another device has its name)
+                    // (unless another one has its name)
                     const blank = !list.some(
                         (other, i) => i !== index && other.name === gone,
                     )
@@ -117,30 +149,10 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
         )
     }
 
-    /** A new device of each kind, given the devices there are. */
-    const fresh = {
-        drive_motor: (list) => ({
-            kind: 'drive_motor',
-            name: nextName(list, 'motor'),
-            port: nextPort(list, 'drive_motor'),
-            direction: '1',
-        }),
-        drivetrain: (list) => {
-            const motors = motorNames(list)
-            return {
-                kind: 'drivetrain',
-                name: nextName(list, 'drivetrain'),
-                left: motors[0] ?? '',
-                right: motors[1] ?? '',
-                drift: '1',
-            }
-        },
-    }
-
     // One row per kind: its picture and name on the left, and on the right
     // a box of its cards that fills left to right and wraps into a grid,
     // ending in a tile that adds another.
-    const rows = Object.keys(fresh).map((kindName) => {
+    const rows = kinds.map((kindName) => {
         const kind = deviceKinds[kindName]
         const Box = div({ class: 'devices-row-box', role: 'list' })
         const Add = button(
@@ -165,7 +177,7 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
                     tag('img', {
                         src: picture,
                         alt: '',
-                        class: 'devices-row-picture',
+                        class: `devices-row-picture devices-row-picture-${kindName}`,
                     }),
                 tag('span', { class: 'devices-row-name' }, `${kind.label}s`),
             ),
@@ -189,11 +201,7 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
 
     const element = div(
         { class: 'toolbox-devices devices-editor' },
-        p(
-            { class: 'toolbox-devices-empty' },
-            'Devices are set up at the top of your program, so your blocks ',
-            'can use them by name.',
-        ),
+        p({ class: 'toolbox-devices-empty' }, intro),
         ...rows.map(({ Row }) => Row),
     )
 
@@ -207,15 +215,23 @@ export const devicesEditor = (workspace, { onHelp } = {}) => {
 }
 
 /**
- * The Devices button, for the bottom of the toolbox column, as wide as the
- * column. It shows how many devices there are and opens them in a pop-up.
+ * A button that opens some kinds in a pop-up, and closes it again on a
+ * second press or a click outside it. It shows how many there are.
  * @param {() => object|null} getWorkspace The program's workspace now (the
  *     workspace is rebuilt when the layout changes).
- * @returns {{element: HTMLElement, show: () => void, destroy: () => void}}
+ * @param {object} options
+ * @param {string} options.title The button's word and the pop-up's heading.
+ * @param {string[]} options.kinds The kinds it shows.
+ * @param {string} options.intro The pop-up's first line.
+ * @param {string} options.className The button's class.
+ * @param {string|null} options.icon The button's picture.
+ * @returns {{element: HTMLButtonElement, show: () => void, destroy: () => void}}
  */
-export const devicesButton = (getWorkspace) => {
+const listButton = (
+    getWorkspace,
+    { title, label = title, heading = title, kinds, intro, className, icons },
+) => {
     const Count = tag('span', { class: 'devices-button-count' })
-    const icon = categoryIcon('devices')
 
     // the open pop-up, if any: the button closes it again
     let Dialog = null
@@ -231,9 +247,11 @@ export const devicesButton = (getWorkspace) => {
             return
         }
         const editor = devicesEditor(workspace, {
+            kinds,
+            intro,
             // the cheatsheet opens beside the editor, so the pop-up closes first
             onHelp: (blockName) => {
-                Dialog?.dispatchEvent(new Event(closePopUpEvent))
+                close()
                 document.dispatchEvent(
                     new CustomEvent(openCheatSheetDrawerEvent, {
                         detail: { blockName },
@@ -242,7 +260,7 @@ export const devicesButton = (getWorkspace) => {
             },
         })
         Dialog = PopUp(
-            tag('h2', { class: 'devices-dialog-title' }, 'Devices'),
+            tag('h2', { class: 'devices-dialog-title' }, heading),
             editor.element,
         )
         Dialog.classList.add('devices-dialog')
@@ -250,38 +268,74 @@ export const devicesButton = (getWorkspace) => {
             editor.destroy()
             Dialog = null
         })
-        // a click outside the pop-up closes it. It is modal, so its
-        // backdrop takes every click outside it (the button's too), and
-        // they reach the dialog itself, outside its box.
-        Dialog.addEventListener('click', (event) => {
-            if (event.target !== Dialog) {
-                return
-            }
-            const box = Dialog.getBoundingClientRect()
-            const inside =
-                event.clientX >= box.left &&
-                event.clientX <= box.right &&
-                event.clientY >= box.top &&
-                event.clientY <= box.bottom
-            if (!inside) {
-                close()
-            }
-        })
+        // a click outside the pop-up (the button's too) closes it
+        closeOnClickOutside(Dialog)
         getRoot().appendChild(Dialog)
     }
 
+    // its icons overlap into one picture (styles.css)
+    const pictures = icons.filter(Boolean)
     const Button = button(
-        {
-            type: 'button',
-            class: 'devices-button',
-            'aria-haspopup': 'dialog',
-        },
-        icon &&
-            tag('img', { src: icon, alt: '', class: 'devices-button-icon' }),
-        tag('span', 'Devices'),
+        { type: 'button', class: className, 'aria-haspopup': 'dialog' },
+        pictures.length &&
+            tag(
+                'span',
+                { class: 'devices-button-icons', 'aria-hidden': 'true' },
+                ...pictures.map((src) =>
+                    tag('img', { src, alt: '', class: 'devices-button-icon' }),
+                ),
+            ),
+        tag('span', { class: 'devices-button-label' }, label),
         Count,
         on('click', open),
     )
+
+    const count = () => {
+        const workspace = getWorkspace()
+        const list = workspace
+            ? getDevices(workspace).filter((d) => kinds.includes(d.kind))
+            : []
+        Count.textContent = list.length ? String(list.length) : ''
+        Count.hidden = list.length === 0
+        Button.setAttribute(
+            'aria-label',
+            list.length
+                ? `${title}: ${devicesSummary(list, kinds)}`
+                : `${title}: none yet`,
+        )
+    }
+    count()
+    const stop = watchDevices(count)
+    return {
+        element: Button,
+        /** Opens the pop-up, if it is not open. */
+        show: () => {
+            if (!Dialog) {
+                open()
+            }
+        },
+        destroy: stop,
+    }
+}
+
+/**
+ * The Devices button, for the bottom of the toolbox column, as wide as the
+ * column. It shows how many devices and variables there are and opens them
+ * in one pop-up.
+ * @param {() => object|null} getWorkspace The program's workspace now.
+ * @returns {{element: HTMLElement, show: () => void, destroy: () => void}}
+ */
+export const devicesButton = (getWorkspace) => {
+    const list = listButton(getWorkspace, {
+        title: 'Devices and Variables',
+        // two short lines, to fit the toolbox column
+        label: 'Devices &\nVariables',
+        kinds: [...DEVICE_KINDS, ...VARIABLE_KINDS],
+        intro: 'Devices and variables are set up at the top of your program, so your blocks can use them by name. A variable is a number your program remembers; it starts at its value, and Set and Change blocks change it.',
+        className: 'devices-button',
+        icons: [categoryIcon('devices'), categoryIcon('variables')],
+    })
+    const Button = list.element
 
     // as wide as the toolbox column, which is as wide as its widest tab;
     // the workspace (and its toolbox) is rebuilt when the layout changes
@@ -305,30 +359,11 @@ export const devicesButton = (getWorkspace) => {
     const frame = requestAnimationFrame(fit)
     window.addEventListener('resize', fit)
 
-    const count = () => {
-        const workspace = getWorkspace()
-        const n = workspace ? getDevices(workspace).length : 0
-        Count.textContent = n ? String(n) : ''
-        Count.hidden = n === 0
-        Button.setAttribute(
-            'aria-label',
-            n
-                ? `Devices: ${devicesSummary(getDevices(workspace))}`
-                : 'Devices: none yet',
-        )
-    }
-    count()
-    const stop = watchDevices(count)
     return {
         element: Button,
-        /** Opens the pop-up, if it is not open. */
-        show: () => {
-            if (!Dialog) {
-                open()
-            }
-        },
+        show: list.show,
         destroy: () => {
-            stop()
+            list.destroy()
             cancelAnimationFrame(frame)
             window.removeEventListener('resize', fit)
             sizer.disconnect()

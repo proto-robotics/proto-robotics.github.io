@@ -69,6 +69,11 @@ function buildPublicApiStub() {
     const definitions = ['from typing import Any', '']
 
     for (const member of autocomplete.members ?? []) {
+        // a ready-made object, like the board's button_a: a typed name
+        if (member.kind === 'instance') {
+            definitions.push(`${member.name}: ${member.resultType}`, '')
+            continue
+        }
         if (member.kind === 'function') {
             const parameters = formatStubParameters(member.parameters)
             const resultType = member.resultType ?? 'Any'
@@ -80,11 +85,15 @@ function buildPublicApiStub() {
             continue
         }
 
+        // a constructor, or a type learners only get from make (kind
+        // 'type': button, encoder), which has no constructor to call
         const constructorParameters = formatMethodParameters(member.parameters)
-        definitions.push(
-            `class ${member.name}:`,
-            `    def __init__(self${constructorParameters}) -> None: ...`,
-        )
+        definitions.push(`class ${member.name}:`)
+        if (member.kind !== 'type') {
+            definitions.push(
+                `    def __init__(self${constructorParameters}) -> None: ...`,
+            )
+        }
 
         const methods = autocomplete.methodsByType?.[member.name] ?? []
         for (const method of methods) {
@@ -94,6 +103,10 @@ function buildPublicApiStub() {
             definitions.push(
                 `    def ${method.name}(self${parameters}) -> ${resultType}: ...`,
             )
+        }
+        // a type with nothing in it still needs a body
+        if (member.kind === 'type' && !methods.length) {
+            definitions.push('    ...')
         }
 
         definitions.push('')

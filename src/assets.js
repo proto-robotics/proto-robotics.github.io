@@ -45,7 +45,9 @@ export const multiselectOffIcon = asset('images/multiselect-off.svg')
 /** Each kind of device's picture: a cartoon render of the real parts. */
 const deviceIcons = {
     drive_motor: 'images/devices/drive-motor-cartoon.png',
-    drivetrain: 'images/devices/drivetrain-cartoon.png',
+    motor_group: 'images/devices/drivetrain-cartoon.png',
+    // a variable has no part to picture: its category's icon
+    variable: 'images/category-icons/variables.svg',
 }
 
 /**
@@ -58,11 +60,14 @@ export const deviceIcon = (kind) =>
 
 /** The toolbox categories that have an icon in images/category-icons. */
 const categoryIconNames = new Set([
+    'board',
     'devices',
+    // the Motor Group category's icon, from when it was called Drivetrain
     'drivetrain',
     'flow',
     'input',
     'motor',
+    'operators',
     'search',
     'time',
     'variables',
@@ -75,7 +80,9 @@ const categoryIconNames = new Set([
  * @returns {string|null} The icon's URL, or null when there is none.
  */
 export const categoryIcon = (name) => {
-    const key = String(name).trim().toLowerCase()
+    const lower = String(name).trim().toLowerCase()
+    // categories whose icon file has another name
+    const key = { 'motor group': 'drivetrain' }[lower] ?? lower
     return categoryIconNames.has(key)
         ? asset(`images/category-icons/${key}.svg`)
         : null

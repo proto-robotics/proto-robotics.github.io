@@ -5,6 +5,7 @@
  */
 
 import {
+    Blocks,
     inject,
     serialization,
     setParentContainer,
@@ -21,8 +22,8 @@ import { multiselectOffIcon, multiselectOnIcon } from '../assets'
 import { injectMods, SEARCH_CATEGORY_KIND } from '../mods/mods.js'
 import { bundleUrl } from '../assets'
 import { addSharedClipboard, takeSavedBackpack } from './clipboardHelper'
-import { liftDeviceBlocks } from './devicesHelper'
 import { isPhoneLayout } from './phoneLayoutHelper'
+import { renameOldBlocks } from './renamedBlocks'
 
 let modsInjected = false
 
@@ -362,96 +363,54 @@ export const getBlocklyState = (blocklyInstance) => {
     return serialization.workspaces.save(blocklyInstance.workspace)
 }
 
-/**
- * Button ports from before the make library named the brain's buttons by
- * their letters (ports 10 to 13), as the letters that replace them.
- */
-const OLD_BUTTON_PORTS = { 10: 'A', 11: 'B', 12: 'C', 13: 'D' }
+/** Where the program an old block set made is kept when it is set aside. */
+export const OLD_PROGRAM_KEY = 'blocklyStateOld'
 
 /**
- * Brings the blocks of a program saved with an older block set up to date:
- * for now, a button block on port 10 to 13 gets the matching letter.
  * @param {object} state A serialized workspace.
- * @returns {object} The state, changed only where a block needed it.
+ * @returns {string[]} The block types in it that no block has now: a
+ *     program made with the old blocks, before the new make.
  */
-/** Old backward spin blocks, and the block (set to backward) each is now. */
-const MERGED_SPIN_BLOCKS = {
-    spinBack: 'spin',
-    spinBackForTime: 'spinForTime',
-}
-
-const upgradeOldBlocks = (state) => {
-    const upgrade = (blockState) => {
+export const unknownBlockTypes = (state) => {
+    const unknown = new Set()
+    const visit = (blockState) => {
         if (!blockState || typeof blockState !== 'object') {
-            return blockState
+            return
         }
-        let upgraded = blockState
-        const oldPort = OLD_BUTTON_PORTS[blockState.fields?.port]
-        // the backward spin blocks became the spin blocks' backward setting
-        const merged = MERGED_SPIN_BLOCKS[blockState.type]
-        if (merged) {
-            upgraded = {
-                ...upgraded,
-                type: merged,
-                fields: { ...blockState.fields, way: 'backward' },
-            }
+        if (blockState.type && !Blocks[blockState.type]) {
+            unknown.add(blockState.type)
         }
-        if (blockState.type === 'button' && oldPort) {
-            upgraded = {
-                ...upgraded,
-                fields: { ...blockState.fields, port: oldPort },
-            }
+        for (const input of Object.values(blockState.inputs ?? {})) {
+            visit(input?.block)
+            visit(input?.shadow)
         }
-        if (blockState.inputs) {
-            upgraded = {
-                ...upgraded,
-                inputs: Object.fromEntries(
-                    Object.entries(blockState.inputs).map(([name, input]) => [
-                        name,
-                        input?.block
-                            ? { ...input, block: upgrade(input.block) }
-                            : input,
-                    ]),
-                ),
-            }
-        }
-        if (blockState.next?.block) {
-            upgraded = {
-                ...upgraded,
-                next: {
-                    ...blockState.next,
-                    block: upgrade(blockState.next.block),
-                },
-            }
-        }
-        return upgraded
+        visit(blockState.next?.block)
     }
-    const tops = state?.blocks?.blocks
-    if (!Array.isArray(tops)) {
-        return state
+    for (const top of state?.blocks?.blocks ?? []) {
+        visit(top)
     }
-    return { ...state, blocks: { ...state.blocks, blocks: tops.map(upgrade) } }
+    return [...unknown]
 }
 
 /**
- * Loads a previously serialized Blockly JSON state into the workspace.
+ * Loads a previously serialized Blockly JSON state into the workspace. A
+ * program made with the old blocks is not converted: it is kept in local
+ * storage under OLD_PROGRAM_KEY, and the workspace starts with its devices
+ * and no blocks.
  * @param {object} blocklyInstance Value returned by createBlocklyInstance.
  * @param {object} state Blockly serialization state to load.
- * @param {object} [options]
- * @param {boolean} [options.liftDevices=true] Turn the motor blocks of a
- *     program saved before the Devices section into devices
- *     (devicesHelper.js). Off for the cheatsheet's previews.
  */
-export const setBlocklyState = (
-    blocklyInstance,
-    state,
-    { liftDevices = true } = {},
-) => {
-    const saved = upgradeOldBlocks(takeSavedBackpack(state))
-    serialization.workspaces.load(
-        liftDevices ? liftDeviceBlocks(saved) : saved,
-        blocklyInstance.workspace,
-    )
+export const setBlocklyState = (blocklyInstance, state) => {
+    let saved = renameOldBlocks(takeSavedBackpack(state))
+    if (unknownBlockTypes(saved).length) {
+        try {
+            localStorage.setItem(OLD_PROGRAM_KEY, JSON.stringify(saved))
+        } catch {
+            // storage is off: the old program is dropped, as it would be
+        }
+        saved = { ...saved, blocks: { languageVersion: 0, blocks: [] } }
+    }
+    serialization.workspaces.load(saved, blocklyInstance.workspace)
 }
 
 /**

@@ -191,21 +191,21 @@ export const createEmbedEditor = async (
     const Toolbar = tag(
         'tool-bar',
         ProjectNameInput,
-        button(
-            'Save',
-            on('click', async () => {
-                if (await ensureProjectName(ProjectNameInput)) {
-                    editor.saveCode(ProjectNameInput)
-                }
-            }),
-        ),
         buildBrainButton({
             getProjectName: () => ProjectNameInput.value,
             getProjectFiles: (projectName) =>
                 editor.getProjectFiles(projectName),
         }),
         button(
-            'Load',
+            'Export',
+            on('click', async () => {
+                if (await ensureProjectName(ProjectNameInput)) {
+                    editor.saveCode(ProjectNameInput)
+                }
+            }),
+        ),
+        button(
+            'Import',
             on('click', () => editor.loadCode(ProjectNameInput)),
         ),
         button(
@@ -247,8 +247,16 @@ export const createEmbedEditor = async (
     // The host cannot always see keys pressed in the editor (an iframe hides
     // them, and the workspace takes focus whenever it is resized), so Escape
     // is reported for the host to act on (leaving a full-screen layout, say).
+    // An Escape that closes something of the editor's own first (the
+    // Devices pop-up, a dropdown) is not reported: it was for that.
     const onKeyDown = (event) => {
-        if (event.key === 'Escape') {
+        if (event.key !== 'Escape' || event.defaultPrevented) {
+            return
+        }
+        const inPopUp = event.target?.closest?.(
+            'dialog, [role="dialog"], .blocklyDropDownDiv, .blocklyWidgetDiv',
+        )
+        if (!inPopUp && !document.querySelector('dialog[open]')) {
             onEscape()
         }
     }
@@ -273,6 +281,9 @@ export const createEmbedEditor = async (
     // for a host that runs the program and lights up the running block
     const highlight = (id) => editor.highlight?.(id ?? null)
     const getTracedCode = () => editor.getTracedCode?.() ?? ''
+    // for a host that lets the learner bring in an earlier program
+    const addBlocks = (state, clientX, clientY) =>
+        editor.addBlocks?.(state, clientX, clientY)
 
     const controls = {
         setTask,
@@ -280,6 +291,7 @@ export const createEmbedEditor = async (
         setCheatsheet,
         highlight,
         getTracedCode,
+        addBlocks,
         dispose,
     }
 

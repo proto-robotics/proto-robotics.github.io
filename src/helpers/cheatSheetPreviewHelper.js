@@ -170,9 +170,7 @@ function createBlocklyPreview(workspaceState) {
                     return
                 }
 
-                setBlocklyState(blocklyInstance, normalizedWorkspaceState, {
-                    liftDevices: false,
-                })
+                setBlocklyState(blocklyInstance, normalizedWorkspaceState)
                 requestAnimationFrame(() => {
                     fitPreviewToBlocks(blocklyInstance, preview)
                 })
@@ -180,11 +178,8 @@ function createBlocklyPreview(workspaceState) {
         },
     })
 
-    // a preview shows the state as given: an entry's block is the old
-    // device block itself, and an example has its devices lifted already
-    setBlocklyState(blocklyInstance, normalizedWorkspaceState, {
-        liftDevices: false,
-    })
+    // an example's state carries its devices, so its code starts with them
+    setBlocklyState(blocklyInstance, normalizedWorkspaceState)
     const code =
         devicesCode(getDevices(blocklyInstance.workspace)) +
         getBlocklyCode(blocklyInstance)

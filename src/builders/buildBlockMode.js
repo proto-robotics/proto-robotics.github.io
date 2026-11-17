@@ -6,7 +6,7 @@
  * layout, since Blockly fixes the toolbox's side when it is created.
  */
 
-import { Events } from 'blockly'
+import { Events, serialization, utils } from 'blockly'
 import { button, on, tag } from 'ellipsi'
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter'
 import { pythonGenerator } from 'blockly/python'
@@ -31,9 +31,9 @@ import {
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
 import {
-    adoptDeviceBlocks,
     devicesCode,
     getDevices,
+    setDevices,
     watchDevices,
 } from '../helpers/devicesHelper'
 import { createDrawer, openDrawer } from '../helpers/drawerHelper'
@@ -44,7 +44,12 @@ import { createToolboxDrawer } from '../helpers/toolboxDrawerHelper'
 import { saveFilesInZip } from '../helpers/zipHelper'
 import { getRoot } from '../helpers/rootHelper'
 import { devicesButton } from '../mods/devicesDialog'
+import { addNote, startNotes } from '../mods/notes'
+import { createClickModes } from '../mods/clickModes'
+import { startRadialMenu } from '../mods/radialMenu'
+import { openDevicesEvent, syncToolboxDevices } from '../mods/deviceField'
 import { lintBlocks } from '../mods/blockLinter'
+import { numberShadowTypes } from '../data/library'
 import { createIssuesDrawer } from '../helpers/issuesDrawerHelper'
 
 /** The workspace events after which the program is regenerated and saved. */
@@ -53,6 +58,13 @@ const programChangeEvents = new Set([
     Events.BLOCK_CREATE,
     Events.BLOCK_DELETE,
     Events.BLOCK_MOVE,
+    // notes (mods/notes.js) are saved with the program, and a linked
+    // note's text is part of its Python
+    Events.COMMENT_CREATE,
+    Events.COMMENT_DELETE,
+    Events.COMMENT_CHANGE,
+    Events.COMMENT_MOVE,
+    Events.COMMENT_RESIZE,
 ])
 
 /**
@@ -77,7 +89,7 @@ const programChangeEvents = new Set([
  *     no toolbox, trashcan, zoom controls or selection, and the code
  *     drawer starts open. The host still loads a program with setState.
  * @param {boolean} [options.devices=false] Pin a Devices button to the
- *     bottom of the toolbox column; it opens the motors and drivetrains a
+ *     bottom of the toolbox column; it opens the motors and motor groups a
  *     program sets up in a pop-up (devicesHelper.js, mods/devicesDialog.js).
  *     Devices saved in a program are honoured either way.
  * @param {boolean} [options.issues=true] An Issues tab on the right, like
@@ -152,18 +164,51 @@ export default (
         ...(showCodePreview ? [CodeDrawer] : []),
     )
     const toolboxDrawer = createToolboxDrawer(blocklyInstance, BlockEditor)
-    // the program's devices, in a pop-up from a button at the bottom of the toolbox
+    // the program's devices and variables, in a pop-up from a button at
+    // the bottom of the toolbox
     const devices =
         showDevices && !view
             ? devicesButton(() => blocklyInstance.workspace ?? null)
             : null
+    // a dropdown's "+ Add a drive motor" opens the Devices pop-up
+    const onOpenDevices = () => devices?.show()
+    if (devices) {
+        document.addEventListener(openDevicesEvent, onOpenDevices)
+    }
     // what the linter finds, listed in a drawer like the line editor's
     const issues = showIssues && !view ? createIssuesDrawer() : null
+    // a Note button at the bottom right: a sticky note to point at a block
+    const NoteButton = view
+        ? null
+        : button(
+              { type: 'button', class: 'note-button', title: 'Add a note' },
+              tag('span', { class: 'note-button-icon', 'aria-hidden': 'true' }),
+              tag('span', 'Note'),
+              on('click', () => {
+                  const workspace = blocklyInstance.workspace
+                  if (workspace) {
+                      addNote(workspace).select?.()
+                  }
+              }),
+          )
+    // a Disable button by it: while on, a click turns a block off or on
+    const clickModes = view
+        ? null
+        : createClickModes(() => blocklyInstance, CanvasWrap)
+    const CornerButtons = NoteButton
+        ? tag(
+              'div',
+              { class: 'canvas-corner-buttons' },
+              clickModes.button,
+              NoteButton,
+          )
+        : null
     CanvasWrap.append(
         blocklyInstance.canvas,
         toolboxDrawer.Tab,
         ...(capacity ? [capacity.element] : []),
         ...(devices ? [devices.element] : []),
+        ...(CornerButtons ? [CornerButtons] : []),
         ...(issues ? [issues.drawer] : []),
     )
 
@@ -188,9 +233,7 @@ export default (
                 ...issue,
                 onClick: block
                     ? () => showBlock(block)
-                    : devices
-                      ? () => devices.show()
-                      : undefined,
+                    : devices && (() => devices.show()),
             })),
         )
     }
@@ -249,6 +292,8 @@ export default (
     const stopWatchingDevices = watchDevices((workspace) => {
         if (workspace === blocklyInstance.workspace) {
             refreshProgram()
+            // the toolbox's blocks show the devices there are now
+            syncToolboxDevices(workspace)
         }
     })
 
@@ -291,8 +336,24 @@ export default (
                 }
                 if (!view) {
                     startMultiselect(blocklyInstance)
+                    blocklyInstance.cleanupCallbacks.push(clickModes.start())
+                    // the simplified menu's round menu (no toolbox then)
+                    blocklyInstance.cleanupCallbacks.push(
+                        startRadialMenu(blocklyInstance.workspace, CanvasWrap),
+                    )
+                    // notes: the edge handle, links to blocks, their lines
+                    blocklyInstance.cleanupCallbacks.push(
+                        startNotes(blocklyInstance.workspace, refreshProgram),
+                    )
                 }
                 loadState(restoredState)
+                // the toolbox's device and variable dropdowns, once the
+                // program (which loads a moment later) is in
+                setTimeout(() =>
+                    setTimeout(() =>
+                        syncToolboxDevices(blocklyInstance.workspace),
+                    ),
+                )
                 capacity?.update()
                 minimap.apply()
                 toolboxDrawer.apply()
@@ -302,18 +363,22 @@ export default (
         // Editing a shadow block (a default value slot) turns it into a
         // real block, so it can be moved or deleted; the shadow comes back
         // when it is removed. Standard Blockly would keep the edit in the
-        // shadow.
-        addBlocklyChangeListener(
-            blocklyInstance,
-            shadowBlockConversionChangeListener,
-        )
+        // shadow. Not for a number in its slot (num_50 and the like): a
+        // typed number is just the block's value, and as a real block it
+        // counted against the block limit, which took it straight back out
+        // (the number snapped back to its default).
+        addBlocklyChangeListener(blocklyInstance, (event) => {
+            if (event.type === Events.BLOCK_CHANGE) {
+                const block = blocklyInstance.workspace?.getBlockById(
+                    event.blockId,
+                )
+                if (block && numberShadowTypes.has(block.type)) {
+                    return
+                }
+            }
+            shadowBlockConversionChangeListener(event)
+        })
         addBlocklyChangeListener(blocklyInstance, onWorkspaceChange)
-        // a motor block from an old program or a cheatsheet copy, pasted
-        // in, becomes a device; a viewer has no Devices section, so it
-        // keeps showing the block
-        if (!view) {
-            addBlocklyChangeListener(blocklyInstance, adoptDeviceBlocks)
-        }
 
         // The editor watches its own size, but the code drawer changes only
         // the canvas's share of it, so the canvas is watched too.
@@ -436,9 +501,7 @@ export default (
         },
         setState: (state) => {
             if (state) {
-                // a viewer has no Devices section, so it shows a saved
-                // motor block as a block rather than lifting it out
-                setBlocklyState(blocklyInstance, state, { liftDevices: !view })
+                setBlocklyState(blocklyInstance, state)
             } else {
                 blocklyInstance.workspace.clear()
             }
@@ -451,6 +514,96 @@ export default (
      * @param {boolean} wanted Whether the minimap should be shown.
      */
     mode.setMinimap = minimap.setWanted
+
+    /**
+     * Puts a saved program's blocks into the workspace beside what is
+     * already there, as one undoable step: its stacks keep their places
+     * relative to each other, with their top-left corner at the screen
+     * point given (where a host's drag let go) or else just under the
+     * existing blocks. Its devices that this program has no device of the
+     * same name for are added too. Each block gets a new id, so the same
+     * program can be put in twice. The block limit still applies.
+     * @param {object} state A saved program: `{ devices, blocks }`.
+     * @param {number} [clientX] Where on the screen, if dropped.
+     * @param {number} [clientY]
+     */
+    mode.addBlocks = (state, clientX, clientY) => {
+        const workspace = blocklyInstance.workspace
+        if (!workspace || !state) {
+            return
+        }
+        const have = getDevices(workspace)
+        const extra = (state.devices ?? []).filter(
+            (device) => !have.some((mine) => mine.name === device.name),
+        )
+        if (extra.length) {
+            setDevices(workspace, [...have, ...extra])
+        }
+        const stacks = state.blocks?.blocks ?? []
+        if (!stacks.length) {
+            return
+        }
+        const minX = Math.min(...stacks.map((b) => b.x ?? 0))
+        const minY = Math.min(...stacks.map((b) => b.y ?? 0))
+        let at
+        if (clientX !== undefined && clientY !== undefined) {
+            at = utils.svgMath.screenToWsCoordinates(
+                workspace,
+                new utils.Coordinate(clientX, clientY),
+            )
+        } else {
+            const box = workspace.getBlocksBoundingBox()
+            const empty = !workspace.getTopBlocks(false).length
+            at = empty
+                ? new utils.Coordinate(20, 20)
+                : new utils.Coordinate(box.left, box.bottom + 40)
+        }
+        // a copy without ids, so Blockly makes new ones
+        const withoutIds = (block) => {
+            if (!block || typeof block !== 'object') {
+                return block
+            }
+            // eslint-disable-next-line no-unused-vars
+            const { id, ...rest } = block
+            const out = { ...rest }
+            if (rest.inputs) {
+                out.inputs = Object.fromEntries(
+                    Object.entries(rest.inputs).map(([name, input]) => [
+                        name,
+                        {
+                            ...input,
+                            ...(input.block
+                                ? { block: withoutIds(input.block) }
+                                : {}),
+                            ...(input.shadow
+                                ? { shadow: withoutIds(input.shadow) }
+                                : {}),
+                        },
+                    ]),
+                )
+            }
+            if (rest.next?.block) {
+                out.next = { block: withoutIds(rest.next.block) }
+            }
+            return out
+        }
+        Events.setGroup(true)
+        try {
+            for (const stack of stacks) {
+                serialization.blocks.append(
+                    {
+                        ...withoutIds(stack),
+                        x: at.x + (stack.x ?? 0) - minX,
+                        y: at.y + (stack.y ?? 0) - minY,
+                    },
+                    workspace,
+                    { recordUndo: true },
+                )
+            }
+        } finally {
+            Events.setGroup(false)
+        }
+    }
 
     /**
      * The program with a `make._block('<block id>')` line before every
@@ -500,6 +653,7 @@ export default (
         stopPhoneLayout()
         stopWatchingDevices()
         devices?.destroy()
+        document.removeEventListener(openDevicesEvent, onOpenDevices)
         destroyBlocklyInstance(blocklyInstance)
     }
 

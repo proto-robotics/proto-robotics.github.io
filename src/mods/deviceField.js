@@ -9,7 +9,7 @@
  * before the Devices section existed, or whose device was removed since,
  * keeps the name it has: it is shown as it is and offered along with the
  * devices there are. A block taken from the flyout starts on the first
- * device of its kind (or the second, for a drivetrain's right motor). With
+ * device of its kind (or the second, for a motor group's right motor). With
  * no devices of its kind yet it is blank (the value ''), and the block
  * linter (blockLinter.js) marks the block until a device is picked.
  */
@@ -17,7 +17,16 @@
 import * as Blockly from 'blockly'
 import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
 
-import { cleanName, getDevices } from '../helpers/devicesHelper'
+import { cleanName, deviceKinds, getDevices } from '../helpers/devicesHelper'
+
+/**
+ * Fired on the document when a dropdown's "+ Add a drive motor" choice is
+ * picked; the block editor opens the Devices pop-up (buildBlockMode.js).
+ */
+export const openDevicesEvent = 'open-devices'
+
+/** The value of the "+ Add a ..." choice: never a name (names are Python names). */
+const ADD = '+add'
 
 /** What a blank field shows: a gap the width of a short name. */
 const BLANK_LABEL = ' '.repeat(6)
@@ -63,16 +72,37 @@ export class FieldDevice extends FieldGridDropdown {
             .map((device) => device.name)
     }
 
-    /** @returns {Array<[string, string]>} The choices: devices, then the
-     *     current name if it is not one of them, or blank when there are
-     *     none. */
+    /** @returns {Array<[string, string]>} The choices: the devices, then
+     *     the current name if it is not one of them, then "+ Add a drive
+     *     motor", which opens the Devices pop-up. With no devices the add
+     *     choice is all there is, so an empty dropdown says what to do. */
     deviceOptions() {
         const names = this.names()
         const value = this.getValue()
         if (value && !names.includes(value)) {
             names.push(value)
         }
-        return names.length ? names.map((name) => [name, name]) : [BLANK]
+        const label = deviceKinds[this.kind]?.label ?? 'device'
+        return [
+            ...names.map((name) => [name, name]),
+            [`+ Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label}`, ADD],
+        ]
+    }
+
+    /**
+     * With nothing picked the field shows blank. Blockly takes the first
+     * choice as the one shown when the value is not among them, which
+     * would show "+ Add a drive motor" as if it were picked.
+     */
+    render_() {
+        if (!this.getValue()) {
+            this.selectedOption = BLANK
+        }
+        super.render_()
+    }
+
+    getText_() {
+        return this.getValue() ? super.getText_() : BLANK_LABEL
     }
 
     /** @returns {boolean} Whether no device is picked. */
@@ -108,6 +138,15 @@ export class FieldDevice extends FieldGridDropdown {
         if (newValue === '' || newValue == null) {
             return ''
         }
+        // "+ Add a ...": open the Devices pop-up and keep what was picked
+        if (newValue === ADD) {
+            if (this.getSourceBlock()) {
+                setTimeout(() =>
+                    document.dispatchEvent(new Event(openDevicesEvent)),
+                )
+            }
+            return null
+        }
         return cleanName(newValue) || null
     }
 
@@ -136,6 +175,37 @@ export class FieldDevice extends FieldGridDropdown {
  */
 export const deviceField = (kind, options) => () =>
     new FieldDevice(kind, options)
+
+/**
+ * Puts the toolbox's blocks on the devices there are now. A toolbox block
+ * picks its device when the toolbox is built, so without this it kept
+ * showing a device (say a motor group) after it was removed, or blank after
+ * one was added. Each goes on the first device of its kind (the second for
+ * a motor group's right motor), or blank when there is none.
+ * @param {object} workspace The program's workspace.
+ */
+export const syncToolboxDevices = (workspace) => {
+    const flyoutWorkspace = workspace?.getFlyout?.()?.getWorkspace?.()
+    if (!flyoutWorkspace) {
+        return
+    }
+    for (const block of flyoutWorkspace.getAllBlocks(false)) {
+        for (const input of block.inputList) {
+            for (const field of input.fieldRow) {
+                if (!(field instanceof FieldDevice)) {
+                    continue
+                }
+                const names = field.names()
+                const wanted = names.length
+                    ? names[Math.min(field.nth, names.length - 1)]
+                    : ''
+                if (field.getValue() !== wanted) {
+                    field.setValue(wanted)
+                }
+            }
+        }
+    }
+}
 
 /**
  * Points the blocks that use a device by one name at another, as one

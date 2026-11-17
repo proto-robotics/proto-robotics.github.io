@@ -1,0 +1,1713 @@
+<!doctype html>
+<html lang="en" data-plan-id="make-update" data-revision="5">
+<!--
+	plan-review template. Authoring rules are in SKILL.md next to this file.
+	Keep: <html data-plan-id> (stable per plan), data-revision (bump on every rewrite),
+	the style block, the topbar, the nav skeleton, the help box, and the runtime script at the bottom (copy it byte for byte).
+	Author: everything inside <main>.
+	Optional on <html>: data-legacy-key="old-localStorage-key" to import decisions from an older plan page.
+-->
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Make Blocks Plan</title>
+	<style>
+		:root {
+			color-scheme: dark;
+			--bg: #0b1118;
+			--panel: #121b26;
+			--panel-2: #182433;
+			--line: #2b3c50;
+			--text: #e7edf5;
+			--muted: #9fb0c3;
+			--accent: #64d2a3;
+			--accent-2: #6bb6ff;
+			--warn: #f4c96b;
+			--danger: #ff7c86;
+			--unknown: #c99cff;
+			--shadow: 0 18px 45px rgb(0 0 0 / 24%);
+		}
+		* { box-sizing: border-box; }
+		html { scroll-behavior: smooth; font-size: 15px; }
+		body {
+			margin: 0;
+			background:
+				radial-gradient(circle at 10% 0%, rgb(47 104 132 / 20%), transparent 28rem),
+				radial-gradient(circle at 90% 10%, rgb(54 151 111 / 13%), transparent 30rem),
+				var(--bg);
+			color: var(--text);
+			font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			line-height: 1.55;
+		}
+		a { color: var(--accent-2); }
+		code, pre { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+		code {
+			padding: .08rem .35rem;
+			border: 1px solid rgb(107 182 255 / 18%);
+			border-radius: .35rem;
+			background: rgb(107 182 255 / 8%);
+			font-size: .9em;
+		}
+		pre {
+			overflow-x: auto; padding: 1rem;
+			border: 1px solid var(--line); border-radius: .8rem;
+			background: #091018; color: #cfe5f8;
+		}
+		button {
+			padding: .45rem .72rem;
+			border: 1px solid var(--line); border-radius: .55rem;
+			background: var(--panel-2); color: var(--text); cursor: pointer;
+			font: inherit; font-size: .88rem;
+		}
+		button:hover { border-color: var(--accent-2); }
+		kbd {
+			padding: .05rem .4rem; border: 1px solid var(--line); border-bottom-width: 2px;
+			border-radius: .3rem; background: #091018; font: .8em Consolas, monospace; color: var(--text);
+		}
+
+		/* ---------- top bar ---------- */
+		.topbar {
+			position: sticky; z-index: 20; top: 0;
+			border-bottom: 1px solid var(--line);
+			background: rgb(11 17 24 / 92%);
+			backdrop-filter: blur(14px);
+		}
+		.topbar-inner {
+			display: grid;
+			grid-template-columns: minmax(14rem, 1fr) minmax(10rem, 22rem) auto;
+			gap: 1.25rem; align-items: center;
+			max-width: 94rem; margin: auto; padding: .55rem 1.25rem .45rem;
+		}
+		.tb-left { display: flex; gap: .7rem; align-items: center; min-width: 0; }
+		.tb-left strong { display: block; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.tb-sub { color: var(--muted); font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.tb-sub .save-state:not(:empty)::before { content: " · "; }
+		button.icon { width: 2.1rem; padding: .35rem 0; text-align: center; color: var(--muted); }
+		button.icon.on { color: var(--text); border-color: var(--accent-2); }
+		.topbar button { font-size: .82rem; padding: .35rem .6rem; }
+		.topbar button.primary { background: var(--accent); border-color: var(--accent); color: #07130e; font-weight: 600; }
+		.topbar button.primary:hover { filter: brightness(1.08); }
+		.menu { position: relative; }
+		.menu > summary {
+			list-style: none; cursor: pointer; padding: .3rem .6rem; font-size: .95rem; line-height: 1.1;
+			border: 1px solid var(--line); border-radius: .55rem; background: var(--panel-2); color: var(--text);
+		}
+		.menu > summary::-webkit-details-marker { display: none; }
+		.menu > summary:hover, .menu[open] > summary { border-color: var(--accent-2); }
+		.menu-list {
+			position: absolute; right: 0; top: calc(100% + .35rem); z-index: 25;
+			display: grid; gap: .25rem; min-width: 13rem; padding: .45rem;
+			border: 1px solid var(--line); border-radius: .6rem; background: var(--panel-2); box-shadow: var(--shadow);
+		}
+		.menu-list button { width: 100%; text-align: left; border-color: transparent; background: transparent; }
+		.menu-list button:hover { background: var(--panel); border-color: var(--line); }
+		.tracks { display: grid; gap: .3rem; }
+		.progress-track {
+			display: flex; height: .72rem; overflow: hidden;
+			border: 1px solid var(--line); border-radius: 99rem; background: #080e14;
+		}
+		.progress-track.thin { height: .4rem; }
+		.progress-track[hidden] { display: none; }
+		.progress-track > div { height: 100%; transition: width .2s ease; }
+		.fill-accept { background: var(--accent); }
+		.fill-reject { background: var(--danger); }
+		.fill-hold { background: var(--warn); }
+		.fill-done { background: var(--accent-2); }
+		.controls { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+		.save-state { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+		.save-state.file { color: var(--accent); }
+		.save-state.error { color: var(--danger); }
+		.filterbar {
+			display: flex; gap: .3rem; flex-wrap: wrap; align-items: center;
+			max-width: 94rem; margin: auto; padding: 0 1.25rem .45rem;
+		}
+		.filterbar .lbl { color: var(--muted); font-size: .74rem; margin-right: .2rem; }
+		.topbar .chip {
+			padding: .12rem .55rem; border-radius: 99rem; font-size: .74rem;
+			border: 1px solid transparent; background: transparent; color: var(--muted);
+		}
+		.topbar .chip:hover { border-color: var(--line); }
+		.chip.on { border-color: var(--accent-2); color: var(--text); background: rgb(107 182 255 / 12%); }
+		.chip .n { opacity: .7; margin-left: .3rem; font-family: Consolas, monospace; }
+
+		/* ---------- layout + nav ---------- */
+		.layout {
+			display: grid; grid-template-columns: 17rem minmax(0, 1fr);
+			gap: 2rem; max-width: 94rem; margin: auto; padding: 2rem 1.25rem 5rem;
+		}
+		.layout.nav-hidden { grid-template-columns: minmax(0, 1fr); }
+		.layout.nav-hidden > nav { display: none; }
+		#detailsBtn.on { border-color: var(--accent-2); color: var(--text); background: rgb(107 182 255 / 12%); }
+		nav {
+			position: sticky; top: 6.2rem; align-self: start;
+			max-height: calc(100vh - 7rem); overflow-y: auto;
+			padding: 1rem; border: 1px solid var(--line); border-radius: .9rem;
+			background: rgb(18 27 38 / 84%);
+		}
+		nav h2 {
+			margin: 0 0 .65rem; font-size: .82rem; letter-spacing: .12em;
+			text-transform: uppercase; color: var(--muted);
+		}
+		nav a {
+			display: flex; justify-content: space-between; gap: .5rem;
+			padding: .3rem .45rem; border-radius: .35rem;
+			color: var(--muted); font-size: .9rem; text-decoration: none;
+		}
+		nav a:hover { background: var(--panel-2); color: var(--text); }
+		nav a .cnt { color: var(--accent); font-family: Consolas, monospace; font-size: .78rem; }
+		nav a .cnt.all { color: var(--muted); }
+
+		/* ---------- hero + sections ---------- */
+		main { min-width: 0; }
+		.hero {
+			padding: clamp(1.5rem, 4vw, 3.2rem);
+			border: 1px solid var(--line); border-radius: 1.2rem;
+			background: linear-gradient(135deg, rgb(24 36 51 / 95%), rgb(15 27 35 / 92%));
+			box-shadow: var(--shadow);
+		}
+		.eyebrow {
+			margin: 0 0 .5rem; color: var(--accent); font-size: .8rem; font-weight: 700;
+			letter-spacing: .13em; text-transform: uppercase;
+		}
+		h1 { max-width: 20ch; margin: 0; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.05; }
+		.lede { max-width: 72ch; margin: 1.25rem 0 0; color: #c2cfdd; font-size: 1.08rem; }
+		.meta-grid, .card-grid {
+			display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+			gap: .9rem; margin-top: 1.25rem;
+		}
+		.meta, .mini-card {
+			padding: .9rem 1rem; border: 1px solid var(--line); border-radius: .75rem;
+			background: rgb(9 16 24 / 55%);
+		}
+		.meta b, .mini-card b { display: block; color: var(--accent); }
+		.meta code, .mini-card code { overflow-wrap: anywhere; }
+		section { scroll-margin-top: 6.5rem; margin-top: 2.4rem; }
+		section > h2 { margin-bottom: .5rem; font-size: 1.65rem; }
+		.section-intro { max-width: 78ch; color: var(--muted); }
+		.callout {
+			margin: 1rem 0; padding: 1rem 1.15rem;
+			border-left: .25rem solid var(--accent-2); border-radius: .45rem; background: var(--panel);
+		}
+		.callout.warning { border-left-color: var(--warn); }
+		.callout.danger { border-left-color: var(--danger); }
+		table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: .92rem; }
+		th, td { padding: .65rem .7rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+		th { background: var(--panel-2); color: var(--accent); }
+		td { background: rgb(18 27 38 / 70%); }
+		.rec { color: var(--accent); font-weight: 600; }
+		footer { margin-top: 3rem; padding-top: 1.4rem; border-top: 1px solid var(--line); color: var(--muted); }
+
+		/* ---------- phases ---------- */
+		.phase {
+			margin-top: 1.2rem; overflow: hidden;
+			border: 1px solid var(--line); border-radius: 1rem; background: var(--panel);
+			box-shadow: 0 10px 25px rgb(0 0 0 / 12%);
+		}
+		.phase-header {
+			display: grid; grid-template-columns: auto 1fr auto; gap: .8rem; align-items: center;
+			padding: 1rem 1.2rem; border-bottom: 1px solid var(--line); background: var(--panel-2);
+		}
+		.phase-number {
+			display: grid; width: 2.35rem; height: 2.35rem; place-items: center;
+			border-radius: 50%; background: var(--accent); color: #07130e; font-weight: 800; font-size: .85rem;
+		}
+		.phase-header h3 { margin: 0; }
+		.phase-header p { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
+		.phase-tools { display: flex; gap: .4rem; flex-wrap: wrap; }
+		.phase-tools button { font-size: .78rem; padding: .3rem .55rem; }
+		.phase.collapsed .phase-body { display: none; }
+		.badge {
+			padding: .22rem .55rem; border: 1px solid var(--line); border-radius: 99rem;
+			color: var(--muted); font-size: .75rem; white-space: nowrap;
+		}
+		.phase-body { padding: 1rem 1.2rem 1.2rem; }
+		.phase-body > p:first-child { margin-top: 0; }
+		.gate {
+			margin-top: 1rem; padding: 1rem;
+			border: 1px solid rgb(244 201 107 / 45%); border-radius: .8rem; background: rgb(244 201 107 / 7%);
+		}
+		.gate h4 { margin: 0 0 .5rem; color: var(--warn); }
+		.gate ul { margin-bottom: 0; }
+
+		/* ---------- pages ---------- */
+		.pager { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: 0 0 1.4rem; }
+		.pager.bottom { margin: 2.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); }
+		.pager .pages { display: flex; gap: .25rem; flex-wrap: wrap; }
+		.pager button { padding: .3rem .55rem; font-size: .8rem; }
+		.pager button.cur { background: var(--accent-2); color: #061320; border-color: var(--accent-2); font-weight: 600; }
+		.pager button.empty { opacity: .45; }
+		.pager .n { margin-left: .3rem; font-size: .7rem; color: var(--warn); }
+		.pager button.cur .n { color: #061320; }
+		.pager .next-title { margin-left: auto; color: var(--muted); font-size: .85rem; }
+		.pg-hidden { display: none !important; }
+		main > .pg-first { margin-top: 0; }
+		section.part.pg-first { padding-top: 0; border-top: 0; }
+
+		/* ---------- reading measure + part dividers ---------- */
+		main p, main li, main dd, main .lede, main .section-intro { max-width: 78ch; }
+		main .task-copy { max-width: 84ch; }
+		section.part { margin-top: 3.4rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
+		section.part > .eyebrow { margin-bottom: .2rem; }
+		section.part > h2 { margin-top: 0; }
+		.time { margin-left: .35rem; color: var(--accent); font-size: .78rem; white-space: nowrap; }
+		.time a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+
+		/* ---------- tasks ---------- */
+		.task-list { display: grid; gap: .4rem; margin: .8rem 0 0; padding: 0; list-style: none; }
+		.task {
+			display: grid; grid-template-columns: 1fr auto; gap: .5rem .9rem; align-items: start;
+			padding: .55rem .7rem; border: 1px solid transparent; border-radius: .6rem;
+			background: rgb(8 14 21 / 42%);
+		}
+		/* controls stay quiet until the task is hovered, current, or decided */
+		.task .decide { opacity: 0; transition: opacity .12s; }
+		.task:hover .decide, .task.cur .decide, .task:not([data-decision=""]) .decide { opacity: 1; }
+		.task .note { display: none; }
+		.task.cur .note, .task .note:not(:placeholder-shown) { display: block; }
+		.task-copy > b { font-weight: 600; }
+		.task:hover { border-color: var(--line); }
+		.task.cur { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+		.task[hidden] { display: none; }
+		.task[data-decision="accept"] { border-color: rgb(100 210 163 / 55%); background: rgb(100 210 163 / 6%); }
+		.task[data-decision="reject"] { border-color: rgb(255 124 134 / 55%); background: rgb(255 124 134 / 6%); }
+		.task[data-decision="reject"] .task-copy { color: var(--muted); text-decoration: line-through; text-decoration-color: rgb(255 124 134 / 50%); }
+		.task[data-decision="hold"] { border-color: rgb(244 201 107 / 55%); background: rgb(244 201 107 / 6%); }
+		.task[data-decision="prototype"] { border-color: rgb(201 156 255 / 55%); background: rgb(201 156 255 / 6%); }
+		.fill-proto { background: var(--unknown); }
+		.decide button[data-d="prototype"].on { background: var(--unknown); color: #1a0a2a; border-color: var(--unknown); }
+		/* clarify: "explain this before I decide", the question in the note */
+		.task[data-decision="clarify"] { border-color: rgb(107 182 255 / 55%); background: rgb(107 182 255 / 6%); }
+		.decide button[data-d="clarify"].on { background: var(--accent-2); color: #061320; border-color: var(--accent-2); }
+		/* options: a task's alternatives (ol.options in .task-copy), picked as chips under the title */
+		.task-copy ol.options { margin: .45rem 0 0; padding-left: 1.4rem; display: grid; gap: .25rem; list-style-type: upper-alpha; }
+		.task-copy ol.options li.picked { color: var(--accent); }
+		.task-copy ol.options li.picked::marker { content: '✓ '; }
+		body.compact .task:not(.open) .task-copy ol.options { display: none; }
+		.choose { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+		.choose .lbl { font-size: .74rem; color: var(--muted); margin-right: .15rem; }
+		.choose button { padding: .22rem .55rem; font-size: .78rem; }
+		.choose button .star { color: var(--warn); margin-left: .25rem; }
+		.choose button.on { background: var(--accent); color: #07130e; border-color: var(--accent); }
+
+		/* ---------- comments anywhere ---------- */
+		.cmt-hint {
+			position: fixed; z-index: 40; padding: .3rem .65rem; font-size: .8rem; border: 0; border-radius: .5rem;
+			background: var(--accent-2); color: #061320; font-weight: 600; box-shadow: var(--shadow);
+		}
+		.cmt-hint[hidden] { display: none; }
+		.cmt {
+			margin: .5rem 0 0; padding: .5rem .7rem;
+			border: 1px solid rgb(107 182 255 / 45%); border-left: .25rem solid var(--accent-2); border-radius: .45rem;
+			background: rgb(107 182 255 / 6%); font-size: .88rem;
+		}
+		.task > .cmt { grid-column: 1 / -1; margin: 0; }
+		.cmt.resolved { opacity: .65; border-left-color: var(--accent); }
+		.cmt.lost { border-left-color: var(--warn); }
+		.cmt-head { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+		.cmt-pin {
+			display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; flex: none;
+			border-radius: 50%; background: var(--accent-2); color: #061320; font-weight: 700; font-size: .75rem;
+		}
+		.cmt-anchor { flex: 1; min-width: 8rem; color: var(--muted); font-size: .8rem; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.cmt-tools { display: flex; gap: .3rem; }
+		.cmt-tools button { padding: .15rem .45rem; font-size: .74rem; }
+		.cmt textarea {
+			width: 100%; min-height: 2.4rem; margin-top: .4rem; resize: vertical;
+			padding: .4rem .6rem; border: 1px solid var(--line); border-radius: .4rem;
+			background: #091018; color: var(--text); font: inherit; font-size: .88rem;
+		}
+		.cmt .reply { margin-top: .4rem; }
+		.drawer {
+			position: fixed; top: 6.5rem; right: 1rem; bottom: 1rem; z-index: 30; width: 22rem; overflow-y: auto;
+			padding: .9rem 1rem; border: 1px solid var(--line); border-radius: .8rem;
+			background: var(--panel-2); box-shadow: var(--shadow); font-size: .86rem;
+		}
+		.drawer[hidden] { display: none; }
+		.drawer h3 { margin: 0 0 .5rem; font-size: .95rem; }
+		.drawer a { display: block; padding: .4rem .5rem; border: 1px solid transparent; border-radius: .4rem; color: var(--text); text-decoration: none; }
+		.drawer a:hover { border-color: var(--line); }
+		.drawer a small { display: block; color: var(--muted); }
+		.drawer a.resolved { opacity: .6; }
+		.task[data-done] .task-copy > b { color: var(--muted); text-decoration: line-through; text-decoration-color: rgb(107 182 255 / 60%); }
+		.task small { display: block; margin-top: .12rem; color: var(--muted); }
+		.task-id {
+			margin-right: .45rem; color: var(--accent-2);
+			font-family: "Cascadia Code", Consolas, monospace; font-size: .78rem;
+		}
+		.from, .tag {
+			margin-left: .4rem; padding: .05rem .4rem; border-radius: 99rem;
+			border: 1px solid var(--line); color: var(--muted); font-size: .7rem; vertical-align: .1rem; white-space: nowrap;
+		}
+		.tag.new { border-color: var(--accent); color: var(--accent); }
+		.tag.changed { border-color: var(--warn); color: var(--warn); }
+		.tag.done { border-color: var(--accent-2); color: var(--accent-2); }
+		.tag.needs { border-color: rgb(201 156 255 / 55%); color: var(--unknown); text-decoration: none; }
+		.tag.needs.ok { border-color: var(--accent); color: var(--accent); }
+		.tag.needs.skip { border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+		.task.waits > .task-copy > b { color: #c9d3df; }
+		.decide { display: flex; gap: .3rem; flex-wrap: wrap; justify-content: flex-end; }
+		.decide button { padding: .28rem .55rem; font-size: .78rem; }
+		.decide button[data-d="accept"].on { background: var(--accent); color: #07130e; border-color: var(--accent); }
+		.decide button[data-d="reject"].on { background: var(--danger); color: #1a0508; border-color: var(--danger); }
+		.decide button[data-d="hold"].on { background: var(--warn); color: #1c1403; border-color: var(--warn); }
+		.note {
+			grid-column: 1 / -1; width: 100%; min-height: 2.4rem; resize: vertical;
+			padding: .45rem .6rem; border: 1px solid var(--line); border-radius: .45rem;
+			background: #091018; color: var(--text); font: inherit; font-size: .88rem;
+		}
+		.note::placeholder { color: #5d6f83; }
+		.reply {
+			grid-column: 1 / -1; margin: 0; padding: .5rem .7rem;
+			border-left: .25rem solid var(--accent-2); border-radius: .35rem;
+			background: rgb(107 182 255 / 8%); color: #c2cfdd; font-size: .86rem; white-space: pre-wrap;
+		}
+		.reply b { color: var(--accent-2); font-weight: 600; margin-right: .3rem; }
+		.evidence { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .82rem; }
+
+		/* ---------- readability: summary line, structured facts, compact mode ---------- */
+		.task-copy > b { cursor: pointer; }
+		.sum { display: block; margin-top: .1rem; color: var(--muted); }
+		.facts {
+			display: grid; grid-template-columns: max-content 1fr; gap: .2rem .8rem;
+			margin: .45rem 0 0; padding: .5rem .7rem; border-left: 2px solid var(--line); color: var(--muted); font-size: .88rem;
+		}
+		.facts dt { color: var(--accent-2); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding-top: .2rem; }
+		.facts dd { margin: 0; }
+		.facts dd .rec { color: var(--accent); }
+		body.compact .task.has-details:not(.open) small,
+		body.compact .task.has-details:not(.open) .facts { display: none; }
+		body.compact .task.has-details:not(.open) .task-copy > b::after { content: " ▸"; color: var(--muted); font-weight: 400; font-size: .8em; }
+		.task.open .task-copy > b::after { content: " ▾"; color: var(--muted); font-weight: 400; font-size: .8em; }
+		.tldr {
+			margin: 1.25rem 0 0; padding: .9rem 1.1rem;
+			border: 1px solid rgb(100 210 163 / 40%); border-radius: .75rem; background: rgb(100 210 163 / 6%);
+		}
+		.tldr b { color: var(--accent); }
+		.tldr ol { margin: .4rem 0 0; padding-left: 1.3rem; }
+		.tldr li { margin: .15rem 0; }
+		.phase-facts { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
+		.phase-facts .badge b { color: var(--accent); font-weight: 600; margin-right: .25rem; }
+		.outcome {
+			margin: 0 0 .7rem; padding: .55rem .8rem;
+			border-left: .25rem solid var(--accent); border-radius: .35rem; background: rgb(100 210 163 / 7%);
+		}
+		.outcome b { color: var(--accent); margin-right: .3rem; }
+
+		/* ---------- figures (optional) ---------- */
+		.fig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+		.fig { padding: .9rem 1rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--panel); }
+		.fig.wide { grid-column: 1 / -1; }
+		.fig h4 { margin: 0 0 .5rem; color: var(--accent); font-size: .95rem; }
+		.fig p { margin: .6rem 0 0; color: var(--muted); font-size: .88rem; }
+		.fig svg { display: block; width: 100%; height: auto; border-radius: .5rem; background: #091018; }
+		.lbl { fill: #c2cfdd; font-size: 11px; font-family: Inter, system-ui, sans-serif; }
+		.lbl.t { fill: var(--accent); font-weight: 700; }
+		.lbl.m { fill: #9fb0c3; }
+
+		/* ---------- help overlay ---------- */
+		.help {
+			position: fixed; right: 1rem; bottom: 1rem; z-index: 30; max-width: 24rem;
+			padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: .8rem;
+			background: var(--panel-2); box-shadow: var(--shadow); font-size: .86rem;
+		}
+		.help[hidden] { display: none; }
+		.help table { margin: .4rem 0 0; font-size: .84rem; }
+		.help td { padding: .25rem .4rem; border: 0; background: none; }
+
+		@media (max-width: 850px) {
+			.topbar-inner { grid-template-columns: 1fr; }
+			.controls { justify-content: flex-start; }
+			.layout { grid-template-columns: 1fr; }
+			nav { position: static; max-height: none; }
+			.phase-header { grid-template-columns: auto 1fr; }
+			.phase-header .phase-tools { grid-column: 2; }
+			.task { grid-template-columns: 1fr; }
+			.decide { justify-content: flex-start; }
+		}
+		@media print {
+			:root { color-scheme: light; --text: #16202a; --muted: #536170; --line: #bcc7d1; }
+			body { background: white; }
+			.topbar, nav, .controls, .phase-tools, .decide, .filterbar, .help, .cmt-hint, .drawer, .cmt-tools, .pager, .note:placeholder-shown { display: none; }
+			.pg-hidden { display: block !important; }
+			.layout { display: block; max-width: none; padding: 0; }
+			.hero, .phase, td, th { background: white; box-shadow: none; }
+			.phase { break-inside: avoid; }
+		}
+	</style>
+</head>
+<body>
+	<header class="topbar">
+		<div class="topbar-inner">
+			<div class="tb-left">
+				<button type="button" id="navBtn" class="icon" title="Show or hide the roadmap">☰</button>
+				<div>
+					<strong id="docTitle">Make Blocks Plan</strong>
+					<div class="tb-sub"><span id="progressText">0 decided</span><span class="save-state" id="saveState"></span></div>
+				</div>
+			</div>
+			<div class="tracks">
+				<div class="progress-track" aria-label="Review progress">
+					<div class="fill-accept" id="fillAccept"></div>
+					<div class="fill-hold" id="fillHold"></div>
+					<div class="fill-proto" id="fillProto"></div>
+					<div class="fill-reject" id="fillReject"></div>
+				</div>
+				<div class="progress-track thin" id="doneTrack" hidden aria-label="Build progress">
+					<div class="fill-done" id="fillDone"></div>
+				</div>
+			</div>
+			<div class="controls">
+				<button type="button" id="nextUndecided" title="u">Next undecided</button>
+				<button type="button" id="commentsBtn" title="Click any text in the page to comment on it">Comments (0)</button>
+				<button type="button" id="detailsBtn" title="Show details on every task (D)">Details</button>
+				<details class="menu" id="menu">
+					<summary title="More">⋯</summary>
+					<div class="menu-list">
+						<button type="button" id="copyJson">Copy JSON</button>
+						<button type="button" id="helpBtn">Keyboard help (?)</button>
+						<button type="button" id="resetAll">Reset all</button>
+					</div>
+				</details>
+				<button type="button" id="copyDecisions" class="primary" title="Copy every decision, note, and comment as text to paste into chat">Copy my review</button>
+			</div>
+		</div>
+		<div class="filterbar" id="filterBar"></div>
+	</header>
+
+	<div class="layout">
+		<nav aria-label="Document sections">
+			<h2>Roadmap</h2>
+			<a href="#purpose">Top</a>
+			<a href="#why">1 · Why</a>
+			<a href="#how-to-review">How to review</a>
+			<a href="#plain" data-phase="L">1 · Steps <span class="cnt"></span></a>
+			<a href="#prototypes" data-phase="X">2 · Prototypes <span class="cnt"></span></a>
+			<a href="#details">3 · Details</a>
+			<a href="#p0" data-phase="P0">P0 · Rules <span class="cnt"></span></a>
+			<a href="#p1" data-phase="P1">P1 · Motion blocks <span class="cnt"></span></a>
+			<a href="#p2" data-phase="P2">P2 · Other blocks <span class="cnt"></span></a>
+			<a href="#p3" data-phase="P3">P3 · Fit the editor <span class="cnt"></span></a>
+			<a href="#risks" data-phase="R">Risks <span class="cnt"></span></a>
+			<a href="#schedule">Order and estimates</a>
+		</nav>
+
+	<main>
+		<!-- ===================================================== hero -->
+		<header class="hero" id="purpose" data-page="Start">
+			<p class="eyebrow">Proposal · revision 5 · for review</p>
+			<h1>A new set of blocks, designed around the new make.</h1>
+			<p class="lede">
+				The new make asks every motor call how long to run: some seconds, some degrees, or a twentieth of a second inside a loop. This plan replaces the editor's blocks with ones that say that on their face, and adds the board's buttons, lights and encoders.
+			</p>
+			<div class="tldr">
+				<b>Read this first</b>
+				<ol>
+					<li>Four steps: agree the block set, build the motion blocks, build the rest, then fit the editor around them.</li>
+					<li>Decide P0 first, above all P0.2, the "step" blocks that only belong inside loops.</li>
+					<li>About 9 working days, and the motor blocks run on the board after day 4.</li>
+				</ol>
+			</div>
+			<div class="meta-grid">
+				<div class="meta"><b>Supersedes</b>Revision 2, which patched the old blocks. Nothing from it is kept except the rules about buttons, Stop and Brake.</div>
+				<div class="meta"><b>Starting point</b>proto-code Casper at df23261. make casper at 2e5b31a, CHANGELOG "Unreleased". Every kit has encoder motors.</div>
+				<div class="meta"><b>Target</b>A toolbox of new blocks that each write one make call, a line editor that knows make's names, and a linter for the new blocks.</div>
+				<div class="meta"><b>Decisions</b>Saved to <code>.plan-review/</code> next to this file when opened through the plan server, otherwise in this browser.</div>
+			</div>
+		</header>
+
+		<!-- ===================================================== PART 1: why -->
+		<section id="why" class="part">
+			<p class="eyebrow">Part 1 · Why</p>
+			<h2>What this is for</h2>
+			<p class="section-intro">The editor's blocks were made for the old make, where Spin started a motor and Stop ended it. In the new make a motor call runs for a set time and then stops the motor. Without a time it runs for 0.05 seconds. Patching the old blocks would leave words on them that no longer match what the board does.</p>
+			<p class="section-intro">So the blocks start again from make's own model. A motion block runs for some seconds, or through some degrees, or for one short step inside a loop. Buttons and lights come built into the board, so they are a letter in a dropdown with nothing to set up. Motors and drivetrains are still set up in the Devices pop-up.</p>
+			<div class="fig-grid">
+				<div class="fig wide">
+					<h4>Three ways to run a motor, and the block for each</h4>
+					<svg viewBox="0 0 760 200" role="img" aria-label="Three block shapes: a timed block, a degrees block, and a step block inside a Forever loop">
+						<rect x="20" y="20" width="330" height="34" rx="6" fill="#e9767a"/>
+						<text class="lbl" x="32" y="42" fill="#fff">Spin arm forward at 50 power for 2 seconds</text>
+						<text class="lbl m" x="380" y="42">arm.spin(50, 2): runs 2 s, then stops</text>
+						<rect x="20" y="70" width="330" height="34" rx="6" fill="#e9767a"/>
+						<text class="lbl" x="32" y="92" fill="#fff">Spin arm forward 90 degrees at 50 power</text>
+						<text class="lbl m" x="380" y="92">arm.spin_degrees(90, 50): turns 90°, brakes</text>
+						<rect x="20" y="120" width="330" height="70" rx="6" fill="#f8bf41"/>
+						<text class="lbl" x="32" y="140" fill="#3a2a00">Forever</text>
+						<rect x="44" y="148" width="290" height="30" rx="6" fill="#e9767a" stroke="#fff" stroke-dasharray="4 3"/>
+						<text class="lbl" x="56" y="168" fill="#fff">step: Spin arm forward at 50 power</text>
+						<text class="lbl m" x="380" y="160">arm.spin(50) again and again:</text>
+						<text class="lbl m" x="380" y="178">keeps going while the loop does</text>
+					</svg>
+					<p>Every motion block says how long it runs. The step block has a dashed edge and only fits inside a loop.</p>
+				</div>
+			</div>
+			<div class="callout">
+				<b>The ideas the whole plan rests on.</b> If one of them is wrong, the rest gets rewritten.
+				<ol>
+					<li>Each block writes one make call, so the Python in the code drawer reads like make's own docs.</li>
+					<li>A motion block always shows how long it runs. A kid never has to know that 0.05 seconds is the default.</li>
+					<li>Directions are words, forward and backward or left and right. Power runs from 0 to 100, never below.</li>
+					<li>Old block programs are not converted. The blocks change too much for a converter to be worth its cost.</li>
+				</ol>
+			</div>
+			<h3>What it costs, and what you see first</h3>
+			<p class="section-intro">About 9 working days. The step blocks worry me most. They are the one new idea kids have to learn. Prototype X2 showed Blockly can keep them inside loops, so the risk left is whether kids get the idea. The motor and drivetrain blocks run on the bench board after about day 4.</p>
+		</section>
+
+		<!-- ===================================================== how to review -->
+		<section id="how-to-review" data-page="Steps">
+			<h2>How to review</h2>
+			<p class="section-intro">
+				Three rounds. First the steps below: directions, not commitments. Then the prototypes in Part 2,
+				cheap builds that answer the questions the details depend on. Part 3 holds the commitments, and a task
+				tagged "after X1" waits for that prototype. Click any sentence to leave a comment. Press <kbd>?</kbd> for the keys.
+			</p>
+		</section>
+
+		<!-- ===================================================== PART 1b: plain steps -->
+		<section id="plain" class="part">
+			<p class="eyebrow">Part 1 · The plan in 4 steps</p>
+			<div class="phase" data-phase="L">
+				<div class="phase-header">
+					<div class="phase-number">L</div>
+					<div>
+						<h3>The direction, one step per phase</h3>
+						<p>Accept = this is the right direction. Reject = go another way, say which in a note. Hold = later. Prototype = not even the direction is clear yet.</p>
+						<div class="phase-facts">
+							<span class="badge"><b>Takes</b>about 8 days</span>
+							<span class="badge"><b>Then</b>Part 2 prototypes</span>
+						</div>
+					</div>
+					<div class="phase-tools"></div>
+				</div>
+				<div class="phase-body">
+					<p class="outcome"><b>You get:</b> a toolbox where every block does on the board exactly what its words say.</p>
+					<ul class="task-list">
+						<li class="task" data-task="L1">
+							<div class="task-copy"><span class="task-id">L1</span><b>Agree the block set.</b>
+								<span class="sum">How long a block runs, step blocks, directions, Stop, buttons, and old programs.<span class="time">one sitting · <a href="#p0">P0</a></span></span>
+								<dl class="facts">
+									<dt>Choice</dt><dd>One timed block per motion, with seconds or degrees picked from a dropdown, and one step block for loops.</dd>
+									<dt>Skip it</dt><dd>The blocks get built one by one and end up inconsistent.</dd>
+								</dl></div>
+						</li>
+						<li class="task" data-task="L2">
+							<div class="task-copy"><span class="task-id">L2</span><b>Build the motor and drivetrain blocks.</b>
+								<span class="sum">Spin, Drive, Turn and Curve, each timed and as a step, plus Stop.<span class="time">3 days · <a href="#p1">P1</a></span></span>
+								<dl class="facts">
+									<dt>Choice</dt><dd>Turn takes left or right. Curve takes a power or a number of degrees for each side.</dd>
+									<dt>You see</dt><dd>A robot drives 720 degrees forward and turns right, from blocks.</dd>
+								</dl></div>
+						</li>
+						<li class="task" data-task="L3" data-changed="changed">
+							<div class="task-copy"><span class="task-id">L3</span><b>Build the waiting, loop, button, light and sensor blocks.</b>
+								<span class="sum">Wait, Repeat for seconds, buttons, lights, sensors, servos, simple motors and variables.<span class="time">3 days · <a href="#p2">P2</a></span></span>
+								<dl class="facts">
+									<dt>Choice</dt><dd>Buttons and lights are dropdowns of the board's names. A number-compare block joins Flow.</dd>
+									<dt>You see</dt><dd>"Repeat until button B pressed: step Drive" stops the robot on a press.</dd>
+								</dl></div>
+						</li>
+						<li class="task" data-task="L4">
+							<div class="task-copy"><span class="task-id">L4</span><b>Fit the rest of the editor to the new blocks.</b>
+								<span class="sum">Help pages, examples, the line editor's names, the Issues list and the tests.<span class="time">2 days · <a href="#p3">P3</a></span></span>
+								<dl class="facts">
+									<dt>Choice</dt><dd>The line editor's list of names is built from make's source, so it keeps up by itself.</dd>
+									<dt>Risk</dt><dd>proto-learn embeds the editor and names old blocks in its lessons. It breaks when it takes this build.</dd>
+								</dl></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<!-- ===================================================== PART 2: prototypes -->
+		<section id="prototypes" class="part" data-page="Prototypes">
+			<p class="eyebrow">Part 2 · Prototypes</p>
+			<h2>Build these before deciding the details</h2>
+			<p class="section-intro">Each one is a throwaway in a scratch folder, built to answer one question with a number or a screenshot. Accept means build it.</p>
+			<div class="phase" data-phase="X">
+				<div class="phase-header">
+					<div class="phase-number">X</div>
+					<div>
+						<h3>3 questions, 3 small builds</h3>
+						<p>What each one decides is listed under it. Those tasks in Part 3 carry an "after X" tag until the prototype is marked done.</p>
+						<div class="phase-facts">
+							<span class="badge"><b>Takes</b>1 day</span>
+							<span class="badge"><b>Then</b>P0 rules, with evidence</span>
+						</div>
+					</div>
+					<div class="phase-tools"></div>
+				</div>
+				<div class="phase-body">
+					<p class="outcome"><b>You get:</b> answers from the board and from Blockly before the block set is fixed.</p>
+					<ul class="task-list">
+						<li class="task" data-task="X1">
+							<div class="task-copy"><span class="task-id">X1</span><b>Does a loop of steps run two motors smoothly on the board?</b>
+								<span class="sum">Run three hand-written programs on the bench board and watch the motors.<span class="time">2 hours</span></span>
+								<dl class="facts">
+									<dt>Build</dt><dd>Three <code>main.py</code> files on the D: drive: Forever with one <code>spin</code>; "while not <code>button_b.pressed()</code>" with <code>left.spin</code> and <code>right.spin</code>; the same with an <code>if</code> and a <code>light_l1.toggle()</code> in the loop.</dd>
+									<dt>Measure</dt><dd>A short video or a note per program. Pass: no stutter you can hear in any of them, and the loop ends on the press.</dd>
+									<dt>Decides</dt><dd><a href="#p0">P0.2</a>, <a href="#p1">P1.3</a></dd>
+								</dl></div>
+						</li>
+						<li class="task" data-task="X2" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">X2</span><b>Can Blockly keep step blocks inside loops?</b>
+								<span class="sum">A scratch Blockly page with a step block and connection checks.<span class="time">half a day</span></span>
+								<dl class="facts">
+									<dt>Build</dt><dd>A step block whose top only connects to a loop's slot or another step, in a scratch page. Try it with an If inside a Forever, the hard case.</dd>
+									<dt>Measure</dt><dd>Screenshots of the four cases: in Forever, in If in Forever, at the top level, after a Wait in a loop. Pass: the checks allow the first, second and fourth and refuse the third. Otherwise the linter does the job, as an error.</dd>
+									<dt>Decides</dt><dd><a href="#p0">P0.2</a>, <a href="#p3">P3.3</a></dd>
+								</dl></div>
+							<p class="evidence">Evidence: <code>C:\Users\caspe\AppData\Local\Temp\claude\fbad20001ba41579\1be237f0-2900-4cbd-bc0e-658c1daf371a\scratchpad\x2-step-blocks\x2.cjs</code>, 7 of 7 cases pass headless on Blockly 12.5.1.</p>
+						</li>
+						<li class="task" data-task="X3" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">X3</span><b>Is the full toolbox readable at a kid's level?</b>
+								<span class="sum">Build the Motor and Drivetrain categories with dummy generators and take a screenshot.<span class="time">3 hours</span></span>
+								<dl class="facts">
+									<dt>Build</dt><dd>The P1 blocks in a scratch copy of <code>library.js</code>, with the seconds/degrees dropdown, in the real editor.</dd>
+									<dt>Measure</dt><dd>One screenshot per category and a block count. Pass: every block fits the flyout without wrapping past two lines, and Motor plus Drivetrain stay under 14 blocks.</dd>
+									<dt>Decides</dt><dd><a href="#p0">P0.1</a>, <a href="#p1">P1.4</a></dd>
+								</dl></div>
+							<p class="evidence">Evidence: <code>C:\Users\caspe\AppData\Local\Temp\claude\fbad20001ba41579\1be237f0-2900-4cbd-bc0e-658c1daf371a\scratchpad\x3-toolbox\toolbox-laptop.png</code> and <code>toolbox-tablet.png</code>.</p>
+						</li>
+					</ul>
+					<div class="gate">
+						<h4>Gate X · Pass when</h4>
+						<ul>
+							<li>Every accepted prototype has a one-paragraph report with its number or screenshot, written as a reply on its task.</li>
+							<li>Every "after X" tag in Part 3 has turned green.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ===================================================== PART 3 -->
+		<section id="details" class="part" data-page="Details">
+			<p class="eyebrow">Part 3 · The detailed draft</p>
+			<h2>Every task, with the exact choices</h2>
+			<p class="section-intro">The same steps as tasks. A purple "after X" tag means the choice waits for that prototype; it turns green when the prototype is marked done.</p>
+			<table>
+				<thead><tr><th>Block</th><th>Writes</th></tr></thead>
+				<tbody>
+					<tr><td>Spin [motor] [forward ▾] at [50] power for [2] [seconds ▾]</td><td><code>motor.spin(50, 2)</code> · <code>spin_back</code> · <code>spin_degrees(2, 50)</code> with "degrees"</td></tr>
+					<tr><td>step: Spin [motor] [forward ▾] at [50] power</td><td><code>motor.spin(50)</code></td></tr>
+					<tr><td>Drive [drivetrain] [forward ▾] at [50] power for [2] [seconds ▾]</td><td><code>drive</code> · <code>drive_back</code> · <code>drive_degrees</code> · <code>drive_back_degrees</code></td></tr>
+					<tr><td>Turn [drivetrain] [right ▾] at [50] power for [2] [seconds ▾]</td><td><code>turn</code> (right) · <code>turn_back</code> (left) · <code>turn_degrees</code> · <code>turn_back_degrees</code></td></tr>
+					<tr><td>Curve [drivetrain] left [50] right [30] power for [2] seconds</td><td><code>curve(50, 30, 2)</code></td></tr>
+					<tr><td>Curve [drivetrain] left [720] right [360] degrees at [50] power</td><td><code>curve_degrees(720, 360, 50)</code></td></tr>
+					<tr><td>Stop [motor or drivetrain] and [brake ▾]</td><td><code>brake()</code> · <code>stop()</code> for "coast"</td></tr>
+					<tr><td>Repeat for [5] seconds</td><td><code>for i in repeat_for(5):</code></td></tr>
+					<tr><td>&lt;button [A ▾] pressed?&gt; · &lt;button [A ▾] held down?&gt;</td><td><code>button_a.pressed()</code> · <code>button_a.held()</code></td></tr>
+					<tr><td>Light [L1 ▾] [on ▾] · Flash [L1 ▾] for [0.2] seconds</td><td><code>light_l1.on()</code> · <code>off</code> · <code>toggle</code> · <code>light_l1.flash(0.2)</code></td></tr>
+					<tr><td>(degrees turned by [motor]) · (speed of [motor])</td><td><code>motor.get_encoder().get_degrees()</code> · <code>get_speed()</code></td></tr>
+				</tbody>
+			</table>
+		</section>
+
+		<!-- ===================================================== P0 -->
+		<section id="p0" data-page="P0 Rules">
+			<div class="phase" data-phase="P0">
+				<div class="phase-header">
+					<div class="phase-number">P0</div>
+					<div>
+						<h3>The rules for the block set</h3>
+						<p>Not code. Each one is a rule every block in P1 and P2 follows.</p>
+						<div class="phase-facts">
+							<span class="badge"><b>Takes</b>one sitting</span>
+							<span class="badge"><b>After</b>X1 to X3</span>
+						</div>
+					</div>
+					<div class="phase-tools"></div>
+				</div>
+				<div class="phase-body">
+					<ul class="task-list">
+						<li class="task" data-task="P0.1" data-needs="X3">
+							<div class="task-copy"><span class="task-id">P0.1</span><b>One timed block per motion, with a seconds/degrees dropdown.</b>
+								<span class="sum">"for [2] [seconds ▾]" switches to <code>_degrees</code> calls; Curve is the exception, with its own degrees block.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>Half the blocks of separate "for seconds" and "degrees" versions, and the two ways of measuring sit side by side.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>Dropdown</b>. One timed block per motion; "for [2] [seconds ▾]" switches to degrees. Fewest blocks.</li><li><b>Separate blocks</b>. A "for N seconds" block and a "N degrees" block for each motion: 4 more blocks, each one plain sentence.</li><li><b>Seconds only for now</b>. Timed blocks in seconds; degree blocks in their own Encoder category.</li></ol></div>
+						</li>
+						<li class="task" data-task="P0.2" data-needs="X1 X2">
+							<div class="task-copy"><span class="task-id">P0.2</span><b>Step blocks run one short step and only belong inside loops.</b>
+								<span class="sum">A step Spin, Drive, Turn and Curve, with a dashed edge, for Forever, Repeat and Repeat until.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>It is how make keeps a motor going while the program checks a button, and how two motors run at once.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>Step blocks</b>. A dashed step block for each motion, kept in loops by connection checks if X2 passes, by a linter error if not.</li><li><b>"Until" blocks</b>. "Spin arm forward at 50 power until [condition]" writes the loop itself. Nothing new to teach, but no way to run two motors or flash a light in the same loop.</li><li><b>Both</b>. Step blocks for loops, plus "until" blocks for the simple one-motor case. Easiest start, most blocks.</li></ol></div>
+						</li>
+						<li class="task" data-task="P0.3">
+							<div class="task-copy"><span class="task-id">P0.3</span><b>Directions are words, and power runs from 0 to 100.</b>
+								<span class="sum">forward/backward on Spin and Drive, right/left on Turn; negative power is gone.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>"Spin forward at -50" was the most confusing thing in the old set.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>Words, 0 to 100</b>. forward/backward and right/left dropdowns; power never below 0. Curve keeps -100 to 100 per side.</li><li><b>Numbers only</b>. No direction dropdown; power from -100 to 100 as make takes it, so -50 means backward.</li><li><b>Words and negatives</b>. The direction dropdowns, and power can still go below 0, which flips the direction again.</li></ol></div>
+						</li>
+						<li class="task" data-task="P0.4" data-changed="changed">
+							<div class="task-copy"><span class="task-id">P0.4</span><b>Stop offers brake or coast, braking by default.</b>
+								<span class="sum">"Stop [arm] and [brake ▾]" writes <code>brake()</code>; "coast" writes <code>stop()</code>.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>Brake and coast are the words robots use. Kids expect Stop to stop, and make's <code>stop()</code> coasts. make has no hold, so hold stays out.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>Brake by default</b>. "Stop [arm] and [brake ▾]", with coast as the other choice.</li><li><b>Coast by default</b>. As make's stop() does; brake is the other choice.</li><li><b>Two blocks</b>. A "Brake [arm]" block and a "Coast [arm]" block, no Stop.</li></ol></div>
+						</li>
+						<li class="task" data-task="P0.5">
+							<div class="task-copy"><span class="task-id">P0.5</span><b>Buttons and lights are dropdowns of the board's names.</b>
+								<span class="sum">A to D and L1, L2, with no set-up block and nothing in Devices.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>make builds them at start-up as <code>button_a</code> to <code>button_d</code>, <code>light_l1</code> and <code>light_l2</code>.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>A to D</b>. All four buttons. A starts the program, and pressed() works on it after.</li><li><b>B to D</b>. Leave A out, so the start button never doubles as an input.</li></ol></div>
+						</li>
+						<li class="task" data-task="P0.6">
+							<div class="task-copy"><span class="task-id">P0.6</span><b>Programs start with "from make import *".</b>
+								<span class="sum">No <code>make.</code> prefix anywhere, as in make's docs.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd><code>button_a.pressed()</code> reads better than <code>make.button_a.pressed()</code>.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>from make import *</b>. No make. prefix, as in make's docs. The linter refuses device names make already uses.</li><li><b>import make</b>. Keep the make. prefix: longer lines, no name clashes.</li></ol></div>
+						</li>
+						<li class="task" data-task="P0.7">
+							<div class="task-copy"><span class="task-id">P0.7</span><b>Old block programs are not converted.</b>
+								<span class="sum">Opening one says it was made with the old blocks, keeps a copy, and starts empty.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>A converter for blocks that changed meaning costs 2 days and guesses at what the kid meant.</dd>
+									</dl>
+								<ol class="options"><li data-rec><b>Message and a copy</b>. Say it was made with the old blocks, keep a copy in local storage, start empty.</li><li><b>Load what it can</b>. Keep the blocks that still exist and drop the rest. Quicker, but a half program confuses.</li><li><b>Convert</b>. Turn old blocks into new ones: about 2 days, and it guesses at what the kid meant.</li></ol></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<!-- ===================================================== P1 -->
+		<section id="p1" data-page="P1">
+			<div class="phase" data-phase="P1">
+				<div class="phase-header">
+					<div class="phase-number">P1</div>
+					<div>
+						<h3>Motor and drivetrain blocks</h3>
+						<p>The blocks that move things, built new in place of the old Motor and Drivetrain categories.</p>
+						<div class="phase-facts">
+							<span class="badge"><b>Takes</b>3 days</span>
+							<span class="badge"><b>After</b>P0</span>
+							<span class="badge"><b>Gate</b>each block runs on the board</span>
+						</div>
+					</div>
+					<div class="phase-tools"></div>
+				</div>
+				<div class="phase-body">
+					<p class="outcome"><b>You get:</b> a robot that drives a set distance, turns, and stops dead, from blocks.</p>
+					<p>The Devices pop-up and the device dropdowns stay as they are. The blocks are new entries in <code>src/data/library.js</code>; the old Motor and Drivetrain entries go.</p>
+					<ul class="task-list">
+						<li class="task" data-task="P1.1" data-needs="X3" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P1.1</span><b>Build the timed Spin block.</b>
+								<span class="sum">Spin [motor] [forward/backward] at [power] for [N] [seconds/degrees].</span>
+								<dl class="facts">
+									<dt>Touches</dt><dd><code>library.js</code>, a unit test per way it can write</dd>
+								</dl></div>
+							<p class="evidence">Evidence: library.js motorSpin; tests/codegen.test.js (4 settings).</p>
+						</li>
+						<li class="task" data-task="P1.2" data-needs="X3" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P1.2</span><b>Build the timed Drive and Turn blocks.</b>
+								<span class="sum">Drive forward/backward and Turn right/left, for seconds or degrees.</span>
+							</div>
+							<p class="evidence">Evidence: library.js driveFor, turnFor; tests/codegen.test.js (8 settings).</p>
+						</li>
+						<li class="task" data-task="P1.3" data-needs="X1 X2" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P1.3</span><b>Build the step blocks for Spin, Drive, Turn and Curve.</b>
+								<span class="sum">No duration, a dashed edge, and the connection checks X2 settles.</span>
+							</div>
+							<p class="evidence">Evidence: src/mods/stepBlocks.js (dashed edge, connection checker); tests/stepBlocks.test.js 9 of 9; live drag refused in the editor.</p>
+						</li>
+						<li class="task" data-task="P1.4" data-needs="X3" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P1.4</span><b>Build the two Curve blocks.</b>
+								<span class="sum">Left and right power for N seconds, and left and right degrees at a power.</span>
+							</div>
+							<p class="evidence">Evidence: library.js curveFor, curveDegrees; tests/codegen.test.js.</p>
+						</li>
+						<li class="task" data-task="P1.5" data-changed="changed" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P1.5</span><b>Build Stop with brake or coast.</b>
+								<span class="sum">One block for a motor and one for a drivetrain.</span>
+							</div>
+							<p class="evidence">Evidence: library.js motorStop, drivetrainStop (brake/coast); tests/codegen.test.js.</p>
+						</li>
+					</ul>
+					<div class="gate">
+						<h4>Gate P1 · Pass when</h4>
+						<ul>
+							<li>Each block, in each dropdown setting, runs on the bench board and does what its words say.</li>
+							<li>A unit test checks the Python each setting writes.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ===================================================== P2 -->
+		<section id="p2" data-page="P2">
+			<div class="phase" data-phase="P2">
+				<div class="phase-header">
+					<div class="phase-number">P2</div>
+					<div>
+						<h3>Time, loops, logic, buttons, lights and sensors</h3>
+						<p>Everything else, rebuilt to the same rules, plus servos, simple motors and variables.</p>
+						<div class="phase-facts">
+							<span class="badge"><b>Takes</b>3 days</span>
+							<span class="badge"><b>After</b>P0</span>
+							<span class="badge"><b>Overlaps</b>P1</span>
+						</div>
+					</div>
+					<div class="phase-tools"></div>
+				</div>
+				<div class="phase-body">
+					<p class="outcome"><b>You get:</b> "Repeat until button B pressed" with a step Drive and a light flashing inside.</p>
+					<ul class="task-list">
+						<li class="task" data-task="P2.1" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.1</span><b>Build Wait for seconds and Wait until.</b>
+								<span class="sum"><code>wait(seconds)</code> and <code>wait_until(lambda: …)</code>; Wait while goes.</span>
+							</div>
+							<p class="evidence">Evidence: library.js wait, until; Wait while removed.</p>
+						</li>
+						<li class="task" data-task="P2.2" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.2</span><b>Build the loops: Forever, Repeat N times, Repeat for N seconds, Repeat until.</b>
+								<span class="sum">The slots that take step blocks.</span>
+							</div>
+							<p class="evidence">Evidence: library.js forever, repeatFor, repeatSeconds, repeatIf.</p>
+						</li>
+						<li class="task" data-task="P2.3" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.3</span><b>Build If, If-else, and, or, not, and a number compare.</b>
+								<span class="sum">The compare takes two numbers and &lt;, &gt; or =.</span>
+							</div>
+							<p class="evidence">Evidence: library.js if, ifElse, logicalCompare, logicalNot, compareNumbers.</p>
+						</li>
+						<li class="task" data-task="P2.4" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.4</span><b>Build the button and light blocks.</b>
+								<span class="sum">Pressed and held down for A to D; on, off, toggle and flash for L1 and L2.</span>
+							</div>
+							<p class="evidence">Evidence: library.js buttonPressed, buttonHeld, lightSet, lightFlash (Board category).</p>
+						</li>
+						<li class="task" data-task="P2.5" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.5</span><b>Build "degrees turned" and "speed" for a motor.</b>
+								<span class="sum">Number blocks for conditions: "Wait until degrees turned by arm &gt; 90".</span>
+							</div>
+							<p class="evidence">Evidence: library.js motorDegrees, motorSpeed.</p>
+						</li>
+						<li class="task" data-task="P2.7" data-changed="new" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.7</span><b>Add servos: a Devices kind and a Move block.</b>
+								<span class="sum">"Servo" in Devices on ports 4 to 7; "Move [claw] to [90] degrees" writes <code>claw.moveto(90)</code>.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>make has <code>servo(port)</code> with <code>moveto(angle, seconds=0.05)</code>, 0 to 180 degrees.</dd>
+									<dt>Touches</dt><dd><code>devicesHelper.js</code> (a servo kind), <code>deviceCard.js</code>, the Devices pop-up row, <code>library.js</code></dd>
+								</dl>
+								<ol class="options"><li data-rec><b>Move, then go on</b>. One block; the program waits 0.05 s, as make does.	<p class="evidence">Evidence: servo device kind (devicesHelper.js) and servoMove; option A.</p>
+						</li><li><b>Move for N seconds</b>. "Move [claw] to [90] degrees over [1] seconds", which waits that long.</li></ol></div>
+						</li>
+						<li class="task" data-task="P2.8" data-changed="new" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.8</span><b>Add simple motors: a Devices kind and Spin blocks.</b>
+								<span class="sum">A continuous servo on ports 4 to 7, with timed and step Spin and a Stop.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>make's <code>simple_motor</code> has <code>spin</code>, <code>spin_back</code> and <code>stop</code>, with no encoder, so seconds only and no brake.</dd>
+									<dt>Touches</dt><dd><code>devicesHelper.js</code>, <code>deviceCard.js</code>, <code>library.js</code></dd>
+								</dl>
+								<ol class="options"><li data-rec><b>Same Spin blocks</b>. The Motor blocks take simple motors too; the degrees choice and brake hide for them.	<p class="evidence">Evidence: simple_motor device kind and simpleSpin, simpleSpinStep, simpleStop in Motor; option B (own blocks).</p>
+						</li><li><b>Own blocks</b>. A separate Simple motor category: clearer, 3 more blocks.</li></ol></div>
+						</li>
+						<li class="task" data-task="P2.9" data-changed="new" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P2.9</span><b>Add number variables.</b>
+								<span class="sum">Set, change by, and read a variable, plus + − × ÷ on numbers, for counting presses or laps.</span>
+								<dl class="facts">
+									<dt>Touches</dt><dd>Blockly's variable category, <code>library.js</code> math blocks, the linter (names make uses)</dd>
+								</dl>
+								<ol class="options"><li data-rec><b>Numbers only</b>. Number variables and arithmetic; no text or lists yet.	<p class="evidence">Evidence: Variables category: varSet, varChange, varGet, numberInput, arithmetic; option A.</p>
+						</li><li><b>Numbers and true/false</b>. Also a yes/no variable, for "has the arm moved yet".</li></ol></div>
+						</li>
+					</ul>
+					<div class="gate">
+						<h4>Gate P2 · Pass when</h4>
+						<ul>
+							<li>The "You get" program runs on the board and stops on a press of B.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ===================================================== P3 -->
+		<section id="p3" data-page="P3">
+			<div class="phase" data-phase="P3">
+				<div class="phase-header">
+					<div class="phase-number">P3</div>
+					<div>
+						<h3>Fit the editor to the new blocks</h3>
+						<p>Help pages, the line editor, the linter, old programs, and clean-up.</p>
+						<div class="phase-facts">
+							<span class="badge"><b>Takes</b>2 days</span>
+							<span class="badge"><b>After</b>P1, P2</span>
+							<span class="badge"><b>Gate</b>npm test green, no old blocks left</span>
+						</div>
+					</div>
+					<div class="phase-tools"></div>
+				</div>
+				<div class="phase-body">
+					<p class="outcome"><b>You get:</b> an editor with no trace of the old blocks, and help for every new one.</p>
+					<ul class="task-list">
+						<li class="task" data-task="P3.1" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P3.1</span><b>Build the line editor's names from make's source.</b>
+								<span class="sum">A script reads make's docstrings and writes <code>pythonLibraryVocab.json</code>.</span>
+								<dl class="facts">
+									<dt>Why</dt><dd>Nothing builds the file today, and make is still changing.</dd>
+									<dt>Touches</dt><dd>new <code>scripts/make-vocab.mjs</code>, <code>pythonLibraryVocab.json</code></dd>
+								</dl>
+								<ol class="options"><li data-rec><b>A script</b>. Reads make's docstrings and writes the file. Half a day, then it never drifts.	<p class="evidence">Evidence: scripts/make-vocab.mjs (npm run vocab); line editor flags only a planted typo in a new-make program.</p>
+						</li><li><b>By hand</b>. Edit the JSON each time make changes. Quick now, easy to forget.</li></ol></div>
+						</li>
+						<li class="task" data-task="P3.2" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P3.2</span><b>Write help and examples for the new blocks.</b>
+								<span class="sum">A cheatsheet entry per block, and new examples in place of the 8 old ones.</span>
+							</div>
+							<p class="evidence">Evidence: a description per block and 9 new examples; previews show arm/robot.</p>
+						</li>
+						<li class="task" data-task="P3.3" data-needs="X2" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P3.3</span><b>Rewrite the linter for the new blocks.</b>
+								<span class="sum">Keep the device and naming rules; add step-outside-loop, 0 degrees, Wait until with no condition.</span>
+								<dl class="facts">
+									<dt>Touches</dt><dd><code>blockLinter.js</code>, <code>tests/blockLinter.test.js</code></dd>
+								</dl></div>
+							<p class="evidence">Evidence: blockLinter.js rewritten; tests/blockLinter.test.js 67 of 67.</p>
+						</li>
+						<li class="task" data-task="P3.4" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P3.4</span><b>Show a message for old programs, and keep a copy.</b>
+								<span class="sum">Any block type the new set lacks triggers it, on load or on opening a file.</span>
+							</div>
+							<p class="evidence">Evidence: blocklyHelper.js setBlocklyState keeps an old program under blocklyStateOld and starts empty, with no message.</p>
+						</li>
+						<li class="task" data-task="P3.5" data-done="2026-11-15">
+							<div class="task-copy"><span class="task-id">P3.5</span><b>Delete the old blocks and their upgrade code.</b>
+								<span class="sum"><code>oldLibrary.js</code>, <code>oldPythonLibraryVocab.json</code>, <code>MERGED_SPIN_BLOCKS</code>, <code>liftDeviceBlocks</code> and friends.</span>
+							</div>
+							<p class="evidence">Evidence: blocks.js, oldLibrary.js, oldPythonLibraryVocab.json, liftDeviceBlocks, adoptDeviceBlocks, upgradeOldBlocks deleted.</p>
+						</li>
+					</ul>
+					<div class="gate">
+						<h4>Gate P3 · Pass when</h4>
+						<ul>
+							<li><code>npm test</code> is green.</li>
+							<li>A search for the old block names in <code>src/</code> finds nothing.</li>
+							<li>Every cheatsheet example runs on the bench board.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ===================================================== risks -->
+		<section id="risks" data-page="Wrap-up">
+			<h2>Risks, ranked</h2>
+			<ul class="task-list">
+				<li class="task" data-task="R1">
+					<div class="task-copy"><span class="task-id">R1</span><b>proto-learn breaks when it takes this build.</b>
+						<span class="sum">Its lessons, diagrams and stored programs name the old blocks. Keep proto-learn on the current build until it gets its own pass.</span></div>
+				</li>
+				<li class="task" data-task="R2" data-changed="changed">
+					<div class="task-copy"><span class="task-id">R2</span><b>Step blocks may confuse kids; we try them anyway.</b>
+						<span class="sum">Blockly keeps them inside loops (X2). If kids struggle in class, "Spin until" blocks are the fallback.</span></div>
+				</li>
+				<li class="task" data-task="R3">
+					<div class="task-copy"><span class="task-id">R3</span><b>make's API moves again before release.</b>
+						<span class="sum">It is "Unreleased" on casper. P3.1's script keeps the line editor cheap to redo; each block is one call, so a rename is one line.</span></div>
+				</li>
+				<li class="task" data-task="R4">
+					<div class="task-copy"><span class="task-id">R4</span><b>Kids lose saved block programs.</b>
+						<span class="sum">P0.7 keeps a copy and says so. Their Python files still open in the line editor.</span></div>
+				</li>
+			</ul>
+			<p class="section-intro">Accept a risk to say "understood, proceed". Reject to say "this needs a mitigation task before we start", and name it in the note.</p>
+		</section>
+
+		<!-- ===================================================== schedule -->
+		<section id="schedule">
+			<h2>Order and estimates</h2>
+			<table>
+				<thead><tr><th>Step</th><th>Phase</th><th>Estimate</th><th>Can overlap with</th></tr></thead>
+				<tbody>
+					<tr><td>1</td><td>X1 to X3 prototypes</td><td>1 day</td><td>—</td></tr>
+					<tr><td>2</td><td>P0 rules</td><td>One sitting</td><td>—</td></tr>
+					<tr><td>3</td><td>P1 motor and drivetrain blocks</td><td>3 days</td><td>P2</td></tr>
+					<tr><td>4</td><td>P2 the other blocks</td><td>3 days</td><td>P1</td></tr>
+					<tr><td>5</td><td>P3 fit the editor</td><td>2 days</td><td>—</td></tr>
+				</tbody>
+			</table>
+			<p class="section-intro">About 9 working days. The motor blocks run on the board after day 4.</p>
+		</section>
+
+		<footer>
+			Make blocks plan · revision 5 · Decisions are saved next to this file when served by plan-review, otherwise in this browser only.
+		</footer>
+	</main>
+	</div>
+
+	<button type="button" class="cmt-hint" id="cmtHint" hidden>Comment</button>
+	<div class="drawer" id="cmtDrawer" hidden></div>
+
+	<div class="help" id="help" hidden>
+		<b>Keys</b>
+		<table>
+			<tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>next / previous task</td></tr>
+			<tr><td><kbd>a</kbd> <kbd>r</kbd> <kbd>h</kbd> <kbd>p</kbd> <kbd>q</kbd></td><td>accept / reject / hold / prototype first / clarify (again to clear)</td></tr>
+			<tr><td>Pick one</td><td>on a task with options, click the option you want; it counts as accepting that option</td></tr>
+			<tr><td><kbd>n</kbd></td><td>write a note (<kbd>Esc</kbd> leaves it)</td></tr>
+			<tr><td><kbd>m</kbd></td><td>comment on this task (or click any text, then "Comment")</td></tr>
+			<tr><td><kbd>u</kbd></td><td>jump to next undecided</td></tr>
+			<tr><td><kbd>d</kbd> / <kbd>D</kbd></td><td>show details for this task / for every task</td></tr>
+			<tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>filter chips, left to right</td></tr>
+			<tr><td><kbd>c</kbd></td><td>collapse / expand current phase</td></tr>
+			<tr><td><kbd>?</kbd></td><td>this box</td></tr>
+		</table>
+	</div>
+
+	<!-- ===================================================== plan-review runtime. Copy byte for byte. -->
+	<script>
+	(function () {
+		'use strict';
+		const root = document.documentElement;
+		const PLAN_ID = root.dataset.planId || location.pathname.split('/').pop().replace(/\.html?$/, '');
+		const REV = Number(root.dataset.revision || 1);
+		const LEGACY_KEY = root.dataset.legacyKey || '';
+		const KEY = 'plan-review:' + PLAN_ID;
+		const TITLE = (document.getElementById('docTitle') || {}).textContent || document.title;
+		const tasks = Array.from(document.querySelectorAll('.task[data-task]'));
+		let state = { planId: PLAN_ID, revision: REV, updated: '', tasks: {}, comments: [] };
+		const DECISIONS = [['accept', 'Accept', 'Build it as written'], ['reject', 'Reject', 'Drop it or do it differently (say which in the note)'], ['hold', 'Hold', 'Not now, keep it on the list'], ['prototype', 'Prototype', 'Build a throwaway prototype first, then decide'], ['clarify', 'Clarify', 'Explain this more before I decide (say what in the note)']];
+		function commentsOf(obj) { return obj && Array.isArray(obj.comments) ? obj.comments.filter(c => c && c.id) : []; }
+		let backend = 'browser';   // 'file' once the plan server answers
+		let fileRel = '';
+		let cur = -1;
+		let filter = 'all';
+
+		// ---------- persistence ----------
+		function normalise(obj) {
+			if (!obj || typeof obj !== 'object') return {};
+			const t = obj.tasks && typeof obj.tasks === 'object' ? obj.tasks : obj; // legacy shape: flat {id:{decision,note}}
+			const out = {};
+			Object.keys(t).forEach(id => { if (t[id] && typeof t[id] === 'object') out[id] = t[id]; });
+			return out;
+		}
+		function loadBrowser() {
+			let t = {}, c = [];
+			try { const o = JSON.parse(localStorage.getItem(KEY) || 'null'); t = normalise(o); c = commentsOf(o); } catch (e) {}
+			if (!Object.keys(t).length && LEGACY_KEY) {
+				try { t = normalise(JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null')); } catch (e) {}
+			}
+			state.comments = c;
+			return t;
+		}
+		let saveTimer = 0;
+		function save() {
+			state.updated = new Date().toISOString();
+			state.revision = REV;
+			try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+			if (backend === 'file') {
+				clearTimeout(saveTimer);
+				saveTimer = setTimeout(async () => {
+					try {
+						const r = await fetch('/api/review?f=' + encodeURIComponent(fileRel), {
+							method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state)
+						});
+						setSaveState(r.ok ? 'file' : 'error');
+					} catch (e) { setSaveState('error'); }
+				}, 250);
+			}
+		}
+		function setSaveState(kind) {
+			const el = document.getElementById('saveState');
+			if (!el) return;
+			el.className = 'save-state ' + kind;
+			el.textContent = kind === 'file' ? 'saved to .plan-review/' : kind === 'error' ? 'save failed (server gone?)' : 'saved in this browser';
+		}
+		async function connect() {
+			if (!/^https?:$/.test(location.protocol) || !location.pathname.startsWith('/p/')) return;
+			try {
+				const ping = await fetch('/api/ping', { cache: 'no-store' });
+				const j = await ping.json();
+				if (!j || !j.planReview) return;
+				fileRel = decodeURIComponent(location.pathname.slice(3));
+				const r = await fetch('/api/review?f=' + encodeURIComponent(fileRel), { cache: 'no-store' });
+				const data = r.ok ? await r.json() : null;
+				backend = 'file';
+				const fromFile = normalise(data), fileComments = commentsOf(data);
+				if (Object.keys(fromFile).length || fileComments.length) { state.tasks = fromFile; state.comments = fileComments; }
+				else if (Object.keys(state.tasks).length || state.comments.length) save(); // first run through the server: push browser state into the file
+				setSaveState('file');
+				tasks.forEach(render); renderComments(); summary();
+			} catch (e) { /* no server: stay in browser mode */ }
+		}
+
+		// ---------- rendering ----------
+		function titleOf(task) {
+			const b = task.querySelector('.task-copy b');
+			return b ? b.textContent.trim() : task.textContent.trim().slice(0, 80);
+		}
+		function rec(id) { return state.tasks[id] || (state.tasks[id] = {}); }
+		function render(task) {
+			const id = task.dataset.task;
+			const r = state.tasks[id] || {};
+			task.dataset.decision = r.decision || '';
+			task.querySelectorAll('.decide button[data-d]').forEach(btn => btn.classList.toggle('on', btn.dataset.d === r.decision));
+			task.querySelectorAll('.choose button[data-opt]').forEach(btn => btn.classList.toggle('on', btn.dataset.opt === r.choice));
+			task.querySelectorAll('.task-copy ol.options > li').forEach((li, i) => li.classList.toggle('picked', optKey(li, i) === r.choice));
+			const note = task.querySelector('.note');
+			if (note && note.value !== (r.note || '')) note.value = r.note || '';
+			let reply = task.querySelector('.reply');
+			if (r.reply) {
+				if (!reply) { reply = document.createElement('p'); reply.className = 'reply'; task.appendChild(reply); }
+				reply.textContent = '';
+				const b = document.createElement('b'); b.textContent = 'Reply' + (r.replyRevision ? ' (r' + r.replyRevision + ')' : '');
+				reply.append(b, document.createTextNode(r.reply));
+			} else if (reply) reply.remove();
+		}
+		// options: <ol class="options"><li data-opt="a" data-rec><b>Label</b> what it means</li>…</ol>
+		function optKey(li, i) { return li.dataset.opt || String.fromCharCode(97 + i); }
+		function optLabel(li) { const b = li.querySelector('b'); return (b ? b.textContent : li.textContent).trim(); }
+		function setChoice(task, key) {
+			const r = rec(task.dataset.task);
+			r.choice = (r.choice === key) ? '' : key;
+			// picking an option is a decision: take this one
+			if (r.choice && (!r.decision || r.decision === 'reject')) r.decision = 'accept';
+			r.decidedRevision = REV;
+			save(); render(task); summary();
+		}
+		function choiceText(task, key) {
+			const lis = Array.from(task.querySelectorAll('.task-copy ol.options > li'));
+			const i = lis.findIndex((li, j) => optKey(li, j) === key);
+			return i < 0 ? key : key + ') ' + lis[i].textContent.replace(/\s+/g, ' ').trim();
+		}
+		function setDecision(task, d) {
+			const r = rec(task.dataset.task);
+			r.decision = (r.decision === d) ? '' : d;
+			r.decidedRevision = REV;
+			save(); render(task); summary();
+		}
+		tasks.forEach(task => {
+			const copy = task.querySelector('.task-copy');
+			const idEl = task.querySelector('.task-id');
+			if (task.dataset.changed && copy) {
+				const tag = document.createElement('span');
+				tag.className = 'tag ' + (task.dataset.changed === 'new' ? 'new' : 'changed');
+				tag.textContent = (task.dataset.changed === 'new' ? 'new in r' : 'changed in r') + REV;
+				(idEl || copy).insertAdjacentElement('afterend', tag);
+			}
+			if (task.dataset.done !== undefined && copy) {
+				const tag = document.createElement('span');
+				tag.className = 'tag done';
+				tag.textContent = 'done' + (task.dataset.done ? ' ' + task.dataset.done : '');
+				(idEl || copy).insertAdjacentElement('afterend', tag);
+			}
+			// data-needs="X1 X2": this decision waits on those prototype tasks
+			if (task.dataset.needs && copy) {
+				task.dataset.needs.split(/\s+/).filter(Boolean).reverse().forEach(pid => {
+					const tag = document.createElement('a');
+					tag.className = 'tag needs'; tag.dataset.needs = pid; tag.href = '#' + pid; tag.textContent = 'after ' + pid;
+					tag.title = 'Decide after prototype ' + pid + ' reports';
+					tag.addEventListener('click', e => { const p = document.querySelector('.task[data-task="' + pid + '"]'); if (p) { e.preventDefault(); focusTask(tasks.indexOf(p)); } });
+					(idEl || copy).insertAdjacentElement('afterend', tag);
+				});
+			}
+			const wrap = document.createElement('div');
+			wrap.className = 'decide';
+			DECISIONS.forEach(([d, label, title]) => {
+				const b = document.createElement('button');
+				b.type = 'button'; b.dataset.d = d; b.tabIndex = -1; b.title = title;
+				b.textContent = label;
+				b.addEventListener('click', () => { focusTask(tasks.indexOf(task), false); setDecision(task, d); });
+				wrap.appendChild(b);
+			});
+			task.appendChild(wrap);
+			const opts = Array.from(task.querySelectorAll('.task-copy ol.options > li'));
+			if (opts.length) {
+				const choose = document.createElement('div');
+				choose.className = 'choose';
+				const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = 'Pick one:';
+				choose.appendChild(lbl);
+				opts.forEach((li, i) => {
+					const b = document.createElement('button');
+					b.type = 'button'; b.dataset.opt = optKey(li, i); b.tabIndex = -1;
+					b.title = li.textContent.replace(/\s+/g, ' ').trim();
+					b.textContent = optKey(li, i).toUpperCase() + ' · ' + optLabel(li);
+					if (li.dataset.rec !== undefined) { const st = document.createElement('span'); st.className = 'star'; st.textContent = '★'; st.title = 'Recommended'; b.appendChild(st); }
+					b.addEventListener('click', () => { focusTask(tasks.indexOf(task), false); setChoice(task, b.dataset.opt); });
+					choose.appendChild(b);
+				});
+				task.appendChild(choose);
+			}
+			const note = document.createElement('textarea');
+			note.className = 'note'; note.rows = 1;
+			note.placeholder = 'Note (optional): why, or what instead';
+			note.addEventListener('input', () => { rec(task.dataset.task).note = note.value; save(); });
+			note.addEventListener('focus', () => focusTask(tasks.indexOf(task), false));
+			task.appendChild(note);
+			task.addEventListener('click', e => { if (e.target === task || e.target.closest('.task-copy')) focusTask(tasks.indexOf(task), false); });
+			// details: long text (small / .facts) folds away in compact mode; the title toggles it
+			if (task.querySelector('.task-copy small, .task-copy .facts')) {
+				task.classList.add('has-details');
+				const title = task.querySelector('.task-copy > b');
+				if (title) title.addEventListener('click', e => { e.stopPropagation(); task.classList.toggle('open'); focusTask(tasks.indexOf(task), false); });
+			}
+		});
+
+		// ---------- compact mode ----------
+		const DETAILS_KEY = 'plan-review:details';
+		let showDetails = false;
+		try { showDetails = localStorage.getItem(DETAILS_KEY) === 'shown'; } catch (e) {}
+		function applyDetails() {
+			document.body.classList.toggle('compact', !showDetails);
+			const b = document.getElementById('detailsBtn');
+			if (b) b.classList.toggle('on', showDetails);
+			try { localStorage.setItem(DETAILS_KEY, showDetails ? 'shown' : 'hidden'); } catch (e) {}
+		}
+		function toggleDetails() { showDetails = !showDetails; if (showDetails) tasks.forEach(t => t.classList.remove('open')); applyDetails(); }
+		applyDetails();
+
+		// ---------- phases ----------
+		const phases = Array.from(document.querySelectorAll('.phase[data-phase]'));
+		function collapseBtn(phase) { return phase.querySelector('.phase-tools button[data-collapse]'); }
+		phases.forEach(phase => {
+			const tools = phase.querySelector('.phase-tools');
+			if (!tools) return;
+			const list = Array.from(phase.querySelectorAll('.task[data-task]'));
+			const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', fn); return b; };
+			const col = mk('Collapse', () => { phase.classList.toggle('collapsed'); col.textContent = phase.classList.contains('collapsed') ? 'Expand' : 'Collapse'; });
+			col.dataset.collapse = '1';
+			tools.append(
+				mk('Accept remaining', () => { list.forEach(t => { const r = rec(t.dataset.task); if (!r.decision) { r.decision = 'accept'; r.decidedRevision = REV; } }); save(); list.forEach(render); summary(); }),
+				mk('Clear phase', () => { list.forEach(t => { rec(t.dataset.task).decision = ''; }); save(); list.forEach(render); summary(); }),
+				col
+			);
+		});
+
+		// ---------- filters ----------
+		const FILTERS = [
+			['all', 'All', () => true],
+			['undecided', 'Undecided', t => !(state.tasks[t.dataset.task] || {}).decision],
+			['accept', 'Accepted', t => (state.tasks[t.dataset.task] || {}).decision === 'accept'],
+			['hold', 'Hold', t => (state.tasks[t.dataset.task] || {}).decision === 'hold'],
+			['reject', 'Rejected', t => (state.tasks[t.dataset.task] || {}).decision === 'reject'],
+			['prototype', 'Prototype first', t => (state.tasks[t.dataset.task] || {}).decision === 'prototype'],
+			['clarify', 'Clarify', t => (state.tasks[t.dataset.task] || {}).decision === 'clarify'],
+			['chose', 'Picked an option', t => !!(state.tasks[t.dataset.task] || {}).choice],
+			['waits', 'Waits on a prototype', t => t.classList.contains('waits')],
+			['ready', 'Ready to decide', t => !t.classList.contains('waits') && !(state.tasks[t.dataset.task] || {}).decision],
+			['changed', 'Changed in r' + REV, t => !!t.dataset.changed],
+			['replied', 'Has reply', t => !!(state.tasks[t.dataset.task] || {}).reply],
+			['done', 'Done', t => t.dataset.done !== undefined],
+			['notdone', 'Not done', t => t.dataset.done === undefined]
+		];
+		const bar = document.getElementById('filterBar');
+		function applyFilter() {
+			const f = FILTERS.find(x => x[0] === filter) || FILTERS[0];
+			tasks.forEach(t => { t.hidden = !f[2](t); });
+			phases.forEach(p => { const vis = Array.from(p.querySelectorAll('.task[data-task]')).some(t => !t.hidden); p.style.display = vis ? '' : 'none'; });
+			document.querySelectorAll('section').forEach(s => {
+				const inner = s.querySelectorAll('.task[data-task]');
+				if (inner.length) s.style.display = Array.from(inner).some(t => !t.hidden) ? '' : 'none';
+			});
+			if (bar) bar.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.f === filter));
+			if (pagers.length) renderPagers();
+		}
+		function renderFilterBar() {
+			if (!bar) return;
+			const anyChanged = tasks.some(t => t.dataset.changed);
+			const anyDone = tasks.some(t => t.dataset.done !== undefined);
+			const anyReply = tasks.some(t => (state.tasks[t.dataset.task] || {}).reply);
+			bar.textContent = '';
+			const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = 'Show'; bar.appendChild(lbl);
+			FILTERS.forEach(([k, label, fn]) => {
+				if (k === 'changed' && !anyChanged) return;
+				if ((k === 'done' || k === 'notdone') && !anyDone) return;
+				if (k === 'replied' && !anyReply) return;
+				const count = tasks.filter(fn).length;
+				if (!count && k !== 'all' && k !== 'undecided' && k !== filter) return; // empty chips are noise
+				const c = document.createElement('button');
+				c.type = 'button'; c.className = 'chip' + (k === filter ? ' on' : ''); c.dataset.f = k;
+				c.textContent = label;
+				const n = document.createElement('span'); n.className = 'n'; n.textContent = count; c.appendChild(n);
+				c.addEventListener('click', () => { filter = k; applyFilter(); });
+				bar.appendChild(c);
+			});
+		}
+
+		// ---------- summary ----------
+		function phaseOf(t) {
+			const p = t.closest('.phase[data-phase]');
+			return p ? p.dataset.phase : t.dataset.task.replace(/[\d.].*$/, '');
+		}
+		function summary() {
+			let a = 0, r = 0, h = 0, p = 0, d = 0, q = 0;
+			tasks.forEach(t => {
+				const dec = (state.tasks[t.dataset.task] || {}).decision;
+				if (dec === 'accept') a++; else if (dec === 'reject') r++; else if (dec === 'hold') h++; else if (dec === 'prototype') p++; else if (dec === 'clarify') q++;
+				if (t.dataset.done !== undefined) d++;
+			});
+			const n = tasks.length || 1;
+			const pt = document.getElementById('progressText');
+			if (pt) pt.textContent = `${a + r + h + p + q} / ${tasks.length} decided · ${a} accepted · ${h} hold · ${p} prototype · ${r} rejected` + (q ? ` · ${q} clarify` : '') + (d ? ` · ${d} done` : '');
+			const w = (id, v) => { const el = document.getElementById(id); if (el) el.style.width = (100 * v / n) + '%'; };
+			w('fillAccept', a); w('fillHold', h); w('fillProto', p); w('fillReject', r); w('fillDone', d);
+			const cb = document.getElementById('commentsBtn');
+			if (cb) cb.textContent = `Comments (${state.comments.filter(c => c.status !== 'resolved').length})`;
+			// prototype status on "after X" tags
+			tasks.forEach(t => {
+				if (!t.dataset.needs) return;
+				let waiting = false;
+				t.querySelectorAll('.tag.needs').forEach(tag => {
+					const p = document.querySelector('.task[data-task="' + tag.dataset.needs + '"]');
+					const dec = p ? (state.tasks[p.dataset.task] || {}).decision : '';
+					const done = p && p.dataset.done !== undefined;
+					tag.className = 'tag needs' + (done ? ' ok' : dec === 'reject' ? ' skip' : '');
+					tag.textContent = done ? tag.dataset.needs + ' done' : dec === 'reject' ? tag.dataset.needs + ' skipped' : 'after ' + tag.dataset.needs;
+					if (!done && dec !== 'reject') waiting = true;
+				});
+				t.classList.toggle('waits', waiting);
+			});
+			const dt = document.getElementById('doneTrack'); if (dt) dt.hidden = !d;
+			document.querySelectorAll('nav a[data-phase]').forEach(link => {
+				const list = tasks.filter(t => phaseOf(t) === link.dataset.phase);
+				const done = list.filter(t => (state.tasks[t.dataset.task] || {}).decision).length;
+				const cnt = link.querySelector('.cnt');
+				if (cnt) { cnt.textContent = `${done}/${list.length}`; cnt.classList.toggle('all', done === list.length && list.length > 0); }
+			});
+			renderFilterBar(); applyFilter();
+		}
+
+		// ---------- pages: main > * with data-page starts a page; following siblings join it ----------
+		const mainRoot = document.querySelector('main');
+		const pages = [];
+		if (mainRoot) {
+			let curPage = null;
+			Array.from(mainRoot.children).forEach(el => {
+				if (el.dataset.page !== undefined || !curPage) { curPage = { title: el.dataset.page || 'Start', nodes: [] }; pages.push(curPage); }
+				curPage.nodes.push(el);
+			});
+		}
+		const PAGE_KEY = 'plan-review:page:' + PLAN_ID;
+		let page = 0;
+		const pagers = [];
+		function pageOf(el) {
+			const top = pages.findIndex(p => p.nodes.some(n => n === el || n.contains(el)));
+			return top;
+		}
+		function showPage(i, scrollTop) {
+			if (pages.length < 2) return;
+			page = Math.max(0, Math.min(pages.length - 1, i));
+			pages.forEach((p, idx) => p.nodes.forEach((n, j) => { n.classList.toggle('pg-hidden', idx !== page); n.classList.toggle('pg-first', j === 0); }));
+			try { localStorage.setItem(PAGE_KEY, String(page)); } catch (e) {}
+			if (location.hash !== '#page-' + (page + 1)) history.replaceState(null, '', '#page-' + (page + 1));
+			renderPagers();
+			if (scrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+		function showPageOf(el) { const i = pageOf(el); if (i >= 0 && i !== page) showPage(i, false); }
+		function pageUndecided(p) { return tasks.filter(t => p.nodes.some(n => n.contains(t)) && !(state.tasks[t.dataset.task] || {}).decision && !t.hidden).length; }
+		function pageVisibleTasks(p) { return tasks.filter(t => p.nodes.some(n => n.contains(t)) && !t.hidden).length; }
+		function pageHasTasks(p) { return tasks.some(t => p.nodes.some(n => n.contains(t))); }
+		function renderPagers() {
+			pagers.forEach(pg => {
+				pg.textContent = '';
+				const prev = document.createElement('button'); prev.type = 'button'; prev.textContent = '‹ Prev'; prev.disabled = page === 0; prev.addEventListener('click', () => showPage(page - 1, true));
+				const list = document.createElement('div'); list.className = 'pages';
+				pages.forEach((p, i) => {
+					const b = document.createElement('button'); b.type = 'button'; b.title = p.title;
+					b.className = (i === page ? 'cur' : '') + (pageHasTasks(p) && !pageVisibleTasks(p) ? ' empty' : '');
+					b.textContent = i === page ? (i + 1) + ' · ' + p.title : String(i + 1);
+					const u = pageUndecided(p);
+					if (u) { const n = document.createElement('span'); n.className = 'n'; n.textContent = u; b.appendChild(n); }
+					b.addEventListener('click', () => showPage(i, true));
+					list.appendChild(b);
+				});
+				const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next ›'; next.disabled = page === pages.length - 1; next.addEventListener('click', () => showPage(page + 1, true));
+				pg.append(prev, list, next);
+				if (page < pages.length - 1) { const nt = document.createElement('span'); nt.className = 'next-title'; nt.textContent = 'Next: ' + pages[page + 1].title; pg.appendChild(nt); }
+			});
+		}
+		if (mainRoot && pages.length > 1) {
+			const top = document.createElement('nav'); top.className = 'pager'; top.setAttribute('aria-label', 'Pages');
+			const bottom = document.createElement('nav'); bottom.className = 'pager bottom'; bottom.setAttribute('aria-label', 'Pages');
+			mainRoot.insertAdjacentElement('afterbegin', top); mainRoot.appendChild(bottom);
+			pagers.push(top, bottom);
+		}
+		function onHash() {
+			const h = decodeURIComponent(location.hash.slice(1));
+			if (!h) return;
+			const m = h.match(/^page-(\d+)$/);
+			if (m) { showPage(Number(m[1]) - 1, true); return; }
+			const el = document.getElementById(h);
+			if (el) { showPageOf(el); el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+		}
+		window.addEventListener('hashchange', onHash);
+
+		// ---------- navigation + keys ----------
+		function visibleTasks() { return tasks.filter(t => !t.hidden); }
+		function focusTask(i, scroll) {
+			if (cur >= 0 && tasks[cur]) tasks[cur].classList.remove('cur');
+			cur = i;
+			const t = tasks[cur];
+			if (!t) return;
+			t.classList.add('cur');
+			showPageOf(t);
+			const ph = t.closest('.phase');
+			if (ph && ph.classList.contains('collapsed')) { const b = collapseBtn(ph); if (b) b.click(); }
+			if (scroll !== false) t.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		}
+		function step(delta) {
+			const vis = visibleTasks(); if (!vis.length) return;
+			let i = vis.indexOf(tasks[cur]);
+			i = i < 0 ? (delta > 0 ? 0 : vis.length - 1) : Math.min(vis.length - 1, Math.max(0, i + delta));
+			focusTask(tasks.indexOf(vis[i]));
+		}
+		function nextUndecided() {
+			const vis = visibleTasks();
+			const start = Math.max(0, vis.indexOf(tasks[cur]) + 1);
+			const order = vis.slice(start).concat(vis.slice(0, start));
+			const t = order.find(x => !(state.tasks[x.dataset.task] || {}).decision);
+			if (t) focusTask(tasks.indexOf(t));
+		}
+		const help = document.getElementById('help');
+		document.addEventListener('keydown', e => {
+			const inField = /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+			if (inField) { if (e.key === 'Escape') e.target.blur(); return; }
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			const t = tasks[cur];
+			switch (e.key) {
+				case 'j': case 'ArrowDown': step(1); break;
+				case 'k': case 'ArrowUp': step(-1); break;
+				case ']': case 'ArrowRight': showPage(page + 1, true); break;
+				case '[': case 'ArrowLeft': showPage(page - 1, true); break;
+				case 'a': if (t) setDecision(t, 'accept'); break;
+				case 'r': if (t) setDecision(t, 'reject'); break;
+				case 'h': if (t) setDecision(t, 'hold'); break;
+				case 'p': if (t) setDecision(t, 'prototype'); break;
+				case 'q': if (t) { setDecision(t, 'clarify'); if ((state.tasks[t.dataset.task] || {}).decision === 'clarify') t.querySelector('.note').focus(); } break;
+				case 'm': if (t) { const b = t.querySelector('.task-copy > b'); addComment(t, b ? b.textContent.trim() : t.dataset.task); } break;
+				case 'n': if (t) t.querySelector('.note').focus(); break;
+				case 'u': nextUndecided(); break;
+				case 'd': if (t) t.classList.toggle('open'); break;
+				case 'D': toggleDetails(); break;
+				case 'c': if (t) { const b = collapseBtn(t.closest('.phase') || t); if (b) b.click(); } break;
+				case '?': if (help) help.hidden = !help.hidden; break;
+				case 'Escape': if (help) help.hidden = true; break;
+				default:
+					if (/^[1-9]$/.test(e.key) && bar) {
+						const chip = bar.querySelectorAll('.chip')[Number(e.key) - 1];
+						if (chip) { filter = chip.dataset.f; applyFilter(); }
+					}
+					return;
+			}
+			e.preventDefault();
+		});
+
+		// ---------- export ----------
+		function decisionsText() {
+			const groups = { reject: [], clarify: [], prototype: [], hold: [], accept: [], undecided: [] };
+			tasks.forEach(t => {
+				const id = t.dataset.task, r = state.tasks[id] || {};
+				const key = groups[r.decision] ? r.decision : 'undecided';
+				groups[key].push({ id, title: titleOf(t), note: (r.note || '').trim(), choice: r.choice ? choiceText(t, r.choice) : '' });
+			});
+			const out = [`Plan review: ${TITLE} (plan-id ${PLAN_ID}, revision ${REV})`];
+			if (backend === 'file') out.push(`Saved in ${fileRel ? '.plan-review/' + fileRel.replace(/[\\/]/g, '__') + '.json' : '.plan-review/'} next to the plan.`);
+			out.push('');
+			[['REJECTED', 'reject'], ['CLARIFY (explain before I decide)', 'clarify'], ['PROTOTYPE FIRST', 'prototype'], ['HOLD', 'hold']].forEach(([label, key]) => {
+				const g = groups[key];
+				if (!g.length) return;
+				out.push(`${label} (${g.length})`);
+				g.forEach(x => { out.push(`- ${x.id} — ${x.title}`); if (x.choice) out.push(`    picked: ${x.choice}`); if (x.note) out.push(`    note: ${x.note.replace(/\n/g, '\n    ')}`); });
+				out.push('');
+			});
+			const acc = groups.accept;
+			if (acc.length) {
+				out.push(`ACCEPTED (${acc.length})`);
+				const noted = acc.filter(x => x.note || x.choice), plain = acc.filter(x => !x.note && !x.choice);
+				noted.forEach(x => { out.push(`- ${x.id} — ${x.title}`); if (x.choice) out.push(`    picked: ${x.choice}`); if (x.note) out.push(`    note: ${x.note.replace(/\n/g, '\n    ')}`); });
+				if (plain.length) out.push((noted.length ? '- also: ' : '') + plain.map(x => x.id).join(', '));
+				out.push('');
+			}
+			const und = groups.undecided;
+			out.push(`UNDECIDED (${und.length})` + (und.length && und.length <= 24 ? ': ' + und.map(x => x.id).join(', ') : ''));
+			out.push('');
+			const open = state.comments.filter(c => c.status !== 'resolved');
+			if (open.length) {
+				out.push(`COMMENTS (${open.length})`);
+				open.forEach(c => {
+					out.push(`- #${state.comments.indexOf(c) + 1}${c.task ? ' on ' + c.task : ''} at "${(c.anchor || '').slice(0, 80)}"`);
+					out.push(`    ${(c.text || '').trim().replace(/\n/g, '\n    ') || '(empty)'}`);
+				});
+				out.push('');
+			}
+			return out.join('\n');
+		}
+
+		// ---------- comments anywhere ----------
+		const mainEl = document.querySelector('main');
+		const BLOCK_SEL = '.task-copy, li, p, h1, h2, h3, h4, dd, dt, td, th, .fig, .callout, .meta, .tldr, .outcome, .gate, pre, table';
+		function blockFor(el) {
+			let b = el.closest(BLOCK_SEL);
+			if (!b) return null;
+			if (b.matches('td, th')) b = b.closest('table') || b;
+			if (b.matches('dd, dt')) b = b.closest('.task-copy') || b.closest('dl') || b;
+			return b;
+		}
+		function hostFor(block) { return block.closest('.task') || block; }
+		function pathOf(el) {
+			const segs = [];
+			for (let n = el; n && n !== mainEl && n.nodeType === 1; n = n.parentElement) {
+				let i = 1, s = n;
+				while ((s = s.previousElementSibling)) if (s.tagName === n.tagName) i++;
+				segs.unshift(n.tagName.toLowerCase() + ':nth-of-type(' + i + ')');
+			}
+			return 'main > ' + segs.join(' > ');
+		}
+		function textOf(el) { return el.textContent.replace(/\s+/g, ' ').trim(); }
+		function findBlock(c) {
+			let el = null;
+			try { el = document.querySelector(c.path); } catch (e) {}
+			const probe = (c.anchor || '').slice(0, 40);
+			if (el && (!probe || textOf(el).includes(probe))) return el;
+			if (probe) {
+				const hit = Array.from(mainEl.querySelectorAll(BLOCK_SEL)).find(b => !b.matches('td, th, dd, dt') && textOf(b).includes(probe));
+				if (hit) return hit;
+			}
+			return null;
+		}
+		function addComment(block, anchor, text) {
+			const task = block.closest('.task');
+			const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), path: pathOf(block), anchor: (anchor || textOf(block)).slice(0, 200), task: task ? task.dataset.task : '', text: text || '', status: 'open', created: new Date().toISOString() };
+			state.comments.push(c);
+			save(); renderComments(); summary();
+			const el = document.querySelector('.cmt[data-cmt="' + c.id + '"]');
+			if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.querySelector('textarea').focus(); }
+		}
+		function renderComments() {
+			document.querySelectorAll('.cmt').forEach(el => el.remove());
+			state.comments.forEach((c, i) => {
+				const block = findBlock(c);
+				const host = block ? hostFor(block) : null;
+				const el = document.createElement('div');
+				el.className = 'cmt' + (c.status === 'resolved' ? ' resolved' : '') + (host ? '' : ' lost');
+				el.dataset.cmt = c.id;
+				const head = document.createElement('div'); head.className = 'cmt-head';
+				const pin = document.createElement('span'); pin.className = 'cmt-pin'; pin.textContent = i + 1;
+				const anc = document.createElement('span'); anc.className = 'cmt-anchor'; anc.textContent = (host ? '' : '(anchor not found) ') + '"' + (c.anchor || '') + '"'; anc.title = c.anchor || '';
+				const tools = document.createElement('span'); tools.className = 'cmt-tools';
+				const res = document.createElement('button'); res.type = 'button'; res.textContent = c.status === 'resolved' ? 'Reopen' : 'Resolve';
+				res.addEventListener('click', () => { c.status = c.status === 'resolved' ? 'open' : 'resolved'; save(); renderComments(); summary(); });
+				const del = document.createElement('button'); del.type = 'button'; del.textContent = 'Delete';
+				del.addEventListener('click', () => {
+					if (del.dataset.armed) { state.comments = state.comments.filter(x => x !== c); save(); renderComments(); summary(); return; }
+					del.dataset.armed = '1'; del.textContent = 'Sure?'; setTimeout(() => { delete del.dataset.armed; del.textContent = 'Delete'; }, 2500);
+				});
+				tools.append(res, del); head.append(pin, anc, tools); el.appendChild(head);
+				const ta = document.createElement('textarea'); ta.rows = 1; ta.placeholder = 'What should change here, or what is unclear?'; ta.value = c.text || '';
+				ta.readOnly = c.status === 'resolved';
+				ta.addEventListener('input', () => { c.text = ta.value; save(); });
+				el.appendChild(ta);
+				if (c.reply) {
+					const rp = document.createElement('p'); rp.className = 'reply';
+					const b = document.createElement('b'); b.textContent = 'Reply' + (c.replyRevision ? ' (r' + c.replyRevision + ')' : '');
+					rp.append(b, document.createTextNode(c.reply)); el.appendChild(rp);
+				}
+				if (host && host.classList.contains('task')) host.appendChild(el);
+				else if (host) host.insertAdjacentElement('afterend', el);
+				else mainEl.insertAdjacentElement('afterbegin', el);
+			});
+			renderDrawer();
+		}
+		const drawer = document.getElementById('cmtDrawer');
+		function renderDrawer() {
+			if (!drawer) return;
+			drawer.textContent = '';
+			const h = document.createElement('h3'); h.textContent = state.comments.length ? 'Comments' : 'No comments yet'; drawer.appendChild(h);
+			if (!state.comments.length) { const p = document.createElement('p'); p.textContent = 'Click any text in the page, then press "Comment". Or press m on a task.'; drawer.appendChild(p); }
+			state.comments.forEach((c, i) => {
+				const a = document.createElement('a'); a.href = '#'; a.className = c.status === 'resolved' ? 'resolved' : '';
+				a.textContent = '#' + (i + 1) + ' ' + ((c.text || '').trim().slice(0, 70) || '(empty)');
+				const s = document.createElement('small'); s.textContent = (c.task ? c.task + ' · ' : '') + (c.anchor || '').slice(0, 60); a.appendChild(s);
+				a.addEventListener('click', e => { e.preventDefault(); const el = document.querySelector('.cmt[data-cmt="' + c.id + '"]'); if (el) { showPageOf(el); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.querySelector('textarea').focus(); } });
+				drawer.appendChild(a);
+			});
+		}
+		const hint = document.getElementById('cmtHint');
+		let pending = null;
+		if (mainEl && hint) {
+			mainEl.addEventListener('mouseup', e => {
+				if (e.button !== 0) return;
+				if (e.target.closest('button, textarea, input, select, a, .decide, .note, .cmt, .phase-tools, .reply')) { hint.hidden = true; return; }
+				const block = blockFor(e.target);
+				if (!block) { hint.hidden = true; return; }
+				const sel = window.getSelection();
+				const selText = sel && !sel.isCollapsed ? sel.toString().replace(/\s+/g, ' ').trim() : '';
+				pending = { block, anchor: selText && block.contains(sel.anchorNode) ? selText : textOf(block) };
+				hint.style.left = Math.min(e.clientX + 8, window.innerWidth - 120) + 'px';
+				hint.style.top = Math.min(e.clientY + 10, window.innerHeight - 40) + 'px';
+				hint.hidden = false;
+			});
+			hint.addEventListener('mousedown', e => e.preventDefault());
+			hint.addEventListener('click', () => { if (pending) addComment(pending.block, pending.anchor); hint.hidden = true; pending = null; });
+			document.addEventListener('mousedown', e => { if (e.target !== hint) hint.hidden = true; });
+			document.addEventListener('keydown', e => { if (e.key === 'Escape') hint.hidden = true; });
+		}
+		async function copy(text, btn) {
+			try {
+				await navigator.clipboard.writeText(text);
+				if (btn) { const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = old; }, 1200); }
+			} catch (e) { window.prompt('Copy this:', text); }
+		}
+		const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+		on('copyDecisions', e => copy(decisionsText(), e.currentTarget));
+		on('copyJson', e => copy(JSON.stringify(state, null, 2), e.currentTarget));
+		on('nextUndecided', nextUndecided);
+		on('detailsBtn', toggleDetails);
+		on('helpBtn', () => { if (help) help.hidden = !help.hidden; });
+		on('commentsBtn', () => { if (drawer) { drawer.hidden = !drawer.hidden; if (!drawer.hidden) renderDrawer(); } });
+
+		// ---------- roadmap (collapsed by default) + overflow menu ----------
+		const NAV_KEY = 'plan-review:nav';
+		let navOpen = false;
+		try { navOpen = localStorage.getItem(NAV_KEY) === 'open'; } catch (e) {}
+		function applyNav() {
+			const layout = document.querySelector('.layout');
+			if (layout) layout.classList.toggle('nav-hidden', !navOpen);
+			const b = document.getElementById('navBtn');
+			if (b) b.classList.toggle('on', navOpen);
+			try { localStorage.setItem(NAV_KEY, navOpen ? 'open' : 'closed'); } catch (e) {}
+		}
+		on('navBtn', () => { navOpen = !navOpen; applyNav(); });
+		applyNav();
+		const menu = document.getElementById('menu');
+		if (menu) {
+			menu.addEventListener('click', e => { if (e.target.closest('.menu-list button')) menu.open = false; });
+			document.addEventListener('mousedown', e => { if (menu.open && !menu.contains(e.target)) menu.open = false; });
+		}
+		on('resetAll', () => {
+			if (!window.confirm('Clear every decision, note, and comment for this plan?')) return;
+			state.tasks = {}; state.comments = []; save(); tasks.forEach(render); renderComments(); summary();
+		});
+
+		// ---------- boot ----------
+		state.tasks = loadBrowser();
+		(function initialPage() {
+			if (pages.length < 2) return;
+			const m = location.hash.match(/^#page-(\d+)$/);
+			let i = m ? Number(m[1]) - 1 : -1;
+			if (i < 0) { try { i = Number(localStorage.getItem(PAGE_KEY) || 0); } catch (e) { i = 0; } }
+			if (location.hash && !m) { const el = document.getElementById(decodeURIComponent(location.hash.slice(1))); if (el) i = Math.max(0, pageOf(el)); }
+			showPage(isNaN(i) ? 0 : i, false);
+			if (location.hash && !m) setTimeout(onHash, 50);
+		})();
+		tasks.forEach(render); renderComments(); summary(); setSaveState('browser');
+		connect();
+	})();
+	</script>
+</body>
+</html>

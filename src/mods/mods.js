@@ -19,9 +19,11 @@ import {
     ProtoSearchCategory,
     SEARCH_CATEGORY_KIND,
 } from './categories.js'
+import { numberShadowTypes } from '../data/library'
 import { ContinuousColumnFlyout, ContinuousRowFlyout } from './flyouts.js'
 import { ProtoRenderer } from './proto_renderer/proto_renderer.js'
 import { SEARCH_FIELD_KIND, SearchFieldInflater } from './searchField.js'
+import { registerStepBlocks } from './stepBlocks.js'
 
 export { SEARCH_CATEGORY_KIND } from './categories.js'
 
@@ -50,6 +52,19 @@ class ProtoMetrics extends ContinuousMetrics {
         return metrics
     }
 
+    /** A hidden toolbox (the simplified menu's) takes no room either. */
+    getToolboxMetrics() {
+        const metrics = super.getToolboxMetrics()
+        const toolbox = this.workspace_.getToolbox()
+        // (the toolbox has no isVisible; its div shows it, as in
+        // toolboxDrawerHelper.js)
+        if (toolbox?.HtmlDiv?.style.display === 'none') {
+            metrics.width = 0
+            metrics.height = 0
+        }
+        return metrics
+    }
+
     getContentMetrics() {
         if (this.useCachedContentMetrics && this.contentMetrics) {
             return this.contentMetrics
@@ -60,17 +75,42 @@ class ProtoMetrics extends ContinuousMetrics {
 }
 
 /**
+ * Workspaces where a drag that starts now must not move anything. Blockly
+ * drags whatever is selected, wherever the press was, so a box drag in
+ * Multi-select could carry a block along (see clickModes.js).
+ * @type {WeakSet<Blockly.WorkspaceSvg>}
+ */
+export const dragLocks = new WeakSet()
+
+/**
  * The scroll-options dragger (wheel scrolling mid-drag, and the canvas
  * scrolling along when a block is dragged to an edge), except that edge
  * scrolling pauses while the pointer is near a drop target: the trash, the
  * clipboard, and the flyout all sit on the edges, and the canvas would
- * scroll away from under them.
+ * scroll away from under them. On a locked workspace (see dragLocks) a
+ * drag moves nothing.
  */
 class ProtoBlockDragger extends ScrollBlockDragger {
     /** How far around a drop target edge scrolling already stays off. */
     static NO_SCROLL_MARGIN = 60
 
+    onDragStart(event) {
+        this.locked = dragLocks.has(this.workspace)
+        if (!this.locked) {
+            super.onDragStart(event)
+        }
+    }
+
+    onDragEnd(event) {
+        if (!this.locked) {
+            super.onDragEnd(event)
+        }
+    }
+
     onDrag(event, totalDelta) {
+        if (this.locked) {
+            return
+        }
         const nearTarget = this.workspace
             .getComponentManager()
             .getComponents(
@@ -115,10 +155,40 @@ const quietTextFieldKeyboards = () => {
     }
 }
 
+/**
+ * The block cap (`maxBlocks`) counts the blocks a learner adds, not the
+ * numbers in their slots. Every number is a hidden number block in a slot
+ * (data/library.js), and Blockly counted those too: one Spin block was
+ * three, so a cap of 1 greyed out the Spin block it was meant to allow.
+ */
+const capCountsRealBlocksOnly = () => {
+    const proto = Blockly.Workspace.prototype
+    proto.remainingCapacity = function () {
+        if (isNaN(this.options.maxBlocks)) {
+            return Infinity
+        }
+        const real = this.getAllBlocks(false).filter(
+            (block) => !block.isShadow(),
+        )
+        return this.options.maxBlocks - real.length
+    }
+    const isCapacityAvailable = proto.isCapacityAvailable
+    proto.isCapacityAvailable = function (typeCounts) {
+        const counts = { ...typeCounts }
+        for (const type of numberShadowTypes) {
+            delete counts[type]
+        }
+        return isCapacityAvailable.call(this, counts)
+    }
+}
+
 /** Registers every Blockly modification. Call once, before any inject. */
 export function injectMods() {
     Blockly.blockRendering.register('proto_renderer', ProtoRenderer)
     quietTextFieldKeyboards()
+    capCountsRealBlocksOnly()
+    // step blocks: a dashed edge, and only inside loops
+    registerStepBlocks()
 
     // The always-open toolbox: every category's blocks in one scrolling
     // flyout (see editorPlugins in blocklyHelper.js).

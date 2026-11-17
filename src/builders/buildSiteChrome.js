@@ -101,11 +101,18 @@ const buildMenuToggle = (nav, panel) => {
  * @param {string} options.tagline Short uppercase label next to the logo.
  * @param {HTMLElement[]} [options.controls] Elements placed after the brand,
  *     such as the editor's toolbar. On a phone they sit in the menu.
+ * @param {HTMLElement[]} [options.pinned] Elements after the controls that
+ *     always show, on a phone too (not folded into the menu).
  * @param {{label: string, href: string}[]} [options.links] Pill links on
  *     the far right.
  * @returns {HTMLElement} The nav element.
  */
-export const buildSiteNav = ({ tagline, controls = [], links = [] }) => {
+export const buildSiteNav = ({
+    tagline,
+    controls = [],
+    pinned = [],
+    links = [],
+}) => {
     const Controls = span(
         { class: 'site-nav__controls', id: 'site-nav-controls' },
         ...controls,
@@ -143,6 +150,9 @@ export const buildSiteNav = ({ tagline, controls = [], links = [] }) => {
             span({ class: 'site-nav__brand-text' }, tagline),
         ),
         Controls,
+        ...(pinned.length
+            ? [span({ class: 'site-nav__pinned' }, ...pinned)]
+            : []),
         span(
             { class: 'site-nav__copy' },
             `© ${new Date().getFullYear()} PROTO LLC`,

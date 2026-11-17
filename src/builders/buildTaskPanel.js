@@ -1,6 +1,68 @@
 import { button, div, on, tag } from 'ellipsi'
 import { marked } from 'marked'
 
+import { library } from '../data/library'
+
+/** What to add in Devices for a required device kind. */
+const DEVICE_WORDS = {
+    drive_motor: 'a drive motor',
+    motor_group: 'a motor group',
+    variable: 'a variable',
+}
+
+/**
+ * A required block as the learner sees it: its words, with each dropdown
+ * and number slot shown as "…", in its category's colour. A host's own
+ * categories (lib.js `categories`) are not in the library and show their
+ * block type.
+ * @param {string} type
+ * @returns {{label: string, colour: string}|null}
+ */
+const describeBlock = (type) => {
+    for (const category of library) {
+        const entry = category.entries.find(
+            (e) => e.entryType === 'block' && e.name === type,
+        )
+        if (!entry) {
+            continue
+        }
+        const words = entry.blocklyTemplate
+            .filter((part) => part.name !== 'info_icon')
+            .map((part) => (part.text ?? '…').trim())
+            .filter(Boolean)
+            // one "…" for slots side by side ("fan forward" is one gap)
+            .filter((word, i, all) => !(word === '…' && all[i - 1] === '…'))
+        return { label: words.join(' '), colour: category.color }
+    }
+    return null
+}
+
+/** One item of the checklist. */
+const blockItem = (type) => {
+    if (DEVICE_WORDS[type]) {
+        return tag(
+            'li',
+            tag(
+                'span',
+                { class: 'task-device' },
+                `Devices: ${DEVICE_WORDS[type]}`,
+            ),
+        )
+    }
+    const block = describeBlock(type)
+    return tag(
+        'li',
+        tag(
+            'span',
+            {
+                class: 'task-block',
+                style: `--block-colour: ${block?.colour ?? '#4E4E4E'}`,
+            },
+            block?.label ?? type,
+        ),
+    )
+}
+
 /**
  * Builds the task panel shown beside the embedded editor: the goal, the
  * instructions (markdown from the host page), the blocks the task needs with
@@ -19,7 +81,7 @@ export default ({ maxBlocks = undefined } = {}) => {
     const Goal = tag('h2', { id: 'task-goal' })
     const Limit = div({ id: 'task-limit' })
     if (maxBlocks) {
-        Limit.textContent = `Block limit: ${maxBlocks}. The editor will not let you add more.`
+        Limit.textContent = `You can use ${maxBlocks} block${maxBlocks === 1 ? '' : 's'} at most.`
     } else {
         Limit.hidden = true
     }
@@ -27,7 +89,7 @@ export default ({ maxBlocks = undefined } = {}) => {
     const BlockList = tag('ul', { id: 'task-blocks' })
     const Blocks = div(
         { id: 'task-blocks-wrap' },
-        tag('h3', 'Blocks you need'),
+        tag('h3', 'Blocks You Need'),
         BlockList,
     )
     const HintButtons = div({ id: 'task-hint-buttons' })
@@ -58,7 +120,7 @@ export default ({ maxBlocks = undefined } = {}) => {
     const renderBlocks = () => {
         BlockList.replaceChildren(
             ...required.map((name) => {
-                const item = tag('li', name)
+                const item = blockItem(name)
                 item.classList.toggle('have', have.has(name))
                 return item
             }),

@@ -1,9 +1,9 @@
 /*
  * One device's card, as the Devices section of the toolbox shows it: its
  * name, then what it is. A drive motor: "is a drive motor on port [0] in
- * direction [clockwise]". A drivetrain: "is a drivetrain from motors
- * [left] and [right] with drift [1]". Then a remove button and a help
- * button. The Devices pop-up (devicesDialog.js) draws one per device; the
+ * direction [clockwise]". A motor group: "is a motor group of", then a line
+ * per motor, "[left] at ratio [1]", and a button that adds a motor. Then a
+ * remove button and a help button. The Devices pop-up (devicesDialog.js) draws one per device; the
  * library (src/lib.js, mountDeviceCard) puts one on a host's page on its
  * own, so a lesson shows the real thing.
  */
@@ -35,6 +35,84 @@ const select = (choices, value, onPick, label) => {
 }
 
 /**
+ * A motor group's motors, a line each: the motor, picked from the program's
+ * drive motors, and its ratio (its speed next to the others; below 0 turns
+ * it the other way). Each line has a button that takes the motor out, while
+ * there are two or more, and a last button adds one.
+ * @param {object} device A motor group.
+ * @param {(patch: object) => void} change
+ * @param {string[]} motors The program's drive motors, by name.
+ * @returns {Array<HTMLElement>}
+ */
+const motorGroupFields = (device, change, motors) => {
+    const list = device.motors
+    const setMotors = (next) => change({ motors: next })
+    const replace = (i, patch) =>
+        setMotors(list.map((m, j) => (j === i ? { ...m, ...patch } : m)))
+    // one no longer there is kept and shown, and with none picked the
+    // choice is blank
+    const motorChoices = (current) => {
+        const names = [...new Set([...motors, current].filter(Boolean))]
+        const choices = names.map((name) => [name, name])
+        return current ? choices : [['', ''], ...choices]
+    }
+    const lines = list.map((motor, i) => {
+        const Motor = select(
+            motorChoices(motor.name),
+            motor.name,
+            (name) => replace(i, { name }),
+            `Motor ${i + 1}`,
+        )
+        // a blank motor, or one that is not a drive motor (any more), is
+        // marked, as the Issues list has it (blockLinter.js)
+        if (!motors.includes(motor.name)) {
+            Motor.setAttribute('aria-invalid', 'true')
+        }
+        const Ratio = tag('input', {
+            type: 'number',
+            step: 'any',
+            value: motor.ratio,
+            'aria-label': `Motor ${i + 1} ratio`,
+            class: 'toolbox-device-number',
+        })
+        Ratio.addEventListener('change', () =>
+            replace(i, { ratio: Ratio.value }),
+        )
+        return div(
+            { class: 'toolbox-device-motor' },
+            Motor,
+            tag('span', 'at ratio'),
+            Ratio,
+            list.length > 1 &&
+                button(
+                    '×',
+                    {
+                        type: 'button',
+                        class: 'toolbox-device-motor-remove',
+                        'aria-label': `Take ${motor.name || 'this motor'} out`,
+                        title: 'Take this motor out',
+                    },
+                    on('click', () =>
+                        setMotors(list.filter((_, j) => j !== i)),
+                    ),
+                ),
+        )
+    })
+    const unused = motors.find((name) => !list.some((m) => m.name === name))
+    return [
+        tag('span', 'is a motor group of'),
+        ...lines,
+        button(
+            '+ Add a motor',
+            { type: 'button', class: 'toolbox-device-motor-add' },
+            on('click', () =>
+                setMotors([...list, { name: unused ?? '', ratio: '1' }]),
+            ),
+        ),
+    ]
+}
+
+/**
  * The card's middle: what the device is and how it is set up.
  * @param {object} device
  * @param {(patch: object) => void} change
@@ -43,46 +121,21 @@ const select = (choices, value, onPick, label) => {
  */
 const fieldsOf = (device, change, motors) => {
     const kind = deviceKinds[device.kind]
-    if (device.kind === 'drivetrain') {
-        // its motors, picked from the program's; one no longer there is
-        // kept and shown, and with none picked the choice is blank
-        const motorChoices = (current) => {
-            const names = [...new Set([...motors, current].filter(Boolean))]
-            const choices = names.map((name) => [name, name])
-            return current ? choices : [['', ''], ...choices]
-        }
-        // a blank motor, or one that is not a drive motor (any more), is
-        // marked, as the Issues list has it (blockLinter.js)
-        const motorSelect = (side, label) => {
-            const element = select(
-                motorChoices(device[side]),
-                device[side],
-                (name) => change({ [side]: name }),
-                label,
-            )
-            if (!motors.includes(device[side])) {
-                element.setAttribute('aria-invalid', 'true')
-            }
-            return element
-        }
-        const Drift = tag('input', {
+    if (device.kind === 'motor_group') {
+        return motorGroupFields(device, change, motors)
+    }
+    if (device.kind === 'variable') {
+        const Value = tag('input', {
             type: 'number',
-            step: '0.01',
-            value: device.drift,
-            'aria-label': 'Drift',
+            step: 'any',
+            value: device.value,
+            'aria-label': 'Starts at',
             class: 'toolbox-device-number',
         })
-        Drift.addEventListener('change', () => change({ drift: Drift.value }))
-        return [
-            tag('span', 'is a drivetrain from motors'),
-            motorSelect('left', 'Left motor'),
-            tag('span', 'and'),
-            motorSelect('right', 'Right motor'),
-            tag('span', 'with drift'),
-            Drift,
-        ]
+        Value.addEventListener('change', () => change({ value: Value.value }))
+        return [tag('span', 'is a variable that starts at'), Value]
     }
-    return [
+    const port = [
         tag('span', `is a ${kind.label} on port`),
         select(
             kind.ports.map((port) => [port, port]),
@@ -90,6 +143,9 @@ const fieldsOf = (device, change, motors) => {
             (port) => change({ port }),
             'Port',
         ),
+    ]
+    return [
+        ...port,
         tag('span', 'in direction'),
         select(
             kind.directions,
@@ -110,7 +166,7 @@ const fieldsOf = (device, change, motors) => {
  * @param {() => void} [handlers.onHelp] The help button was pressed.
  * @param {object} [context]
  * @param {string[]} [context.motors] The program's drive motors by name, for
- *     a drivetrain's choice of motors.
+ *     a motor group's choice of motors.
  * @returns {HTMLElement}
  */
 export const deviceCard = (
@@ -148,8 +204,15 @@ export const deviceCard = (
 
     const fields = fieldsOf(device, change, motors)
     for (const field of fields) {
-        if (field.tagName === 'SELECT' || field.tagName === 'INPUT') {
-            field.disabled = !onChange
+        const controls = field.matches?.('select, input, button')
+            ? [field]
+            : [...(field.querySelectorAll?.('select, input, button') ?? [])]
+        for (const control of controls) {
+            if (control.tagName === 'BUTTON') {
+                control.hidden = !onChange
+            } else {
+                control.disabled = !onChange
+            }
         }
     }
 

@@ -5,10 +5,10 @@
  * lists what it finds in the Issues drawer (issuesDrawerHelper.js). A block
  * with a problem also gets Blockly's warning icon with the message.
  *
- * An error is a program that breaks or cannot do anything: a blank device,
- * a button set up twice, a condition left empty. A warning is a program
- * that runs but likely not as meant: Wait 400 seconds, 0 power, a block
- * after Forever.
+ * An error is a program that breaks or cannot do anything: a blank device
+ * or variable, a step outside a loop. A warning is a
+ * program that runs but likely not as meant: Wait 400 seconds, 0 power, a
+ * block after Forever.
  *
  * There are two kinds of rule: a block rule looks at one block, a device
  * rule at the devices. Each returns its problems. To add a check, add a
@@ -18,17 +18,21 @@
 
 import { FieldLabel, inputs } from 'blockly'
 
+import { numberShadowTypes, stepBlockTypes } from '../data/library'
 import { deviceKinds, getDevices } from '../helpers/devicesHelper'
 import { FieldDevice } from './deviceField'
+import { insideLoop } from './stepBlocks'
 
 /** The id the linter's warnings go under, apart from any other warning. */
 const LINT_ID = 'lint'
 
 /**
- * Words Python keeps for itself, and the names the program already uses:
- * a device or button named one of them breaks the program.
+ * Words Python keeps for itself, and the names `from make import *` brings
+ * in or the program already uses: a device or variable named one of them
+ * breaks the program.
  */
 const TAKEN_NAMES = new Set([
+    // Python
     'False',
     'None',
     'True',
@@ -64,41 +68,39 @@ const TAKEN_NAMES = new Set([
     'while',
     'with',
     'yield',
-    // the program's own
+    // make
     'make',
-    'time',
+    'wait',
+    'wait_until',
+    'wait_while',
+    'repeat_for',
+    'drive_motor',
+    'motor_group',
+    'encoder',
+    'system_config',
+    'button_a',
+    'button_b',
+    'button_c',
+    'button_d',
+    'light_l1',
+    'light_l2',
+    // the loops' counter
+    'i',
 ])
 
 /** A time this long or longer is likely meant in milliseconds. */
 const LONG_SECONDS = 60
 
-/** The blocks with a time in seconds, in their `time` field. */
-const TIMED_BLOCKS = new Set([
-    'wait',
-    'spinForTime',
-    'driveForTime',
-    'turnForTime',
-    'curveForTime',
-])
+/** Blocks with a time in a `time` field, and what 0 seconds means there. */
+const ZERO_TIME = {
+    wait: 'Waiting 0 seconds does nothing. Wait at least a little, like 1 second.',
+    repeatSeconds:
+        'Repeat for 0 seconds never runs the blocks inside. Set how many seconds.',
+    lightFlash: 'A 0 second flash is too short to see. Try 0.2 seconds.',
+}
 
-/** The blocks with one power, in their `power` field. */
-const POWERED_BLOCKS = new Set([
-    'spin',
-    'spinForTime',
-    'drive',
-    'driveForTime',
-    'turn',
-    'turnForTime',
-])
-
-/** The blocks with a left and a right power. */
-const CURVE_BLOCKS = new Set(['curve', 'curveForTime'])
-
-/** The blocks that run what is inside them again and again. */
-const LOOP_BLOCKS = new Set(['forever', 'repeatFor', 'repeatIf'])
-
-/** The blocks that ask whether a button is down, by its name. */
-const BUTTON_READERS = new Set(['isPressed', 'isHeld'])
+/** Of those, the ones where a long time is likely a mistake. */
+const LONG_TIME = new Set(['wait'])
 
 /**
  * What an empty slot does, for the blocks where it is worse than a gap:
@@ -116,10 +118,6 @@ const EMPTY_SLOT = {
     until: [
         'error',
         'Wait until needs a condition. With none, it waits forever.',
-    ],
-    while: [
-        'warning',
-        'Wait while needs a condition. With none, it does not wait.',
     ],
     repeatIf: [
         'error',
@@ -147,6 +145,26 @@ const warning = (message) => ({ severity: 'warning', message })
 const fieldsOf = (block) => block.inputList.flatMap((input) => input.fieldRow)
 
 /**
+ * A number a block is given, in a field or in a slot (a number block, or
+ * the slot's default). A variable or a sum in the slot is only known when
+ * the program runs, so it gives null, as does a block with no such number.
+ * @returns {number|null}
+ */
+const numberField = (block, name) => {
+    if (block.getField(name)) {
+        return Number(block.getFieldValue(name))
+    }
+    const inSlot = block.getInput(name) ? block.getInputTargetBlock(name) : null
+    if (
+        inSlot &&
+        (inSlot.type === 'numberInput' || numberShadowTypes.has(inSlot.type))
+    ) {
+        return Number(inSlot.getFieldValue('operation'))
+    }
+    return null
+}
+
+/**
  * @param {string} kindName
  * @returns {string} What the kind is called: "drive motor".
  */
@@ -159,18 +177,8 @@ const labelOf = (kindName) => deviceKinds[kindName]?.label ?? 'device'
 const a = (word) => `${/^[aeiou]/i.test(word) ? 'an' : 'a'} ${word}`
 
 /**
- * @param {string} name As typed on a block.
- * @returns {string} As the Python has it: spaces become underscores.
- */
-const pythonName = (name) =>
-    String(name ?? '')
-        .trim()
-        .replace(/\s+/g, '_')
-
-/**
  * @param {number} seconds
- * @returns {string} "6 minutes 40 seconds", "1 minute", "90 seconds" under
- *     two minutes reads as minutes too.
+ * @returns {string} "6 minutes 40 seconds", "1 minute", "45 seconds".
  */
 export const durationText = (seconds) => {
     const minutes = Math.floor(seconds / 60)
@@ -185,36 +193,31 @@ export const durationText = (seconds) => {
     return parts.join(' ')
 }
 
+/** "400 seconds is 6 minutes 40 seconds. Times are in seconds: ..." */
+const longTime = (seconds) =>
+    warning(
+        `${seconds} seconds is ${durationText(seconds)}. Times are in seconds: ` +
+            `${seconds / 1000} seconds is ${seconds} milliseconds.`,
+    )
+
 /**
  * @param {object} block
  * @returns {string} What the block is called, by its first words: "Spin
- *     block", or "button block" for one that starts with a name.
+ *     block". A step block says so: "Spin step".
  */
 export const blockName = (block) => {
     const label = fieldsOf(block).find((field) => field instanceof FieldLabel)
     const text = label?.getText()?.trim()
-    return text ? `${text} block` : 'A block'
-}
-
-/**
- * @param {object} block
- * @returns {boolean} Whether the block is inside a loop, at any depth.
- */
-const insideLoop = (block) => {
-    for (let parent = block.getSurroundParent(); parent; ) {
-        if (LOOP_BLOCKS.has(parent.type)) {
-            return true
-        }
-        parent = parent.getSurroundParent()
+    if (!text) {
+        return 'A block'
     }
-    return false
+    return `${text} ${stepBlockTypes.has(block.type) ? 'step' : 'block'}`
 }
 
 /**
  * What the rules know about the whole program.
  * @typedef {object} Context
- * @property {object[]} devices
- * @property {object[]} buttons The button blocks.
+ * @property {object[]} devices The devices and variables.
  */
 
 /**
@@ -248,60 +251,93 @@ const blockRules = [
             })
             .filter(Boolean),
 
-    // a time of 0 does nothing; a long one is likely meant in milliseconds
-    (block) => {
-        if (!TIMED_BLOCKS.has(block.type)) {
-            return []
-        }
-        const seconds = Number(block.getFieldValue('time'))
-        if (seconds === 0) {
-            return [
-                warning(
-                    block.type === 'wait'
-                        ? 'Waiting 0 seconds does nothing. Wait at least a little, like 1 second.'
-                        : 'For 0 seconds is no time at all, so nothing moves. Set how many seconds.',
-                ),
-            ]
-        }
-        if (seconds >= LONG_SECONDS) {
-            return [
-                warning(
-                    `${seconds} seconds is ${durationText(seconds)}. Times are in seconds: ` +
-                        `${seconds / 1000} seconds is ${seconds} milliseconds.`,
-                ),
-            ]
-        }
-        return []
-    },
+    // a step outside every loop runs once, for a moment
+    (block) =>
+        stepBlockTypes.has(block.type) && !insideLoop(block)
+            ? [
+                  error(
+                      `A step only works inside a loop, like Forever or Repeat: on its own it runs for a moment and stops. Put it in a loop, or use the ${blockName(block).replace(/ step$/, '')} block with a time.`,
+                  ),
+              ]
+            : [],
 
-    // 0 power moves nothing; negative power with a way picked is backwards twice
+    // seconds or degrees: 0 does nothing, and a long time is likely milliseconds
     (block) => {
         const problems = []
-        if (POWERED_BLOCKS.has(block.type)) {
-            const power = Number(block.getFieldValue('power'))
-            if (power === 0) {
+        const unit = block.getField('unit') ? block.getFieldValue('unit') : null
+        const n = numberField(block, 'amount')
+        if (unit === 'degrees' && n === 0) {
+            problems.push(
+                warning(
+                    'Through 0 degrees nothing moves. Set how many degrees: 360 is one full turn.',
+                ),
+            )
+        }
+        if (unit === 'seconds' && n === 0) {
+            problems.push(
+                warning(
+                    'For 0 seconds is no time at all, so nothing moves. Set how many seconds.',
+                ),
+            )
+        }
+        if (unit === 'seconds' && n >= LONG_SECONDS) {
+            problems.push(longTime(n))
+        }
+        const time = numberField(block, 'time')
+        if (ZERO_TIME[block.type] && time === 0) {
+            problems.push(warning(ZERO_TIME[block.type]))
+        }
+        if (LONG_TIME.has(block.type) && time >= LONG_SECONDS) {
+            problems.push(longTime(time))
+        }
+        return problems
+    },
+
+    // 0 power moves nothing; below 0 with a way picked turns it around
+    (block) => {
+        const problems = []
+        const power = numberField(block, 'power')
+        if (power === 0) {
+            problems.push(
+                warning('At 0 power nothing moves. To stop, use a Stop block.'),
+            )
+        } else if (power < 0 && block.getField('way')) {
+            const way = block.getFieldValue('way')
+            const other = {
+                forward: 'backward',
+                backward: 'forward',
+                right: 'left',
+                left: 'right',
+            }[way]
+            problems.push(
+                warning(
+                    `Less than 0 power turns ${way} around, so it goes ${other}. Pick ${other} and use power above 0.`,
+                ),
+            )
+        }
+        return problems
+    },
+
+    // the ranges a number field used to hold a number to: power, and
+    // times and degrees that can't be below 0
+    (block) => {
+        const problems = []
+        for (const name of ['power']) {
+            const power = numberField(block, name)
+            if (power !== null && Math.abs(power) > 100) {
                 problems.push(
                     warning(
-                        'At 0 power nothing moves. To stop, use a Stop block.',
-                    ),
-                )
-            } else if (power < 0 && block.getField('way')) {
-                const way = block.getFieldValue('way')
-                const other = way === 'backward' ? 'forward' : 'backward'
-                problems.push(
-                    warning(
-                        `Less than 0 power turns ${way} around, so it spins ${other}. Pick ${other} and use power above 0.`,
+                        `Power goes from -100 to 100, so ${power} runs the same as ${power > 0 ? 100 : -100}.`,
                     ),
                 )
             }
         }
-        if (CURVE_BLOCKS.has(block.type)) {
-            const left = Number(block.getFieldValue('left'))
-            const right = Number(block.getFieldValue('right'))
-            if (left === 0 && right === 0) {
+        for (const name of ['amount', 'time']) {
+            const n = numberField(block, name)
+            if (n !== null && n < 0) {
                 problems.push(
                     warning(
-                        'At 0 power on both sides nothing moves. To stop, use a Stop block.',
+                        `${n} can't be below 0. To go the other way, pick the other direction.`,
                     ),
                 )
             }
@@ -314,11 +350,10 @@ const blockRules = [
         if (block.type !== 'repeatFor') {
             return []
         }
-        const count = block.getInputTargetBlock('function')
-        if (count?.type !== 'numberInput') {
+        const times = numberField(block, 'function')
+        if (times === null) {
             return []
         }
-        const times = Number(count.getFieldValue('operation'))
         if (!Number.isInteger(times)) {
             return [
                 error(
@@ -381,83 +416,6 @@ const blockRules = [
                   ),
               ]
             : [],
-
-    // a button: named, once, on a port of its own, set up outside any loop
-    (block, { devices, buttons }) => {
-        if (block.type !== 'button') {
-            return []
-        }
-        const problems = []
-        const name = pythonName(block.getFieldValue('name'))
-        const port = block.getFieldValue('port')
-        if (!name) {
-            problems.push(error('This button has no name. Give it one.'))
-        } else if (TAKEN_NAMES.has(name)) {
-            problems.push(
-                error(
-                    `${name} can't be a button's name: the program uses that word. Pick another name.`,
-                ),
-            )
-        } else if (devices.some((device) => device.name === name)) {
-            problems.push(
-                error(
-                    `${name} is already a device's name. Give the button another name.`,
-                ),
-            )
-        }
-        const samePort = buttons.filter(
-            (other) => other.getFieldValue('port') === port,
-        )
-        if (samePort.length > 1) {
-            problems.push(
-                error(
-                    `Button ${port} is set up ${samePort.length} times. Set each button up once.`,
-                ),
-            )
-        } else if (
-            name &&
-            buttons.some(
-                (other) =>
-                    other !== block &&
-                    pythonName(other.getFieldValue('name')) === name,
-            )
-        ) {
-            problems.push(
-                warning(
-                    `Two buttons are named ${name}. Give each one its own name.`,
-                ),
-            )
-        }
-        if (insideLoop(block)) {
-            problems.push(
-                error(
-                    'A button is set up once. Inside a loop it is set up again each time, which stops the program. Move it above the loop.',
-                ),
-            )
-        }
-        return problems
-    },
-
-    // asking about a button that is not set up
-    (block, { buttons }) => {
-        if (!BUTTON_READERS.has(block.type)) {
-            return []
-        }
-        const name = pythonName(block.getFieldValue('name'))
-        const known = buttons.some(
-            (button) => pythonName(button.getFieldValue('name')) === name,
-        )
-        if (known) {
-            return []
-        }
-        return [
-            error(
-                name
-                    ? `There is no button named ${name}. Set it up with an "is button" block first.`
-                    : 'Type the name of the button this block asks about.',
-            ),
-        ]
-    },
 ]
 
 /**
@@ -467,27 +425,31 @@ const blockRules = [
 
 /** @type {DeviceRule[]} */
 const deviceRules = [
-    // every device needs a name, one of its own, that Python can use
+    // every device and variable needs a name, one of its own, that Python
+    // can use; a variable's problems are listed under Variables
     (devices) => {
         const problems = []
         const seen = new Set()
         devices.forEach((device) => {
             const label = labelOf(device.kind)
+            const what = device.kind === 'variable' ? 'variable' : 'device'
+            const where = device.kind === 'variable' ? 'Variables' : 'Devices'
+            const add = (problem) => problems.push({ ...problem, where })
             if (!device.name) {
-                problems.push(error(`A ${label} has no name. Give it one.`))
+                add(error(`A ${label} has no name. Give it one.`))
                 return
             }
             if (TAKEN_NAMES.has(device.name)) {
-                problems.push(
+                add(
                     error(
-                        `${device.name} can't be a device's name: the program uses that word. Pick another name.`,
+                        `${device.name} can't be a ${what}'s name: the program uses that word. Pick another name.`,
                     ),
                 )
             }
             if (seen.has(device.name)) {
-                problems.push(
+                add(
                     error(
-                        `Two devices are named ${device.name}. Give each one its own name.`,
+                        `${device.name} is used twice. Give each device and variable its own name.`,
                     ),
                 )
             }
@@ -496,75 +458,72 @@ const deviceRules = [
         return problems
     },
 
-    // a drivetrain's motors: both picked, both drive motors, not the same one
+    // a motor group's motors: each picked, each a drive motor, none twice
     (devices) => {
         const motors = devices
             .filter((device) => device.kind === 'drive_motor')
             .map((device) => device.name)
         return devices
-            .filter((device) => device.kind === 'drivetrain')
+            .filter((device) => device.kind === 'motor_group')
             .flatMap((device) => {
-                const name = device.name || 'A drivetrain'
+                const name = device.name || 'A motor group'
                 const problems = []
-                for (const side of ['left', 'right']) {
-                    const motor = device[side]
-                    if (!motor) {
-                        problems.push(
-                            motors.length
-                                ? error(`Pick ${name}'s ${side} motor.`)
-                                : error(
-                                      `${name} needs a ${side} motor. Add a drive motor, then pick it.`,
-                                  ),
-                        )
-                    } else if (!motors.includes(motor)) {
+                const seen = new Set()
+                device.motors.forEach((motor, i) => {
+                    if (!motor.name) {
+                        if (motors.length) {
+                            problems.push(
+                                error(`Pick ${name}'s motor ${i + 1}.`),
+                            )
+                        } else if (!seen.has('')) {
+                            // with no drive motors yet, one line says so
+                            problems.push(
+                                error(
+                                    `${name} needs motors. Add a drive motor, then pick it.`,
+                                ),
+                            )
+                        }
+                    } else if (!motors.includes(motor.name)) {
                         problems.push(
                             error(
-                                `${name}'s ${side} motor, ${motor}, is not a drive motor. Pick another.`,
+                                `${name}'s motor ${motor.name} is not a drive motor. Pick another.`,
+                            ),
+                        )
+                    } else if (seen.has(motor.name)) {
+                        problems.push(
+                            warning(
+                                `${name} has ${motor.name} twice. Take one out, or pick a different motor.`,
                             ),
                         )
                     }
-                }
-                if (device.left && device.left === device.right) {
-                    problems.push(
-                        warning(
-                            `${name} uses ${device.left} for both sides. Pick a different motor for one side.`,
-                        ),
-                    )
-                }
+                    seen.add(motor.name)
+                })
                 return problems
             })
     },
 
-    // a drivetrain's drift: above 0, and near 1 (1 is no drift; below 1
-    // slows the left side, above 1 the right)
+    // a motor group's ratios: at least one that is not 0 (make refuses a
+    // motor group whose motors all hold still)
     (devices) =>
         devices
-            .filter((device) => device.kind === 'drivetrain')
-            .map((device) => {
-                const name = device.name || 'A drivetrain'
-                const drift = Number(device.drift)
-                if (!(drift > 0)) {
-                    return error(
-                        `${name}'s drift is ${device.drift}, so one side doesn't drive. Drift must be above 0: 1 is none.`,
-                    )
-                }
-                if (drift < 0.5 || drift > 2) {
-                    return warning(
-                        `${name}'s drift of ${device.drift} runs one side at less than half power. Drift is usually close to 1.`,
-                    )
-                }
-                return null
-            })
-            .filter(Boolean),
+            .filter((device) => device.kind === 'motor_group')
+            .filter((device) =>
+                device.motors.every((motor) => Number(motor.ratio) === 0),
+            )
+            .map((device) =>
+                error(
+                    `Every ratio in ${device.name || 'a motor group'} is 0, so nothing turns. Set at least one, like 1.`,
+                ),
+            ),
 
-    // two drive motors on one port
+    // two devices on one port
     (devices) => {
         const byPort = new Map()
         for (const device of devices) {
-            if (device.kind === 'drive_motor') {
+            if (device.port !== undefined) {
                 byPort.set(device.port, [
                     ...(byPort.get(device.port) ?? []),
-                    device.name || 'a motor',
+                    device.name || `a ${labelOf(device.kind)}`,
                 ])
             }
         }
@@ -598,17 +557,14 @@ export const lintBlocks = (workspace) => {
     const devices = getDevices(workspace)
     const found = deviceRules
         .flatMap((rule) => rule(devices))
-        .map((problem) => ({ ...problem, where: 'Devices' }))
+        .map((problem) => ({ where: 'Devices', ...problem }))
 
     const blocks = workspace
         .getTopBlocks(true)
         .flatMap((top) => top.getDescendants(true))
         // a shadow (a default value in a slot) is part of the block it is in
         .filter((block) => !block.isShadow())
-    const context = {
-        devices,
-        buttons: blocks.filter((block) => block.type === 'button'),
-    }
+    const context = { devices }
     for (const block of blocks) {
         const problems = blockRules.flatMap((rule) => rule(block, context))
         // only a rendered block can show a warning icon

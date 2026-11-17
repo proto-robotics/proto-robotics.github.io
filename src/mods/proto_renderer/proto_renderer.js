@@ -66,6 +66,8 @@ export class ProtoRendererConstantProvider extends Blockly.blockRendering.Consta
 	/** Font family loaded by the website stylesheet. */
 	FIELD_TEXT_FONTFAMILY = 'Montserrat, sans-serif';
 
+	FIELD_TEXT_FONTWEIGHT = '600';
+
 	/** A shallower notch between stacked blocks than Blockly's default. */
 	NOTCH_HEIGHT = 6;
 

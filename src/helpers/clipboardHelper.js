@@ -312,6 +312,14 @@ class Clipboard extends Backpack {
      */
     flyoutContents() {
         return this.contents_.flatMap((item, index) => {
+            // a stack kept from the old blocks has types no block has now,
+            // and would break the flyout: it is left out until removed
+            const types = [...item.matchAll(/"type":"([^"]+)"/g)].map(
+                (m) => m[1],
+            )
+            if (types.some((type) => !Blockly.Blocks[type])) {
+                return []
+            }
             const key = `clipboardRemove${index}`
             this.workspace_.registerButtonCallback(key, () =>
                 this.removeItem(item),

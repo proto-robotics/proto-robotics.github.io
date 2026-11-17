@@ -128,9 +128,30 @@ function buildCallableCompletions(entry) {
     })
 }
 
-/** @returns {object[]} Completions for top-level public make API entries. */
+/**
+ * @returns {object[]} Completions for top-level public make API entries:
+ *     calls for functions and constructors, plain names for ready-made
+ *     objects (the board's button_a). A type learners only get from make
+ *     (button, encoder) is not offered.
+ */
 function buildTopLevelCompletions() {
-    return autocompleteApi().members.flatMap(buildCallableCompletions)
+    return autocompleteApi().members.flatMap((entry) => {
+        if (entry.kind === 'type') {
+            return []
+        }
+        if (entry.kind === 'instance') {
+            return [
+                {
+                    label: entry.path ?? entry.name,
+                    type: 'variable',
+                    detail: entry.description?.split('\n')[0],
+                    info: () =>
+                        renderCompletionDocumentation(entry.description),
+                },
+            ]
+        }
+        return buildCallableCompletions(entry)
+    })
 }
 
 /**
@@ -617,7 +638,7 @@ function buildGutterExtensions(readonly, noGutter) {
 }
 
 /** The first lines of every program, and the whole of an empty one. */
-export const PROGRAM_PREAMBLE = 'import make\n\n'
+export const PROGRAM_PREAMBLE = 'from make import *\n\n'
 
 /**
  * Creates a configured Python CodeMirror view.

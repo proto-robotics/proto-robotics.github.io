@@ -1,0 +1,178 @@
+{
+  "file": "make-update_plan.html",
+  "planId": "make-update",
+  "revision": 5,
+  "updated": "2026-11-16T03:19:20.368Z",
+  "tasks": {
+    "L1": {
+      "decision": "accept",
+      "decidedRevision": 3
+    },
+    "L2": {
+      "decision": "accept",
+      "decidedRevision": 3
+    },
+    "L3": {
+      "decision": "accept",
+      "decidedRevision": 3
+    },
+    "L4": {
+      "decision": "accept",
+      "decidedRevision": 3
+    },
+    "X1": {
+      "decision": "hold",
+      "decidedRevision": 3
+    },
+    "X2": {
+      "decision": "accept",
+      "decidedRevision": 3,
+      "reply": "Built and passed: a connection rule refuses any drag that leaves a step block outside every loop. 7 of 7 cases pass, including a step in an If inside a Forever (allowed) and an If holding a step dragged to the top level (refused). Gap: a step dropped on empty canvas makes no connection, so the linter flags it as an error (P3.3). Tested headless, not by hand-dragging.",
+      "replyRevision": 5
+    },
+    "X3": {
+      "decision": "accept",
+      "decidedRevision": 3,
+      "reply": "Built and passed: the new Motor and Drivetrain categories hold 11 blocks (pass line under 14). Every block fits on one line; the widest, Drive ... for 2 seconds, is 268 px in a 296 px flyout. Screenshots at laptop and tablet size.",
+      "replyRevision": 5
+    },
+    "P0.1": {
+      "decision": "accept",
+      "decidedRevision": 3
+    },
+    "P0.2": {
+      "decision": "",
+      "decidedRevision": 3,
+      "reply": "Built with option A: step blocks with a dashed edge, kept in loops by the connection checker, and a linter error for a step dropped loose on the canvas.",
+      "replyRevision": 5
+    },
+    "P0.3": {
+      "decision": "",
+      "decidedRevision": 3,
+      "reply": "Built with option C (words and negatives): the forward/backward and right/left dropdowns stay, power runs -100 to 100, and the linter warns when power below 0 turns the picked way around. Pick another option if you want it changed.",
+      "replyRevision": 5
+    },
+    "P0.4": {
+      "decision": "",
+      "decidedRevision": 4,
+      "note": "I want you to use the terms robots usually use which are brake coast and hold. but for this it would just be brake and coast",
+      "reply": "Built with option A: Stop [x] and [brake/coast], brake by default.",
+      "replyRevision": 5
+    },
+    "P0.5": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P0.6": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P0.7": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P1.1": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P1.2": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P1.3": {
+      "decision": "",
+      "decidedRevision": 4,
+      "reply": "X2 passed, so the step blocks can use the connection rule from x2.cjs. Ready to decide.",
+      "replyRevision": 5
+    },
+    "P1.4": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P1.5": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.1": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.2": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.3": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.4": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.5": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.6": {
+      "decision": "reject",
+      "decidedRevision": 4,
+      "note": "add them",
+      "reply": "Removed. Added P2.7 servos, P2.8 simple motors and P2.9 number variables, each with options; P2 is now 3 days.",
+      "replyRevision": 5
+    },
+    "P3.1": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P3.2": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P3.3": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P3.5": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P3.4": {
+      "decision": "",
+      "decidedRevision": 4,
+      "reply": "Built as: an old program opens empty with no message, and is kept in local storage under blocklyStateOld. Say if you want the message back.",
+      "replyRevision": 5
+    },
+    "R1": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "R2": {
+      "decision": "reject",
+      "decidedRevision": 4,
+      "note": "They might be confusing but we will try it anyway",
+      "reply": "Understood: we try step blocks and watch how kids take them. Reworded; no mitigation task added.",
+      "replyRevision": 5
+    },
+    "R3": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "R4": {
+      "decision": "accept",
+      "decidedRevision": 4
+    },
+    "P2.7": {
+      "reply": "Built with option A: Move [claw] to [90] degrees, writes claw.moveto(angle=90).",
+      "replyRevision": 5
+    },
+    "P2.8": {
+      "reply": "Built with option B: simple motors have their own Spin, Spin step and Stop blocks, in the Motor category.",
+      "replyRevision": 5
+    },
+    "P2.9": {
+      "reply": "Built with option A: number variables (Set, Change by, read) and + − × ÷.",
+      "replyRevision": 5
+    }
+  },
+  "comments": []
+}

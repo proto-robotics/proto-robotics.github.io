@@ -7,7 +7,7 @@
  *   import { mountEditor, fields } from './proto-ide.js'
  *   const editor = await mountEditor(container, {
  *       categories: [myCategory],   // extra block categories, library.js shape
- *       toolbox: ['Motor', 'Time'], // or blocks: ['drive_motor', 'spin']
+ *       toolbox: ['Motor', 'Time'], // or blocks: ['motorSpin', 'wait']
  *       maxBlocks: 4,
  *       onChange: ({ code, blockTypes, state }) => {},
  *   })
@@ -67,7 +67,7 @@ export const fields = {
     dropdown: (options) => () => gridDropdown(options),
     /**
      * A choice of the program's devices of a kind, by name.
-     * @param {string} kind 'drive_motor' or 'drivetrain'.
+     * @param {string} kind 'drive_motor' or 'motor_group'.
      * @param {{nth?: number}} [options] Blank while there are none.
      */
     device: deviceField,
@@ -120,8 +120,8 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {boolean} [options.view=false] Read-only viewer.
  * @param {boolean} [options.devices=false] Pin a Devices button to the
  *     bottom of the toolbox column: it opens the program's motors and
- *     drivetrains in a pop-up, where they are set up. A device counts in
- *     `blockTypes` under its kind (`drive_motor` or `drivetrain`).
+ *     motor groups in a pop-up, where they are set up. A device counts in
+ *     `blockTypes` under its kind (`drive_motor` or `motor_group`).
  * @param {boolean} [options.issues=false] An Issues tab on the right that
  *     lists the program's problems (blank devices and the like). The
  *     blocks with one are marked either way.
@@ -137,8 +137,12 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  *   setCheatsheet: (open?: boolean) => void,
  *   highlight: (id: string|null) => void,
  *   tracedCode: () => string,
+ *   add: (state: object, clientX?: number, clientY?: number) => void,
  *   destroy: () => void,
- * }>} The mounted editor, once the workspace exists. `tracedCode` is the
+ * }>} The mounted editor, once the workspace exists. `add` puts a saved
+ *     program's blocks into the workspace beside what is there (at a point
+ *     on the screen, or under the existing blocks), and adds any of its
+ *     devices the program does not have yet. `tracedCode` is the
  *     program with `make._block('<id>')` before each block's code, for a
  *     simulator that reports which block is running; `highlight` lights up
  *     that block (and the blocks it sits inside), or none with null.
@@ -207,6 +211,7 @@ export const mountEditor = async (
         setCheatsheet: api.setCheatsheet,
         highlight: api.highlight,
         tracedCode: api.getTracedCode,
+        add: api.addBlocks,
         destroy: () => {
             stopPhoneLayout()
             api.dispose()
@@ -227,7 +232,7 @@ export const mountEditor = async (
  * @param {{kind?: string, name?: string, port?: string, direction?: string}} [options.device]
  *     The device; a drive motor named motor on port 0, clockwise, if left out.
  * @param {(device: object) => void} [options.onChange] The device, after a change.
- * @param {string[]} [options.motors] For a drivetrain: the drive motors it
+ * @param {string[]} [options.motors] For a motor group: the drive motors it
  *     can be made from, by name.
  * @returns {Promise<{
  *   element: HTMLElement,

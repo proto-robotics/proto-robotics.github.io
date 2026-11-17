@@ -56,6 +56,31 @@ export const PopUp = (...children) => {
 }
 
 /**
+ * Closes a pop-up when it is clicked outside. It is modal, so its
+ * backdrop takes every click outside it, and they reach the dialog
+ * itself, outside its box.
+ * @param {HTMLDialogElement} Dialog A pop-up made by PopUp.
+ * @returns {HTMLDialogElement} The same pop-up.
+ */
+export const closeOnClickOutside = (Dialog) => {
+    Dialog.addEventListener('click', (event) => {
+        if (event.target !== Dialog) {
+            return
+        }
+        const box = Dialog.getBoundingClientRect()
+        const inside =
+            event.clientX >= box.left &&
+            event.clientX <= box.right &&
+            event.clientY >= box.top &&
+            event.clientY <= box.bottom
+        if (!inside) {
+            Dialog.dispatchEvent(new Event(closePopUpEvent))
+        }
+    })
+    return Dialog
+}
+
+/**
  * Makes sure the project has a name before it is saved. An unnamed project
  * gets a popup asking for one; the name is written into the field (and its
  * change event fired, so it is remembered like a typed name).

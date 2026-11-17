@@ -145,21 +145,21 @@ export default (
         ProjectNameInput,
         UndoButton,
         RedoButton,
-        button(
-            'Save',
-            on('click', async () => {
-                if (await ensureProjectName(ProjectNameInput)) {
-                    currentMode.saveCode(ProjectNameInput)
-                }
-            }),
-        ),
         buildBrainButton({
             getProjectName: () => ProjectNameInput.value,
             getProjectFiles: (projectName) =>
                 currentMode.getProjectFiles(projectName),
         }),
         button(
-            'Load',
+            'Export',
+            on('click', async () => {
+                if (await ensureProjectName(ProjectNameInput)) {
+                    currentMode.saveCode(ProjectNameInput)
+                }
+            }),
+        ),
+        button(
+            'Import',
             on('click', () => currentMode.loadCode(ProjectNameInput)),
         ),
         MinimapToggle,
@@ -169,12 +169,49 @@ export default (
         ),
     )
 
+    // ---- the simplified menu -------------------------------------------------
+
+    // A trial: on, it hides the toolbox and its blocks (a click on the
+    // canvas opens a round menu instead: mods/radialMenu.js), every
+    // button on the canvas, the drawers, and the whole top bar but this
+    // switch, so it can be turned off again (styles.css, body.simplified).
+    // Remembered like the minimap.
+    const setSimplified = (wanted) => {
+        document.body.classList.toggle('simplified', wanted)
+        SimplifiedToggle.setAttribute('aria-checked', String(wanted))
+        localStorage.setItem('simplified', wanted ? 'on' : 'off')
+        // Blockly measures the canvas again on a window resize
+        window.dispatchEvent(new Event('resize'))
+    }
+    const SimplifiedToggle = button(
+        {
+            type: 'button',
+            role: 'switch',
+            class: 'simplified-toggle',
+            'aria-checked': 'false',
+        },
+        tag('span', { class: 'simplified-toggle-track', 'aria-hidden': 'true' }),
+        tag('span', 'Simplified Menu'),
+        on('click', () =>
+            setSimplified(
+                SimplifiedToggle.getAttribute('aria-checked') !== 'true',
+            ),
+        ),
+    )
+    // Hidden for now (to be revisited): the switch is not on the page, so
+    // the menu stays off even if it was left on before.
+    setSimplified(false)
+
     // ---- the page ------------------------------------------------------------
 
     // One bar: the brand, then the toolbar, then the copyright. The
     // cheatsheet is reached through its drawer, so there are no links.
     const Header = header(
-        buildSiteNav({ tagline: 'Code Editor', controls: [Toolbar] }),
+        buildSiteNav({
+            tagline: 'Code Editor',
+            controls: [Toolbar],
+            // pinned: [SimplifiedToggle], (hidden for now)
+        }),
     )
     watchHeaderHeight(Header)
     watchPhoneLayout()

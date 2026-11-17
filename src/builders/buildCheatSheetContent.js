@@ -7,7 +7,6 @@ import { hr, on, tag } from 'ellipsi'
 
 import { cheatSheetBlocks as blocks } from '../data/library'
 import { copyWorkspaceStateToClipboard } from '../helpers/blockClipboardHelper'
-import { liftDeviceBlocks } from '../helpers/devicesHelper'
 import { animateScrollTo } from '../helpers/scrollHelper'
 import {
     CheatSheetPreviewMode,
@@ -76,20 +75,33 @@ function countItemsBeforeSection(sectionIndex) {
         )
 }
 
+/** The device name a block's preview shows, by kind of device. */
+const PREVIEW_DEVICE_NAMES = {
+    drive_motor: 'arm',
+    motor_group: 'robot',
+}
+
 /**
- * Creates serialized workspace state for a single block reference entry.
- * @param {string} blockType Blockly block type to preview.
+ * Creates serialized workspace state for a single block reference entry. A
+ * block that uses a device shows an example name (arm, robot), so its code
+ * reads `arm.spin(...)`; the preview has no devices, so no set-up lines.
+ * @param {object} block The block's library entry.
  * @returns {object} Serialized one-block Blockly workspace state.
  */
-function createSingleBlockWorkspaceState(blockType) {
+function createSingleBlockWorkspaceState(block) {
+    const deviceField = block.blocklyTemplate
+        .find((part) => part.name === 'name')
+        ?.field?.()
+    const name = PREVIEW_DEVICE_NAMES[deviceField?.kind]
     return {
         blocks: {
             languageVersion: 0,
             blocks: [
                 {
-                    type: blockType,
+                    type: block.name,
                     x: 12,
                     y: 12,
+                    ...(name ? { fields: { name } } : {}),
                 },
             ],
         },
@@ -128,7 +140,7 @@ function buildCopyButton(workspaceState) {
  * @returns {HTMLElement} Rendered block item.
  */
 function buildBlockItem(block, settings, elementNumber) {
-    const workspaceState = createSingleBlockWorkspaceState(block.name)
+    const workspaceState = createSingleBlockWorkspaceState(block)
     const item = tag('cheatsheet-item', {
         id: `cheatsheet-item-${elementNumber}`,
         'data-cheatsheet-element-number': String(elementNumber),
@@ -177,12 +189,12 @@ function buildExampleItem(example, settings, elementNumber) {
         item.appendChild(tag('h3', example.name))
     }
 
-    // The example is shown as a program is now: its motors as devices,
-    // lines at the top of the code. Copy keeps the blocks that set them
-    // up, which become devices when pasted (devicesHelper.js).
+    // The example carries its devices, so its code starts with the lines
+    // that set them up. Copy takes the blocks; the devices are set up in
+    // the Devices pop-up.
     item.append(
         tag('p', example.preamble),
-        createCheatSheetPreview(liftDeviceBlocks(example.workspace), settings),
+        createCheatSheetPreview(example.workspace, settings),
         ...(settings.showCopy ? [buildCopyButton(example.workspace)] : []),
     )
     return item
