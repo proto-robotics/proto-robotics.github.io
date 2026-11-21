@@ -78,7 +78,7 @@ function countItemsBeforeSection(sectionIndex) {
 /** The device name a block's preview shows, by kind of device. */
 const PREVIEW_DEVICE_NAMES = {
     drive_motor: 'arm',
-    motor_group: 'robot',
+    drivetrain: 'robot',
 }
 
 /**

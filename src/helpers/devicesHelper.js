@@ -1,8 +1,9 @@
 /*
  * The devices a program sets up before its blocks run: drive motors, each
- * with a name, a port and a direction, and motor groups: drive motors that
- * turn together, each at its own ratio (make's motor_group(motors, ratios)). Its variables live here too, each a name and
- * the number it starts at (the Variables pop-up shows them). They are part of the workspace's state (a
+ * with a name, a port and a direction, and drivetrains: two or more drive
+ * motors driven as one (make's drivetrain(left, right)). Its variables live
+ * here too, each a name and the number it starts at (the Variables pop-up
+ * shows them). They are part of the workspace's state (a
  * Blockly serializer under the key `devices`), so they save and load with
  * the blocks, in local storage and in a project file, and the generated
  * Python starts with one line per device, in make's own words
@@ -65,49 +66,37 @@ export const deviceKinds = {
             return cleanPortAndDirection(this, device)
         },
     },
-    motor_group: {
-        label: 'motor group',
-        help: 'groupSpin',
+    drivetrain: {
+        label: 'drivetrain',
+        help: 'driveFor',
         base: 'robot',
         /** Made from drive motors, so it is set up after them. */
         order: 1,
         fields: ['motors'],
         /**
-         * `robot = motor_group([left, right])`, with the ratios after the
-         * motors when they are not all 1: `motor_group([left, right], [1, -1])`.
+         * `robot = drivetrain(left, right)`: the motors in order, the
+         * first, third... on the left and the second, fourth... on the
+         * right.
          */
-        code: ({ name, motors }) => {
+        code: ({ name, motors }) =>
             // a motor not picked yet is left out (the Issues list has it)
-            const picked = motors.filter((motor) => motor.name)
-            const names = picked.map((motor) => motor.name).join(', ')
-            const ratios = picked.map((motor) => motor.ratio)
-            const same = ratios.every((ratio) => Number(ratio) === 1)
-            return `${name} = motor_group([${names}]${same ? '' : `, [${ratios.join(', ')}]`})`
-        },
+            `${name} = drivetrain(${motors.filter(Boolean).join(', ')})`,
         /**
-         * @param {object} device As saved or typed. A drivetrain (a motor
-         *     group's old name) saved before make's drivetrains took a list (`left`, `right`,
-         *     `drift`) loads as those two motors, the right one at the
-         *     drift as its ratio.
-         * @returns {{motors: Array<{name: string, ratio: string}>}} Its
-         *     motors by name (blank when none is picked), each with its
-         *     ratio as a number.
+         * @param {object} device As saved or typed. A motor group (make's
+         *     motor_group, from before drivetrain came back) loads as a
+         *     drivetrain of its motors, its ratios dropped; an older
+         *     drivetrain saved with `left` and `right` loads as those two.
+         * @returns {{motors: string[]}} Its motors by name, in order (blank
+         *     when none is picked).
          */
         clean(device) {
             const motors = Array.isArray(device.motors)
                 ? device.motors
-                : [
-                      { name: device.left, ratio: '1' },
-                      { name: device.right, ratio: device.drift ?? '1' },
-                  ]
+                : [device.left, device.right]
             return {
-                motors: motors.map((motor) => {
-                    const ratio = Number(motor?.ratio)
-                    return {
-                        name: cleanName(motor?.name),
-                        ratio: Number.isFinite(ratio) ? String(ratio) : '1',
-                    }
-                }),
+                motors: motors.map((motor) =>
+                    cleanName(typeof motor === 'object' ? motor?.name : motor),
+                ),
             }
         },
     },
@@ -183,14 +172,17 @@ export const cleanName = (name) =>
         .replace(/^\d+/, '')
 
 /**
+ * Device kinds by an old name: for a while make called a drivetrain a
+ * motor group (motor_group(motors, ratios)).
+ */
+export const OLD_KINDS = { motor_group: 'drivetrain' }
+
+/**
  * Checks one device as saved or typed, filling in anything missing.
  * @param {object} device
  * @returns {object|null} The device, or null if it is not one we know.
  */
-/** Device kinds by an old name: make called a motor group a drivetrain. */
-const OLD_KINDS = { drivetrain: 'motor_group' }
-
-const cleanDevice = (device) => {
+export const cleanDevice = (device) => {
     const kindName = OLD_KINDS[device?.kind] ?? device?.kind
     const kind = deviceKinds[kindName]
     if (!kind) {
@@ -237,7 +229,7 @@ export const nextPort = (devices, kindName) => {
 }
 
 /**
- * The devices without one of them: those made from it (a motor group from a
+ * The devices without one of them: those made from it (a drivetrain from a
  * motor) lose it and are left blank there, to be picked again.
  * @param {object[]} devices
  * @param {number} index Which device goes.
@@ -252,7 +244,7 @@ export const removeDevice = (devices, index) => {
 }
 
 /**
- * The devices with a drive motor's name changed in every motor group made
+ * The devices with a drive motor's name changed in every drivetrain made
  * from it (to blank, when the motor is gone).
  * @param {object[]} devices
  * @param {string} from The motor's old name.
@@ -261,11 +253,11 @@ export const removeDevice = (devices, index) => {
  */
 export const renameMotor = (devices, from, to) =>
     devices.map((device) =>
-        device.kind === 'motor_group'
+        device.kind === 'drivetrain'
             ? {
                   ...device,
                   motors: device.motors.map((motor) =>
-                      motor.name === from ? { ...motor, name: to } : motor,
+                      motor === from ? to : motor,
                   ),
               }
             : device,
@@ -279,18 +271,19 @@ export const renameMotor = (devices, from, to) =>
  *     nothing when there are no devices.
  */
 export const devicesCode = (devices) => {
-    // a motor group is made from motors, so the motors come first, and the
+    // a drivetrain is made from motors, so the motors come first, and the
     // variables come last
-    const lines = [...devices]
+    // cleaned first, so a device saved in an older shape still writes
+    // today's line
+    const lines = devices
+        .map(cleanDevice)
+        .filter((device) => device?.name)
         .sort(
             (a, b) =>
                 (deviceKinds[a.kind].order ?? 0) -
                 (deviceKinds[b.kind].order ?? 0),
         )
-        .filter((device) => device.name)
-        // cleaned first, so a device saved in an older shape still writes
-        // today's line
-        .map((device) => deviceKinds[device.kind].code(cleanDevice(device)))
+        .map((device) => deviceKinds[device.kind].code(device))
     return lines.length ? lines.join('\n') + '\n\n' : ''
 }
 

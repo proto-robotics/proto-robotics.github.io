@@ -2,11 +2,12 @@ import { button, div, on, tag } from 'ellipsi'
 import { marked } from 'marked'
 
 import { library } from '../data/library'
+import { currentBlockType } from '../helpers/renamedBlocks'
 
 /** What to add in Devices for a required device kind. */
 const DEVICE_WORDS = {
     drive_motor: 'a drive motor',
-    motor_group: 'a motor group',
+    drivetrain: 'a drivetrain',
     variable: 'a variable',
 }
 
@@ -145,7 +146,8 @@ export default ({ maxBlocks = undefined } = {}) => {
         Goal.textContent = goal
         Body.innerHTML = marked.parse(markdown)
 
-        required = [...requiredBlocks]
+        // a task written for an older block or device name still ticks
+        required = [...new Set(requiredBlocks.map(currentBlockType))]
         renderBlocks()
 
         HintText.hidden = true

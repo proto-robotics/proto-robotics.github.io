@@ -9,7 +9,7 @@ import { blockName, durationText, lintBlocks } from '../src/mods/blockLinter'
 import {
     block,
     defineBlocks,
-    motorGroup,
+    drivetrain,
     motor,
     num,
     robot,
@@ -88,7 +88,7 @@ describe('a program with nothing wrong', () => {
                             {
                                 function: slot(pressed()),
                                 input: slot(
-                                    block('groupSpinStep', {
+                                    block('driveStep', {
                                         name: 'robot',
                                         way: 'forward',
                                         power: 50,
@@ -96,7 +96,7 @@ describe('a program with nothing wrong', () => {
                                 ),
                             },
                         ),
-                        block('groupStop', {
+                        block('drivetrainStop', {
                             name: 'robot',
                             mode: 'brake',
                         }),
@@ -204,10 +204,11 @@ describe('device dropdowns', () => {
 
     test.each([
         [
-            'groupSpin',
+            'driveFor',
             { way: 'forward', power: 50, amount: 1, unit: 'seconds' },
-            'motor group',
+            'drivetrain',
         ],
+        ['motorHold', { time: 1 }, 'drive motor'],
     ])('a blank %s asks for %s', (type, fields, label) => {
         expect(only([block(type, { name: '', ...fields })]).message).toBe(
             `Add a ${label} with the Devices button, then pick it here.`,
@@ -256,7 +257,7 @@ describe('times and degrees', () => {
         expect(
             only(
                 [
-                    block('groupSpin', {
+                    block('driveFor', {
                         name: 'robot',
                         way: 'forward',
                         power: 50,
@@ -273,7 +274,7 @@ describe('times and degrees', () => {
         expect(
             only(
                 [
-                    block('groupSpin', {
+                    block('driveFor', {
                         name: 'robot',
                         way: 'forward',
                         power: 50,
@@ -292,6 +293,54 @@ describe('times and degrees', () => {
                 block('repeatSeconds', { time: 0 }, { input: slot(wait(1)) }),
             ]).message,
         ).toMatch(/^Repeat for 0 seconds never runs/)
+    })
+
+    test.each([
+        ['motorHold', { name: 'arm' }, 'Holding for 0 seconds does nothing'],
+        [
+            'curveFor',
+            { name: 'robot', way: 'forward', left: 50, right: 20 },
+            'For 0 seconds is no time at all',
+        ],
+    ])('%s for 0 seconds', (type, fields, start) => {
+        expect(
+            only([block(type, { ...fields, time: 0 })], robot().concat(motor()))
+                .message,
+        ).toMatch(new RegExp(`^${start}`))
+    })
+
+    test('Curve with both sides at 0 power', () => {
+        expect(
+            only(
+                [
+                    block('curveFor', {
+                        name: 'robot',
+                        way: 'forward',
+                        left: 0,
+                        right: 0,
+                        time: 1,
+                    }),
+                ],
+                robot(),
+            ).message,
+        ).toMatch(/^With both sides at 0 power nothing moves/)
+    })
+
+    test('Turn left at below 0 power', () => {
+        expect(
+            only(
+                [
+                    block('turnFor', {
+                        name: 'robot',
+                        way: 'left',
+                        power: -40,
+                        amount: 1,
+                        unit: 'seconds',
+                    }),
+                ],
+                robot(),
+            ).message,
+        ).toMatch(/turns left around, so it goes right/)
     })
 
     test('a 0 second flash', () => {
@@ -314,11 +363,11 @@ describe('power', () => {
         )
     })
 
-    test('below 0 power, a motor group backward', () => {
+    test('below 0 power, a drivetrain backward', () => {
         expect(
             only(
                 [
-                    block('groupSpin', {
+                    block('driveFor', {
                         name: 'robot',
                         way: 'backward',
                         power: -30,
@@ -455,14 +504,20 @@ describe('variables', () => {
 })
 
 describe('devices', () => {
-    test.each(['repeat_for', 'motor_group', 'wait', 'light_l1', 'for'])(
-        'a device named %s',
-        (name) => {
-            expect(messages([], [motor(name)])).toEqual([
-                `${name} can't be a device's name: the program uses that word. Pick another name.`,
-            ])
-        },
-    )
+    test.each([
+        'countdown',
+        'drivetrain',
+        'button',
+        'wait',
+        'light_l1',
+        'A',
+        'L2',
+        'for',
+    ])('a device named %s', (name) => {
+        expect(messages([], [motor(name)])).toEqual([
+            `${name} can't be a device's name: the program uses that word. Pick another name.`,
+        ])
+    })
 
     test('a nameless device', () => {
         expect(messages([], [motor('')])).toEqual([
@@ -476,48 +531,57 @@ describe('devices', () => {
         ])
     })
 
-    test('a motor group with blank motors and none to pick', () => {
-        expect(messages([], [motorGroup('robot', '', '')])).toEqual([
+    test('a drivetrain with blank motors and none to pick', () => {
+        expect(messages([], [drivetrain('robot', '', '')])).toEqual([
             'robot needs motors. Add a drive motor, then pick it.',
         ])
     })
 
-    test('a motor group with a blank motor to pick', () => {
+    test('a drivetrain with a blank motor to pick', () => {
         expect(
-            messages([], [motor('left'), motorGroup('robot', 'left', '')]),
+            messages([], [motor('left'), drivetrain('robot', 'left', '')]),
         ).toEqual(["Pick robot's motor 2."])
     })
 
-    test('a motor group motor that is not a drive motor', () => {
+    test('a drivetrain motor that is not a drive motor', () => {
         expect(
-            messages([], [motor('left'), motorGroup('robot', 'left', 'arm')]),
+            messages([], [motor('left'), drivetrain('robot', 'left', 'arm')]),
         ).toEqual(["robot's motor arm is not a drive motor. Pick another."])
     })
 
-    test('a motor group with one motor twice', () => {
+    test('a drivetrain with one motor twice', () => {
         expect(
-            only([], [motor('left'), motorGroup('robot', 'left', 'left')])
-                .severity,
-        ).toBe('warning')
+            only([], [motor('left'), drivetrain('robot', 'left', 'left')]),
+        ).toMatchObject({
+            severity: 'error',
+            message:
+                'robot has left twice. Pick a different motor for each wheel.',
+        })
     })
 
-    test.each([
-        [['0', '0'], 'error'],
-        [['1', '-1'], null],
-        [['0', '1'], null],
-        [['2', '0.5'], null],
-    ])('ratios %o', (ratios, severity) => {
-        const issues = lint(
-            [],
-            [
-                motor('left', '0'),
-                motor('right', '1'),
-                motorGroup('robot', ['left', ratios[0]], ['right', ratios[1]]),
-            ],
-        )
-        expect(issues.map((i) => i.severity)).toEqual(
-            severity ? [severity] : [],
-        )
+    test('a drivetrain of one motor', () => {
+        expect(
+            only([], [motor('left'), drivetrain('robot', 'left')]),
+        ).toMatchObject({
+            severity: 'error',
+            message:
+                'robot needs at least 2 motors, a left and a right. Add a motor.',
+        })
+    })
+
+    test('a drivetrain of four motors', () => {
+        expect(
+            lint(
+                [],
+                [
+                    motor('a', '0'),
+                    motor('b', '1'),
+                    motor('c', '2'),
+                    motor('d', '3'),
+                    drivetrain('robot', 'a', 'b', 'c', 'd'),
+                ],
+            ),
+        ).toEqual([])
     })
 
     test('two drive motors on one port', () => {
@@ -552,7 +616,8 @@ describe('blockName', () => {
         defineBlocks()
         const ws = new Blockly.Workspace(new Blockly.Options({}))
         expect(blockName(ws.newBlock('motorSpin'))).toBe('Spin block')
-        expect(blockName(ws.newBlock('groupSpinStep'))).toBe('Spin step')
+        expect(blockName(ws.newBlock('driveStep'))).toBe('Drive step')
+        expect(blockName(ws.newBlock('motorHoldStep'))).toBe('Hold step')
         ws.dispose()
     })
 })

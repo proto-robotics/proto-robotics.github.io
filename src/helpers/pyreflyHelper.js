@@ -40,12 +40,12 @@ let pyreflyStatePromise = null
  */
 function formatStubParameters(parameters = []) {
     return parameters
-        .map(({ name, annotation, default: defaultValue }) => {
+        .map(({ name, annotation, default: defaultValue, variadic }) => {
             const type = annotation ?? 'Any'
             const defaultExpression =
                 defaultValue === null ? '' : ` = ${defaultValue}`
 
-            return `${name}: ${type}${defaultExpression}`
+            return `${variadic ? '*' : ''}${name}: ${type}${defaultExpression}`
         })
         .join(', ')
 }
@@ -66,10 +66,10 @@ function formatMethodParameters(parameters = []) {
  */
 function buildPublicApiStub() {
     const autocomplete = getVocab().autocomplete ?? {}
-    const definitions = ['from typing import Any', '']
+    const definitions = ['from typing import Any, Iterator', '']
 
     for (const member of autocomplete.members ?? []) {
-        // a ready-made object, like the board's button_a: a typed name
+        // a ready-made value, like the board's port A: a typed name
         if (member.kind === 'instance') {
             definitions.push(`${member.name}: ${member.resultType}`, '')
             continue
@@ -86,7 +86,7 @@ function buildPublicApiStub() {
         }
 
         // a constructor, or a type learners only get from make (kind
-        // 'type': button, encoder), which has no constructor to call
+        // 'type': encoder), which has no constructor to call
         const constructorParameters = formatMethodParameters(member.parameters)
         definitions.push(`class ${member.name}:`)
         if (member.kind !== 'type') {

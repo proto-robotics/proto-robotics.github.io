@@ -9,7 +9,7 @@
  * before the Devices section existed, or whose device was removed since,
  * keeps the name it has: it is shown as it is and offered along with the
  * devices there are. A block taken from the flyout starts on the first
- * device of its kind (or the second, for a motor group's right motor). With
+ * device of its kind (or the one its `nth` asks for). With
  * no devices of its kind yet it is blank (the value ''), and the block
  * linter (blockLinter.js) marks the block until a device is picked.
  */
@@ -179,9 +179,9 @@ export const deviceField = (kind, options) => () =>
 /**
  * Puts the toolbox's blocks on the devices there are now. A toolbox block
  * picks its device when the toolbox is built, so without this it kept
- * showing a device (say a motor group) after it was removed, or blank after
- * one was added. Each goes on the first device of its kind (the second for
- * a motor group's right motor), or blank when there is none.
+ * showing a device (say a drivetrain) after it was removed, or blank after
+ * one was added. Each goes on the first device of its kind (or its `nth`
+ * one), or blank when there is none.
  * @param {object} workspace The program's workspace.
  */
 export const syncToolboxDevices = (workspace) => {

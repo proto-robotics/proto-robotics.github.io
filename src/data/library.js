@@ -37,11 +37,17 @@ const slot = (name, type, shadow) => ({
     blocklyInput: { name, type, ...(shadow ? { shadow } : {}) },
 })
 
-/** forward or backward, for Spin and Drive. */
+/** forward or backward, for Spin, Drive and Curve. */
 const ways = () =>
     gridDropdown([
         ['forward', 'forward'],
         ['backward', 'backward'],
+    ])
+/** right or left, for Turn: make's turn has the left wheels go forward. */
+const turns = () =>
+    gridDropdown([
+        ['right', 'right'],
+        ['left', 'left'],
     ])
 /** How a timed block measures how long it runs. */
 const units = () =>
@@ -75,6 +81,7 @@ const num = (name, value) => slot(name, 'Number', numberShadow(value))
 const val = (block, name) =>
     pythonGenerator.valueToCode(block, name, Order.NONE) || '0'
 
+// the board's buttons and lights; the value is the port in lower case
 const buttons = [
     ['A', 'a'],
     ['B', 'b'],
@@ -98,13 +105,15 @@ const spacesToUnderscores = (str) => String(str ?? '').replace(/\s+/g, '_')
 /** @returns {string} The device a block uses, as Python names it. */
 const deviceOf = (block) => spacesToUnderscores(block.getFieldValue('name'))
 
-const isBack = (block) => block.getFieldValue('way') === 'backward'
+/** Backward, or left for a Turn: make's _back version of the call. */
+const isBack = (block) =>
+    ['backward', 'left'].includes(block.getFieldValue('way'))
 
 /**
  * A make call for a timed motion block: the seconds version, or the
  * degrees version when the block is set to degrees.
  * @param {object} block
- * @param {string} verb spin.
+ * @param {string} verb spin, drive or turn.
  * @returns {string} One line of Python.
  */
 const timedCall = (block, verb) => {
@@ -122,6 +131,10 @@ const stepCall = (block, verb) => {
     return `${deviceOf(block)}.${method}(power=${val(block, 'power')})\n`
 }
 
+/** Curve's two powers, left then right, as make's curve takes them. */
+const curvePowers = (block) =>
+    `left_power=${val(block, 'left')}, right_power=${val(block, 'right')}`
+
 const stopCall = (block) =>
     `${deviceOf(block)}.${block.getFieldValue('mode') === 'coast' ? 'stop' : 'brake'}()\n`
 
@@ -134,6 +147,15 @@ const condition = (block, generator, name = 'function') =>
 
 const number = (block, generator, name, order = Order.NONE) =>
     generator.valueToCode(block, name, order) || '0'
+
+/**
+ * A board button or light. make has the board's own ready under their
+ * port's name, so a block uses that name: A, L1.
+ * @param {object} block A block with a `button` or `light` field.
+ * @param {'button'|'light'} kind
+ * @returns {string}
+ */
+const boardPart = (block, kind) => block.getFieldValue(kind).toUpperCase()
 
 // ---- the blocks --------------------------------------------------------------
 
@@ -180,24 +202,8 @@ const numberOut = { blocklyOutput: { type: 'Number', name: 'value' } }
 const ARM = { kind: 'drive_motor', name: 'arm', port: '0', direction: '1' }
 const LEFT = { kind: 'drive_motor', name: 'left', port: '1', direction: '1' }
 const RIGHT = { kind: 'drive_motor', name: 'right', port: '2', direction: '-1' }
-// motor groups: both wheels at the same speed, and one that turns on the
-// spot, the right wheel going the other way (make's motor_group(motors, ratios))
-const ROBOT = {
-    kind: 'motor_group',
-    name: 'robot',
-    motors: [
-        { name: 'left', ratio: '1' },
-        { name: 'right', ratio: '1' },
-    ],
-}
-const TURN = {
-    kind: 'motor_group',
-    name: 'turn',
-    motors: [
-        { name: 'left', ratio: '1' },
-        { name: 'right', ratio: '-1' },
-    ],
-}
+// a drivetrain of the two wheels, left then right (make's drivetrain(left, right))
+const ROBOT = { kind: 'drivetrain', name: 'robot', motors: ['left', 'right'] }
 
 export const library = [
     {
@@ -234,8 +240,27 @@ export const library = [
                 { step: true },
             ),
             block(
+                'motorHold',
+                'Holds a motor where it is for some seconds: it pushes back against a load, like an arm holding something up, to stay at its angle. Then it lets go.',
+                [
+                    text('Hold'),
+                    field('name', deviceField('drive_motor')),
+                    text('for'),
+                    num('time', 1),
+                    text('seconds'),
+                ],
+                (b) => `${deviceOf(b)}.hold(seconds=${val(b, 'time')})\n`,
+            ),
+            block(
+                'motorHoldStep',
+                'A step: holds a motor where it is for a moment. It only goes inside a loop, which keeps the motor held while the loop runs.',
+                [text('Hold'), field('name', deviceField('drive_motor'))],
+                (b) => `${deviceOf(b)}.hold()\n`,
+                { step: true },
+            ),
+            block(
                 'motorStop',
-                'Stops a motor. Brake stops it and holds it still; coast lets it roll to a stop.',
+                'Stops a motor. Brake stops it quickly; coast lets it roll to a stop.',
                 [
                     text('Stop'),
                     field('name', deviceField('drive_motor')),
@@ -269,7 +294,7 @@ export const library = [
             ),
             example(
                 'Lift an arm a quarter turn',
-                'Turns the arm 90 degrees up, where it brakes and holds, waits 2 seconds, and lowers it.',
+                'Turns the arm 90 degrees up, holds it there for 2 seconds, and lowers it.',
                 [ARM],
                 [
                     {
@@ -285,8 +310,8 @@ export const library = [
                         },
                         next: {
                             block: {
-                                type: 'wait',
-                                fields: { time: 2 },
+                                type: 'motorHold',
+                                fields: { name: 'arm', time: 2 },
                                 next: {
                                     block: {
                                         type: 'motorSpin',
@@ -344,15 +369,15 @@ export const library = [
         ],
     },
     {
-        name: 'Motor Group',
+        name: 'Drivetrain',
         color: '#00B8AA',
         entries: [
             block(
-                'groupSpin',
-                "Turns a motor group's motors together, each at its own ratio, forward or backward for some seconds, or until the motor with the largest ratio has turned some degrees, then stops them.",
+                'driveFor',
+                'Drives a drivetrain straight forward or backward for some seconds, or until every wheel has turned some degrees, then stops it. Degrees are of the wheels, not the robot: 360 is one full turn of each wheel.',
                 [
-                    text('Spin'),
-                    field('name', deviceField('motor_group')),
+                    text('Drive'),
+                    field('name', deviceField('drivetrain')),
                     field('way', ways),
                     text('at'),
                     num('power', 50),
@@ -360,28 +385,118 @@ export const library = [
                     num('amount', 1),
                     field('unit', units),
                 ],
-                (b) => timedCall(b, 'spin'),
+                (b) => timedCall(b, 'drive'),
             ),
             block(
-                'groupSpinStep',
-                "A step: turns a motor group's motors together for a moment. It only goes inside a loop. Two motor groups stepped in one loop add up.",
+                'driveStep',
+                'A step: drives a drivetrain straight for a moment. It only goes inside a loop. A Drive step and a Turn step in one loop add up, so the robot drives in an arc.',
                 [
-                    text('Spin'),
-                    field('name', deviceField('motor_group')),
+                    text('Drive'),
+                    field('name', deviceField('drivetrain')),
                     field('way', ways),
                     text('at'),
                     num('power', 50),
                     text('power'),
                 ],
-                (b) => stepCall(b, 'spin'),
+                (b) => stepCall(b, 'drive'),
                 { step: true },
             ),
             block(
-                'groupStop',
-                "Stops a motor group's motors. Brake stops and holds them; coast lets them roll to a stop.",
+                'turnFor',
+                'Turns a drivetrain on the spot, right or left, for some seconds, or until every wheel has turned some degrees, then stops it. To turn right the left wheels go forward and the right wheels backward.',
+                [
+                    text('Turn'),
+                    field('name', deviceField('drivetrain')),
+                    field('way', turns),
+                    text('at'),
+                    num('power', 50),
+                    text('power for'),
+                    num('amount', 1),
+                    field('unit', units),
+                ],
+                (b) => timedCall(b, 'turn'),
+            ),
+            block(
+                'turnStep',
+                'A step: turns a drivetrain on the spot for a moment. It only goes inside a loop.',
+                [
+                    text('Turn'),
+                    field('name', deviceField('drivetrain')),
+                    field('way', turns),
+                    text('at'),
+                    num('power', 50),
+                    text('power'),
+                ],
+                (b) => stepCall(b, 'turn'),
+                { step: true },
+            ),
+            block(
+                'curveFor',
+                'Drives a drivetrain in a curve for some seconds, its left and right wheels at their own powers, then stops it. The robot curves toward the slower side.',
+                [
+                    text('Curve'),
+                    field('name', deviceField('drivetrain')),
+                    field('way', ways),
+                    text('left at'),
+                    num('left', 50),
+                    text('right at'),
+                    num('right', 25),
+                    text('power for'),
+                    num('time', 1),
+                    text('seconds'),
+                ],
+                (b) => {
+                    const method = isBack(b) ? 'curve_back' : 'curve'
+                    return `${deviceOf(b)}.${method}(${curvePowers(b)}, seconds=${val(b, 'time')})\n`
+                },
+            ),
+            block(
+                'curveStep',
+                'A step: drives a drivetrain in a curve for a moment, its left and right wheels at their own powers. It only goes inside a loop.',
+                [
+                    text('Curve'),
+                    field('name', deviceField('drivetrain')),
+                    field('way', ways),
+                    text('left at'),
+                    num('left', 50),
+                    text('right at'),
+                    num('right', 25),
+                    text('power'),
+                ],
+                (b) => {
+                    const method = isBack(b) ? 'curve_back' : 'curve'
+                    return `${deviceOf(b)}.${method}(${curvePowers(b)})\n`
+                },
+                { step: true },
+            ),
+            block(
+                'curveDegrees',
+                'Drives a drivetrain in a curve until its left wheels have turned one number of degrees and its right wheels another, all finishing together, then stops it.',
+                [
+                    text('Curve'),
+                    field('name', deviceField('drivetrain')),
+                    field('way', ways),
+                    text('left'),
+                    num('leftDegrees', 720),
+                    text('right'),
+                    num('rightDegrees', 360),
+                    text('degrees at'),
+                    num('power', 50),
+                    text('power'),
+                ],
+                (b) => {
+                    const method = isBack(b)
+                        ? 'curve_back_degrees'
+                        : 'curve_degrees'
+                    return `${deviceOf(b)}.${method}(left_degrees=${val(b, 'leftDegrees')}, right_degrees=${val(b, 'rightDegrees')}, power=${val(b, 'power')})\n`
+                },
+            ),
+            block(
+                'drivetrainStop',
+                "Stops a drivetrain's motors. Brake stops them quickly; coast lets them roll to a stop.",
                 [
                     text('Stop'),
-                    field('name', deviceField('motor_group')),
+                    field('name', deviceField('drivetrain')),
                     text('and'),
                     field('mode', stops),
                 ],
@@ -389,8 +504,8 @@ export const library = [
             ),
             example(
                 'Drive a square',
-                'Two motor groups of the same wheels: robot drives straight, and turn spins the right wheel the other way, so the robot turns on the spot. Four times: drive two wheel turns, then turn. Tune the turn degrees until the corners are square.',
-                [LEFT, RIGHT, ROBOT, TURN],
+                'Four times: drive two wheel turns, then turn right. Tune the turn degrees until the corners are square.',
+                [LEFT, RIGHT, ROBOT],
                 [
                     {
                         type: 'repeatFor',
@@ -405,7 +520,7 @@ export const library = [
                             },
                             input: {
                                 block: {
-                                    type: 'groupSpin',
+                                    type: 'driveFor',
                                     fields: {
                                         name: 'robot',
                                         way: 'forward',
@@ -415,10 +530,10 @@ export const library = [
                                     },
                                     next: {
                                         block: {
-                                            type: 'groupSpin',
+                                            type: 'turnFor',
                                             fields: {
-                                                name: 'turn',
-                                                way: 'forward',
+                                                name: 'robot',
+                                                way: 'right',
                                                 power: 40,
                                                 amount: 200,
                                                 unit: 'degrees',
@@ -450,7 +565,7 @@ export const library = [
                             },
                             input: {
                                 block: {
-                                    type: 'groupSpinStep',
+                                    type: 'driveStep',
                                     fields: {
                                         name: 'robot',
                                         way: 'forward',
@@ -461,7 +576,7 @@ export const library = [
                         },
                         next: {
                             block: {
-                                type: 'groupStop',
+                                type: 'drivetrainStop',
                                 fields: { name: 'robot', mode: 'brake' },
                             },
                         },
@@ -482,8 +597,8 @@ export const library = [
                     field('button', () => gridDropdown(buttons)),
                     text('pressed?'),
                 ],
-                (b) => [
-                    `button_${b.getFieldValue('button')}.pressed()`,
+                (b, g) => [
+                    `${boardPart(b, 'button')}.pressed()`,
                     Order.FUNCTION_CALL,
                 ],
                 boolOut,
@@ -496,8 +611,8 @@ export const library = [
                     field('button', () => gridDropdown(buttons)),
                     text('held down?'),
                 ],
-                (b) => [
-                    `button_${b.getFieldValue('button')}.held()`,
+                (b, g) => [
+                    `${boardPart(b, 'button')}.held()`,
                     Order.FUNCTION_CALL,
                 ],
                 boolOut,
@@ -516,8 +631,8 @@ export const library = [
                         ]),
                     ),
                 ],
-                (b) =>
-                    `light_${b.getFieldValue('light')}.${b.getFieldValue('action')}()\n`,
+                (b, g) =>
+                    `${boardPart(b, 'light')}.${b.getFieldValue('action')}()\n`,
             ),
             block(
                 'lightFlash',
@@ -529,8 +644,8 @@ export const library = [
                     num('time', 0.2),
                     text('seconds'),
                 ],
-                (b) =>
-                    `light_${b.getFieldValue('light')}.flash(seconds=${val(b, 'time')})\n`,
+                (b, g) =>
+                    `${boardPart(b, 'light')}.flash(seconds=${val(b, 'time')})\n`,
             ),
             example(
                 'The light shows the button',
@@ -693,8 +808,10 @@ export const library = [
                     text('seconds'),
                     slot('input', 'Void'),
                 ],
+                // the for loop makes its own timer, so loops inside each
+                // other or one after another never share one
                 (b, g) =>
-                    `for i in repeat_for(${val(b, 'time')}):\n${inside(b, g)}`,
+                    `for _ in countdown(${val(b, 'time')}):\n${inside(b, g)}`,
                 { loop: true },
             ),
             block(

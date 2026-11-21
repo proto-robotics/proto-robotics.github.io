@@ -1,8 +1,8 @@
 /*
  * One device's card, as the Devices section of the toolbox shows it: its
  * name, then what it is. A drive motor: "is a drive motor on port [0] in
- * direction [clockwise]". A motor group: "is a motor group of", then a line
- * per motor, "[left] at ratio [1]", and a button that adds a motor. Then a
+ * direction [clockwise]". A drivetrain: "is a drivetrain of", then a line
+ * per motor, "[left_motor] left", and a button that adds a motor. Then a
  * remove button and a help button. The Devices pop-up (devicesDialog.js) draws one per device; the
  * library (src/lib.js, mountDeviceCard) puts one on a host's page on its
  * own, so a lesson shows the real thing.
@@ -35,20 +35,18 @@ const select = (choices, value, onPick, label) => {
 }
 
 /**
- * A motor group's motors, a line each: the motor, picked from the program's
- * drive motors, and its ratio (its speed next to the others; below 0 turns
- * it the other way). Each line has a button that takes the motor out, while
- * there are two or more, and a last button adds one.
- * @param {object} device A motor group.
+ * A drivetrain's motors, a line each, picked from the program's drive
+ * motors: the first, third... are its left wheels and the second,
+ * fourth... its right. Each line has a button that takes the motor out,
+ * while there are more than two, and a last button adds one.
+ * @param {object} device A drivetrain.
  * @param {(patch: object) => void} change
  * @param {string[]} motors The program's drive motors, by name.
  * @returns {Array<HTMLElement>}
  */
-const motorGroupFields = (device, change, motors) => {
+const drivetrainFields = (device, change, motors) => {
     const list = device.motors
     const setMotors = (next) => change({ motors: next })
-    const replace = (i, patch) =>
-        setMotors(list.map((m, j) => (j === i ? { ...m, ...patch } : m)))
     // one no longer there is kept and shown, and with none picked the
     // choice is blank
     const motorChoices = (current) => {
@@ -57,57 +55,47 @@ const motorGroupFields = (device, change, motors) => {
         return current ? choices : [['', ''], ...choices]
     }
     const lines = list.map((motor, i) => {
+        const side = i % 2 === 0 ? 'left' : 'right'
         const Motor = select(
-            motorChoices(motor.name),
-            motor.name,
-            (name) => replace(i, { name }),
-            `Motor ${i + 1}`,
+            motorChoices(motor),
+            motor,
+            (name) => setMotors(list.map((m, j) => (j === i ? name : m))),
+            `Motor ${i + 1}, ${side}`,
         )
         // a blank motor, or one that is not a drive motor (any more), is
         // marked, as the Issues list has it (blockLinter.js)
-        if (!motors.includes(motor.name)) {
+        if (!motors.includes(motor)) {
             Motor.setAttribute('aria-invalid', 'true')
         }
-        const Ratio = tag('input', {
-            type: 'number',
-            step: 'any',
-            value: motor.ratio,
-            'aria-label': `Motor ${i + 1} ratio`,
-            class: 'toolbox-device-number',
-        })
-        Ratio.addEventListener('change', () =>
-            replace(i, { ratio: Ratio.value }),
-        )
         return div(
             { class: 'toolbox-device-motor' },
             Motor,
-            tag('span', 'at ratio'),
-            Ratio,
-            list.length > 1 &&
-                button(
-                    '×',
-                    {
-                        type: 'button',
-                        class: 'toolbox-device-motor-remove',
-                        'aria-label': `Take ${motor.name || 'this motor'} out`,
-                        title: 'Take this motor out',
-                    },
-                    on('click', () =>
-                        setMotors(list.filter((_, j) => j !== i)),
-                    ),
-                ),
+            tag('span', side),
+            // make needs at least two; null, not false, which would show as text
+            list.length > 2
+                ? button(
+                      '×',
+                      {
+                          type: 'button',
+                          class: 'toolbox-device-motor-remove',
+                          'aria-label': `Take ${motor || 'this motor'} out`,
+                          title: 'Take this motor out',
+                      },
+                      on('click', () =>
+                          setMotors(list.filter((_, j) => j !== i)),
+                      ),
+                  )
+                : null,
         )
     })
-    const unused = motors.find((name) => !list.some((m) => m.name === name))
+    const unused = motors.find((name) => !list.includes(name))
     return [
-        tag('span', 'is a motor group of'),
+        tag('span', 'is a drivetrain of'),
         ...lines,
         button(
             '+ Add a motor',
             { type: 'button', class: 'toolbox-device-motor-add' },
-            on('click', () =>
-                setMotors([...list, { name: unused ?? '', ratio: '1' }]),
-            ),
+            on('click', () => setMotors([...list, unused ?? ''])),
         ),
     ]
 }
@@ -121,8 +109,8 @@ const motorGroupFields = (device, change, motors) => {
  */
 const fieldsOf = (device, change, motors) => {
     const kind = deviceKinds[device.kind]
-    if (device.kind === 'motor_group') {
-        return motorGroupFields(device, change, motors)
+    if (device.kind === 'drivetrain') {
+        return drivetrainFields(device, change, motors)
     }
     if (device.kind === 'variable') {
         const Value = tag('input', {
@@ -166,7 +154,7 @@ const fieldsOf = (device, change, motors) => {
  * @param {() => void} [handlers.onHelp] The help button was pressed.
  * @param {object} [context]
  * @param {string[]} [context.motors] The program's drive motors by name, for
- *     a motor group's choice of motors.
+ *     a drivetrain's choice of motors.
  * @returns {HTMLElement}
  */
 export const deviceCard = (

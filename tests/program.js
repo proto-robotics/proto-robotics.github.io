@@ -25,24 +25,17 @@ export const motor = (name = 'arm', port = '0', direction = '1') => ({
     port,
     direction,
 })
-/**
- * A motor group of these motors (left and right by default), each at ratio 1
- * unless given as [name, ratio].
- */
-export const motorGroup = (name = 'robot', ...motors) => ({
-    kind: 'motor_group',
+/** A drivetrain of these motors, in order (left and right by default). */
+export const drivetrain = (name = 'robot', ...motors) => ({
+    kind: 'drivetrain',
     name,
-    motors: (motors.length ? motors : ['left', 'right']).map((m) =>
-        Array.isArray(m)
-            ? { name: m[0], ratio: m[1] }
-            : { name: m, ratio: '1' },
-    ),
+    motors: motors.length ? motors : ['left', 'right'],
 })
-/** Two drive motors and a motor group made from them. */
+/** Two drive motors and a drivetrain made from them. */
 export const robot = () => [
     motor('left', '1'),
     motor('right', '2', '-1'),
-    motorGroup(),
+    drivetrain(),
 ]
 
 /** A block with its fields, what is in its slots, and the block under it. */

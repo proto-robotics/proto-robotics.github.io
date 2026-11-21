@@ -73,11 +73,21 @@ const TAKEN_NAMES = new Set([
     'wait',
     'wait_until',
     'wait_while',
-    'repeat_for',
+    'countdown',
     'drive_motor',
-    'motor_group',
+    'drivetrain',
+    'button',
+    'light',
     'encoder',
     'system_config',
+    // the board's ports, which the buttons and lights are made on
+    'A',
+    'B',
+    'C',
+    'D',
+    'L1',
+    'L2',
+    // the buttons and lights the program makes (button_a = button(A))
     'button_a',
     'button_b',
     'button_c',
@@ -97,10 +107,13 @@ const ZERO_TIME = {
     repeatSeconds:
         'Repeat for 0 seconds never runs the blocks inside. Set how many seconds.',
     lightFlash: 'A 0 second flash is too short to see. Try 0.2 seconds.',
+    motorHold: 'Holding for 0 seconds does nothing. Set how many seconds.',
+    curveFor:
+        'For 0 seconds is no time at all, so nothing moves. Set how many seconds.',
 }
 
 /** Of those, the ones where a long time is likely a mistake. */
-const LONG_TIME = new Set(['wait'])
+const LONG_TIME = new Set(['wait', 'motorHold', 'curveFor'])
 
 /**
  * What an empty slot does, for the blocks where it is worse than a gap:
@@ -297,6 +310,16 @@ const blockRules = [
     (block) => {
         const problems = []
         const power = numberField(block, 'power')
+        if (
+            numberField(block, 'left') === 0 &&
+            numberField(block, 'right') === 0
+        ) {
+            problems.push(
+                warning(
+                    'With both sides at 0 power nothing moves. To stop, use a Stop block.',
+                ),
+            )
+        }
         if (power === 0) {
             problems.push(
                 warning('At 0 power nothing moves. To stop, use a Stop block.'),
@@ -322,7 +345,7 @@ const blockRules = [
     // times and degrees that can't be below 0
     (block) => {
         const problems = []
-        for (const name of ['power']) {
+        for (const name of ['power', 'left', 'right']) {
             const power = numberField(block, name)
             if (power !== null && Math.abs(power) > 100) {
                 problems.push(
@@ -332,7 +355,7 @@ const blockRules = [
                 )
             }
         }
-        for (const name of ['amount', 'time']) {
+        for (const name of ['amount', 'time', 'leftDegrees', 'rightDegrees']) {
             const n = numberField(block, name)
             if (n !== null && n < 0) {
                 problems.push(
@@ -458,19 +481,27 @@ const deviceRules = [
         return problems
     },
 
-    // a motor group's motors: each picked, each a drive motor, none twice
+    // a drivetrain's motors: at least two, each picked, each a drive
+    // motor, none twice (make refuses a drivetrain of fewer than two)
     (devices) => {
         const motors = devices
             .filter((device) => device.kind === 'drive_motor')
             .map((device) => device.name)
         return devices
-            .filter((device) => device.kind === 'motor_group')
+            .filter((device) => device.kind === 'drivetrain')
             .flatMap((device) => {
-                const name = device.name || 'A motor group'
+                const name = device.name || 'A drivetrain'
                 const problems = []
+                if (device.motors.length < 2) {
+                    problems.push(
+                        error(
+                            `${name} needs at least 2 motors, a left and a right. Add a motor.`,
+                        ),
+                    )
+                }
                 const seen = new Set()
                 device.motors.forEach((motor, i) => {
-                    if (!motor.name) {
+                    if (!motor) {
                         if (motors.length) {
                             problems.push(
                                 error(`Pick ${name}'s motor ${i + 1}.`),
@@ -483,38 +514,24 @@ const deviceRules = [
                                 ),
                             )
                         }
-                    } else if (!motors.includes(motor.name)) {
+                    } else if (!motors.includes(motor)) {
                         problems.push(
                             error(
-                                `${name}'s motor ${motor.name} is not a drive motor. Pick another.`,
+                                `${name}'s motor ${motor} is not a drive motor. Pick another.`,
                             ),
                         )
-                    } else if (seen.has(motor.name)) {
+                    } else if (seen.has(motor)) {
                         problems.push(
-                            warning(
-                                `${name} has ${motor.name} twice. Take one out, or pick a different motor.`,
+                            error(
+                                `${name} has ${motor} twice. Pick a different motor for each wheel.`,
                             ),
                         )
                     }
-                    seen.add(motor.name)
+                    seen.add(motor)
                 })
                 return problems
             })
     },
-
-    // a motor group's ratios: at least one that is not 0 (make refuses a
-    // motor group whose motors all hold still)
-    (devices) =>
-        devices
-            .filter((device) => device.kind === 'motor_group')
-            .filter((device) =>
-                device.motors.every((motor) => Number(motor.ratio) === 0),
-            )
-            .map((device) =>
-                error(
-                    `Every ratio in ${device.name || 'a motor group'} is 0, so nothing turns. Set at least one, like 1.`,
-                ),
-            ),
 
     // two devices on one port
     (devices) => {

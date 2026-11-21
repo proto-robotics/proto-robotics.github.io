@@ -89,7 +89,7 @@ const programChangeEvents = new Set([
  *     no toolbox, trashcan, zoom controls or selection, and the code
  *     drawer starts open. The host still loads a program with setState.
  * @param {boolean} [options.devices=false] Pin a Devices button to the
- *     bottom of the toolbox column; it opens the motors and motor groups a
+ *     bottom of the toolbox column; it opens the motors and drivetrains a
  *     program sets up in a pop-up (devicesHelper.js, mods/devicesDialog.js).
  *     Devices saved in a program are honoured either way.
  * @param {boolean} [options.issues=true] An Issues tab on the right, like

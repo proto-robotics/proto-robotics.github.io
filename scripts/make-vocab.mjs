@@ -6,9 +6,10 @@
 //
 // It reads make.py for what `from make import *` brings in, each class's
 // public methods with their signatures and docstrings, and the board the
-// library is set up for (system_config.py) for the built-in buttons and
-// lights (button_a, light_l1). Programs start with `from make import *`, so
-// every name is bare: `wait`, not `make.wait`.
+// library is set up for (system_config.py) for its named ports (A to D for
+// the buttons, L1 and L2 for the lights), which make.py makes globals.
+// Programs start with `from make import *`, so every name is bare: `wait`,
+// not `make.wait`.
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -25,7 +26,7 @@ const CATEGORIES = {
     wait: 'Time',
     wait_until: 'Time',
     wait_while: 'Time',
-    repeat_for: 'Time',
+    countdown: 'Time',
     drive_motor: 'Motor',
     encoder: 'Motor',
     drivetrain: 'Drivetrain',
@@ -39,7 +40,25 @@ const CATEGORIES = {
  * make has it (`encoder | None`) the checker would flag every
  * `arm.get_encoder().get_degrees()` the blocks write.
  */
-const RESULT_TYPES = { 'drive_motor.get_encoder': 'encoder' }
+const RESULT_TYPES = {
+    'drive_motor.get_encoder': 'encoder',
+    // a for loop over a countdown gives the seconds left
+    'countdown.__iter__': 'Iterator[float]',
+    'countdown.__bool__': 'bool',
+}
+
+/**
+ * Parameter types to state more widely than make does: a button or light
+ * is made on a named port (button(A)), which make types as an int.
+ */
+const PARAMETER_TYPES = {
+    'button.port': 'int | str',
+    'light.port': 'int | str',
+}
+
+/** Methods that start with _ yet are part of how a class is used: a
+ * countdown is true while time is left, and a for loop can go over it. */
+const PROTOCOL_METHODS = new Set(['__iter__', '__bool__'])
 
 /** Constructor parameters a learner never passes. */
 const HIDDEN_PARAMETERS = new Set(['self', 'schema'])
@@ -52,7 +71,8 @@ const HIDDEN_PARAMETERS = new Set(['self', 'schema'])
 const LEFT_OUT = new Set(['simple_motor', 'servo'])
 /** Descriptions to say in the editor's words, where make's mention what is left out. */
 const DESCRIPTIONS = {
-    drivetrain: 'A drivetrain made from 2 drive motors.',
+    drivetrain:
+        "A robot's wheel motors, driven as one: `drivetrain(left, right)`, or `drivetrain(front_left, front_right, back_left, back_right)`. The first, third... are the left wheels, the second, fourth... the right.",
 }
 
 const withoutLeftOut = (annotation) => {
@@ -104,9 +124,14 @@ const parseParameters = (text) =>
                 required: !value,
             }
         })
-        .filter(
-            (p) => !HIDDEN_PARAMETERS.has(p.name) && !p.name.startsWith('*'),
+        .filter((p) => !HIDDEN_PARAMETERS.has(p.name) && p.name !== '*')
+        // *motors: any number given in order, not by name
+        .map((p) =>
+            p.name.startsWith('*') && !p.name.startsWith('**')
+                ? { ...p, name: p.name.slice(1), variadic: true }
+                : p,
         )
+        .filter((p) => !p.name.startsWith('*'))
 
 /**
  * The docstring right after a definition, dedented.
@@ -170,9 +195,15 @@ const readClass = (path, className) => {
     const init = defs.find((d) => d.name === '__init__')
     return {
         description: docstring(body.slice(body.indexOf(':') + 1)),
-        parameters: init?.parameters ?? [],
+        parameters: (init?.parameters ?? []).map((p) => ({
+            ...p,
+            annotation:
+                PARAMETER_TYPES[`${className}.${p.name}`] ?? p.annotation,
+        })),
         methods: defs
-            .filter((d) => !d.name.startsWith('_'))
+            .filter(
+                (d) => !d.name.startsWith('_') || PROTOCOL_METHODS.has(d.name),
+            )
             .map(({ name, parameters, resultType, description }) => ({
                 name,
                 description,
@@ -219,7 +250,7 @@ for (const { file, names } of imports) {
                 RESULT_TYPES[`${name}.${method.name}`] ?? method.resultType,
         }))
         // a private import (button as _button) or encoder is a type only:
-        // learners get one from make, they never build one
+        // learners get one from make (get_encoder()), they never build one
         const typeOnly = Boolean(alias) || name === 'encoder'
         members.push({
             name,
@@ -233,7 +264,7 @@ for (const { file, names } of imports) {
     }
 }
 
-// ---- the board's buttons and lights, made at start-up
+// ---- the board's named ports, which make.py makes globals (A, L1)
 
 const config = read('proto/system_config.py')
 const boardName = config.match(/^board\s*=\s*(\w+)/m)?.[1]
@@ -241,33 +272,31 @@ const boards = read('proto/schemata/board_schema.py')
 const boardStart = boards.indexOf(`${boardName}: board_schema = board_schema(`)
 if (boardStart < 0) throw new Error(`no board ${boardName}`)
 const boardText = boards.slice(boardStart, boards.indexOf('\n)\n', boardStart))
-const tuple = (key) =>
-    (boardText.match(new RegExp(`${key}=\\(([^)]*)\\)`))?.[1] ?? '')
-        .split(',')
-        .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
-        .filter(Boolean)
+const startButton = boardText.match(/start_button_port=['"](\w+)['"]/)?.[1]
 
-for (const port of tuple('buttons')) {
+// a named port is a built-in button or light when the schema says so
+// ('A': button_port(...)), and otherwise just its name
+const portKinds = boardText.matchAll(
+    /^\s*['"](\w+)['"]\s*:\s*(button_port|light_port|port)\(/gm,
+)
+
+for (const [, port, kind] of portKinds) {
+    const description = {
+        button_port:
+            `Button ${port}, built into the board, ready to use: \`${port}.pressed()\`.` +
+            (port === startButton ? ' It also starts the program.' : ''),
+        light_port: `Light ${port}, built into the board, ready to use: \`${port}.on()\`.`,
+        port: `The name of port ${port} on the board.`,
+    }[kind]
     members.push({
-        name: `button_${port.toLowerCase()}`,
+        name: port,
         kind: 'instance',
-        description:
-            `Button ${port}, built into the board.` +
-            (port === 'A' ? ' It also starts the program.' : ''),
+        description,
         parameters: [],
-        resultType: 'button',
-        path: `button_${port.toLowerCase()}`,
-        category: 'Board',
-    })
-}
-for (const port of tuple('lights')) {
-    members.push({
-        name: `light_${port.toLowerCase()}`,
-        kind: 'instance',
-        description: `Light ${port}, built into the board.`,
-        parameters: [],
-        resultType: 'light',
-        path: `light_${port.toLowerCase()}`,
+        resultType: { button_port: 'button', light_port: 'light', port: 'str' }[
+            kind
+        ],
+        path: port,
         category: 'Board',
     })
 }

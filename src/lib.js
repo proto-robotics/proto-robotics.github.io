@@ -48,6 +48,7 @@ import { setRoot } from './helpers/rootHelper'
 import { setWidgetHost } from './helpers/blocklyHelper'
 import { deviceField } from './mods/deviceField'
 import { deviceCard } from './mods/deviceCard'
+import { cleanDevice } from './helpers/devicesHelper'
 
 export { addVocab, pythonGenerator, whenEditorFontsReady }
 
@@ -67,7 +68,7 @@ export const fields = {
     dropdown: (options) => () => gridDropdown(options),
     /**
      * A choice of the program's devices of a kind, by name.
-     * @param {string} kind 'drive_motor' or 'motor_group'.
+     * @param {string} kind 'drive_motor' or 'drivetrain'.
      * @param {{nth?: number}} [options] Blank while there are none.
      */
     device: deviceField,
@@ -120,8 +121,8 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {boolean} [options.view=false] Read-only viewer.
  * @param {boolean} [options.devices=false] Pin a Devices button to the
  *     bottom of the toolbox column: it opens the program's motors and
- *     motor groups in a pop-up, where they are set up. A device counts in
- *     `blockTypes` under its kind (`drive_motor` or `motor_group`).
+ *     drivetrains in a pop-up, where they are set up. A device counts in
+ *     `blockTypes` under its kind (`drive_motor` or `drivetrain`).
  * @param {boolean} [options.issues=false] An Issues tab on the right that
  *     lists the program's problems (blank devices and the like). The
  *     blocks with one are marked either way.
@@ -232,7 +233,7 @@ export const mountEditor = async (
  * @param {{kind?: string, name?: string, port?: string, direction?: string}} [options.device]
  *     The device; a drive motor named motor on port 0, clockwise, if left out.
  * @param {(device: object) => void} [options.onChange] The device, after a change.
- * @param {string[]} [options.motors] For a motor group: the drive motors it
+ * @param {string[]} [options.motors] For a drivetrain: the drive motors it
  *     can be made from, by name.
  * @returns {Promise<{
  *   element: HTMLElement,
@@ -246,13 +247,15 @@ export const mountDeviceCard = async (
 ) => {
     await whenEditorFontsReady()
     const root = div({ class: 'proto-ide proto-ide-card' })
-    let current = {
+    // a device in an older shape (a motor_group) shows as it is now
+    const clean = (shown) => ({ ...shown, ...cleanDevice(shown) })
+    let current = clean({
         kind: 'drive_motor',
         name: 'motor',
         port: '0',
         direction: '1',
         ...device,
-    }
+    })
     const draw = () =>
         root.replaceChildren(
             div(
@@ -278,7 +281,7 @@ export const mountDeviceCard = async (
     return {
         element: root,
         set: (changed) => {
-            current = { ...current, ...changed }
+            current = clean({ ...current, ...changed })
             draw()
         },
         destroy: () => root.remove(),

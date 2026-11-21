@@ -2,7 +2,7 @@
  * Devices and variables: what a program sets up at its top
  * (helpers/devicesHelper.js). One button, pinned to the bottom of the
  * toolbox column and drawn like a category tab, opens them in a pop-up: a
- * row per kind (drive motors, motor groups, then variables) with a card per item (deviceCard.js) and a tile that adds
+ * row per kind (drive motors, drivetrains, then variables) with a card per item (deviceCard.js) and a tile that adds
  * one. They live with the workspace; the pop-up is a view of them, drawn
  * again whenever they change.
  */
@@ -31,7 +31,7 @@ import { deviceCard } from './deviceCard'
 import { renameDeviceInBlocks } from './deviceField'
 
 /** The kinds the Devices pop-up shows, in its order. */
-export const DEVICE_KINDS = ['drive_motor', 'motor_group']
+export const DEVICE_KINDS = ['drive_motor', 'drivetrain']
 /** The kinds the Variables pop-up shows. */
 export const VARIABLE_KINDS = ['variable']
 
@@ -47,7 +47,7 @@ const motorNames = (devices) =>
 /**
  * @param {object[]} devices
  * @param {string[]} [kinds] The kinds to count.
- * @returns {string} How many of each kind: "2 drive motors, 1 motor group".
+ * @returns {string} How many of each kind: "2 drive motors, 1 drivetrain".
  */
 export const devicesSummary = (devices, kinds = Object.keys(deviceKinds)) =>
     kinds
@@ -67,16 +67,13 @@ const fresh = {
         port: nextPort(list, 'drive_motor'),
         direction: '1',
     }),
-    motor_group: (list) => {
+    drivetrain: (list) => {
         const motors = motorNames(list)
         return {
-            kind: 'motor_group',
-            name: nextName(list, deviceKinds.motor_group.base),
-            // the first two drive motors, turning together at the same speed
-            motors: [
-                { name: motors[0] ?? '', ratio: '1' },
-                { name: motors[1] ?? '', ratio: '1' },
-            ],
+            kind: 'drivetrain',
+            name: nextName(list, deviceKinds.drivetrain.base),
+            // the first two drive motors, left and right
+            motors: [motors[0] ?? '', motors[1] ?? ''],
         }
     },
     variable: (list) => ({
@@ -118,7 +115,7 @@ export const devicesEditor = (
                     const changed = devices().map((other, i) =>
                         i === index ? { ...other, ...patch } : other,
                     )
-                    // a motor group made from a renamed motor follows the new name
+                    // a drivetrain made from a renamed motor follows the new name
                     update(
                         renamedFrom !== undefined &&
                             device.kind === 'drive_motor'

@@ -7,6 +7,34 @@ import { describe, expect, test } from 'vitest'
 import { block, motor, num, python, robot, slot, stack } from './program'
 
 describe('Motor', () => {
+    test.each([['motorHold', { time: 2 }, 'arm.hold(seconds=2)']])(
+        '%s',
+        (type, fields, code) => {
+            expect(
+                python([block(type, { name: 'arm', ...fields })], [motor()]),
+            ).toBe(code)
+        },
+    )
+
+    test('Hold step', () => {
+        expect(
+            python(
+                [
+                    block(
+                        'forever',
+                        {},
+                        {
+                            input: slot(
+                                block('motorHoldStep', { name: 'arm' }),
+                            ),
+                        },
+                    ),
+                ],
+                [motor()],
+            ),
+        ).toBe('while True:\n  arm.hold()')
+    })
+
     test.each([
         ['forward', 'seconds', 'arm.spin(power=50, seconds=2)'],
         ['backward', 'seconds', 'arm.spin_back(power=50, seconds=2)'],
@@ -122,22 +150,72 @@ describe('Motor', () => {
     })
 })
 
-describe('Motor Group', () => {
+describe('Drivetrain', () => {
+    const timed = (type, way, unit) =>
+        python(
+            [
+                block(type, {
+                    name: 'robot',
+                    way,
+                    power: 50,
+                    amount: 3,
+                    unit,
+                }),
+            ],
+            robot(),
+        )
+    const inLoop = (child) =>
+        python([block('forever', {}, { input: slot(child) })], robot())
+
     test.each([
-        ['forward', 'seconds', 'robot.spin(power=50, seconds=3)'],
-        ['backward', 'seconds', 'robot.spin_back(power=50, seconds=3)'],
-        ['forward', 'degrees', 'robot.spin_degrees(degrees=3, power=50)'],
-        ['backward', 'degrees', 'robot.spin_back_degrees(degrees=3, power=50)'],
+        ['forward', 'seconds', 'robot.drive(power=50, seconds=3)'],
+        ['backward', 'seconds', 'robot.drive_back(power=50, seconds=3)'],
+        ['forward', 'degrees', 'robot.drive_degrees(degrees=3, power=50)'],
+        [
+            'backward',
+            'degrees',
+            'robot.drive_back_degrees(degrees=3, power=50)',
+        ],
     ])('Drive %s for 3 %s', (way, unit, code) => {
+        expect(timed('driveFor', way, unit)).toBe(code)
+    })
+
+    test.each([
+        ['right', 'seconds', 'robot.turn(power=50, seconds=3)'],
+        ['left', 'seconds', 'robot.turn_back(power=50, seconds=3)'],
+        ['right', 'degrees', 'robot.turn_degrees(degrees=3, power=50)'],
+        ['left', 'degrees', 'robot.turn_back_degrees(degrees=3, power=50)'],
+    ])('Turn %s for 3 %s', (way, unit, code) => {
+        expect(timed('turnFor', way, unit)).toBe(code)
+    })
+
+    test.each([
+        ['driveStep', 'forward', 'robot.drive(power=50)'],
+        ['driveStep', 'backward', 'robot.drive_back(power=50)'],
+        ['turnStep', 'right', 'robot.turn(power=50)'],
+        ['turnStep', 'left', 'robot.turn_back(power=50)'],
+    ])('%s %s', (type, way, code) => {
+        expect(inLoop(block(type, { name: 'robot', way, power: 50 }))).toBe(
+            `while True:\n  ${code}`,
+        )
+    })
+
+    test.each([
+        ['forward', 'robot.curve(left_power=50, right_power=20, seconds=2)'],
+        [
+            'backward',
+            'robot.curve_back(left_power=50, right_power=20, seconds=2)',
+        ],
+    ])('Curve %s for 2 seconds', (way, code) => {
         expect(
             python(
                 [
-                    block('groupSpin', {
+                    block('curveFor', {
                         name: 'robot',
                         way,
-                        power: 50,
-                        amount: 3,
-                        unit,
+                        left: 50,
+                        right: 20,
+                        time: 2,
                     }),
                 ],
                 robot(),
@@ -146,29 +224,40 @@ describe('Motor Group', () => {
     })
 
     test.each([
-        ['forward', 'robot.spin(power=50)'],
-        ['backward', 'robot.spin_back(power=50)'],
-    ])('Spin step %s', (way, code) => {
+        ['forward', 'robot.curve(left_power=50, right_power=20)'],
+        ['backward', 'robot.curve_back(left_power=50, right_power=20)'],
+    ])('Curve step %s', (way, code) => {
+        expect(
+            inLoop(
+                block('curveStep', { name: 'robot', way, left: 50, right: 20 }),
+            ),
+        ).toBe(`while True:\n  ${code}`)
+    })
+
+    test.each([
+        [
+            'forward',
+            'robot.curve_degrees(left_degrees=720, right_degrees=360, power=40)',
+        ],
+        [
+            'backward',
+            'robot.curve_back_degrees(left_degrees=720, right_degrees=360, power=40)',
+        ],
+    ])('Curve %s by degrees', (way, code) => {
         expect(
             python(
                 [
-                    block(
-                        'forever',
-                        {},
-                        {
-                            input: slot(
-                                block('groupSpinStep', {
-                                    name: 'robot',
-                                    way,
-                                    power: 50,
-                                }),
-                            ),
-                        },
-                    ),
+                    block('curveDegrees', {
+                        name: 'robot',
+                        way,
+                        leftDegrees: 720,
+                        rightDegrees: 360,
+                        power: 40,
+                    }),
                 ],
                 robot(),
             ),
-        ).toBe(`while True:\n  ${code}`)
+        ).toBe(code)
     })
 
     test.each([
@@ -176,36 +265,55 @@ describe('Motor Group', () => {
         ['coast', 'robot.stop()'],
     ])('Stop and %s', (mode, code) => {
         expect(
-            python([block('groupStop', { name: 'robot', mode })], robot()),
+            python([block('drivetrainStop', { name: 'robot', mode })], robot()),
         ).toBe(code)
     })
 })
 
 describe('Board', () => {
     test.each([
-        ['buttonPressed', 'a', 'button_a.pressed()'],
-        ['buttonPressed', 'd', 'button_d.pressed()'],
-        ['buttonHeld', 'b', 'button_b.held()'],
-    ])('%s %s', (type, button, code) => {
+        ['buttonPressed', 'a', 'A', 'pressed'],
+        ['buttonPressed', 'd', 'D', 'pressed'],
+        ['buttonHeld', 'b', 'B', 'held'],
+    ])('%s %s', (type, button, port, method) => {
         expect(
             python([
                 block('until', {}, { function: slot(block(type, { button })) }),
             ]),
-        ).toBe(`wait_until(lambda: ${code})`)
+        ).toBe(`wait_until(lambda: ${port}.${method}())`)
     })
 
     test.each([
-        ['l1', 'on', 'light_l1.on()'],
-        ['l2', 'off', 'light_l2.off()'],
-        ['l1', 'toggle', 'light_l1.toggle()'],
+        ['l1', 'on', 'L1.on()'],
+        ['l2', 'off', 'L2.off()'],
+        ['l1', 'toggle', 'L1.toggle()'],
     ])('Light %s %s', (light, action, code) => {
         expect(python([block('lightSet', { light, action })])).toBe(code)
     })
 
     test('Flash', () => {
         expect(python([block('lightFlash', { light: 'l2', time: 0.5 })])).toBe(
-            'light_l2.flash(seconds=0.5)',
+            'L2.flash(seconds=0.5)',
         )
+    })
+
+    test('the board buttons and lights are used by name, with nothing made first', () => {
+        expect(
+            python([
+                stack(
+                    block(
+                        'until',
+                        {},
+                        {
+                            function: slot(
+                                block('buttonPressed', { button: 'b' }),
+                            ),
+                        },
+                    ),
+                    block('lightSet', { light: 'l1', action: 'on' }),
+                ),
+            ]),
+        ).toBe('wait_until(lambda: B.pressed())\nL1.on()')
     })
 })
 
@@ -245,7 +353,7 @@ describe('Time and Flow', () => {
                     { input: slot(block('wait', { time: 1 })) },
                 ),
             ]),
-        ).toBe('for i in repeat_for(5):\n  wait(seconds=1)')
+        ).toBe('for _ in countdown(5):\n  wait(seconds=1)')
         expect(
             python([
                 block(
@@ -257,7 +365,7 @@ describe('Time and Flow', () => {
                     },
                 ),
             ]),
-        ).toBe('while not button_b.pressed():\n  wait(seconds=1)')
+        ).toBe('while not B.pressed():\n  wait(seconds=1)')
         expect(
             python([
                 block(
@@ -269,7 +377,19 @@ describe('Time and Flow', () => {
                     },
                 ),
             ]),
-        ).toBe('while button_b.held():\n  wait(seconds=1)')
+        ).toBe('while B.held():\n  wait(seconds=1)')
+    })
+
+    test('Repeat for seconds nests, each loop with its own timer', () => {
+        const repeat = (time, inside) =>
+            block('repeatSeconds', { time }, { input: slot(inside) })
+        expect(
+            python([repeat(10, repeat(2, block('wait', { time: 1 })))]),
+        ).toBe(
+            'for _ in countdown(10):\n' +
+                '  for _ in countdown(2):\n' +
+                '    wait(seconds=1)',
+        )
     })
 
     test('an empty loop or If writes pass', () => {
@@ -303,9 +423,7 @@ describe('Time and Flow', () => {
                     },
                 ),
             ]),
-        ).toBe(
-            'if not button_a.held():\n  light_l1.on()\nelse:\n  light_l1.off()',
-        )
+        ).toBe('if not A.held():\n  L1.on()\nelse:\n  L1.off()')
     })
 
     test('and, or, compare', () => {
@@ -336,7 +454,7 @@ describe('Time and Flow', () => {
                     },
                 ),
             ]),
-        ).toBe('wait_until(lambda: button_b.pressed() or 1 == 2)')
+        ).toBe('wait_until(lambda: B.pressed() or 1 == 2)')
     })
 })
 
@@ -441,7 +559,7 @@ describe('number slots', () => {
     test('every slot keeps its default number', () => {
         expect(python([block('wait')])).toBe('wait(seconds=1)')
         expect(python([block('lightFlash', { light: 'l1' })])).toBe(
-            'light_l1.flash(seconds=0.2)',
+            'L1.flash(seconds=0.2)',
         )
     })
 })

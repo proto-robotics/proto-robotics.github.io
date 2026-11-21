@@ -80,6 +80,10 @@ function renderCompletionDocumentation(description) {
 function buildCallSnippet(path, parameters) {
     let placeholder = 1
     const args = parameters.map((parameter) => {
+        // *motors: given in order, not by name (drivetrain(left, right))
+        if (parameter.variadic) {
+            return `\${${placeholder++}}`
+        }
         if (parameter.required) {
             return `${parameter.name}=\${${placeholder++}}`
         }
@@ -97,9 +101,11 @@ function buildCallSnippet(path, parameters) {
 function formatCallLabel(path, parameters) {
     return `${path}(${parameters
         .map((parameter) =>
-            parameter.required
-                ? `${parameter.name}=`
-                : `${parameter.name}=${parameter.default}`,
+            parameter.variadic
+                ? `${parameter.name}...`
+                : parameter.required
+                  ? `${parameter.name}=`
+                  : `${parameter.name}=${parameter.default}`,
         )
         .join(', ')})`
 }
@@ -131,8 +137,8 @@ function buildCallableCompletions(entry) {
 /**
  * @returns {object[]} Completions for top-level public make API entries:
  *     calls for functions and constructors, plain names for ready-made
- *     objects (the board's button_a). A type learners only get from make
- *     (button, encoder) is not offered.
+ *     values (the board's ports, A and L1). A type learners only get from
+ *     make (encoder) is not offered.
  */
 function buildTopLevelCompletions() {
     return autocompleteApi().members.flatMap((entry) => {
@@ -164,9 +170,12 @@ function buildMethodCompletionsByType() {
     for (const [typeName, methods] of Object.entries(
         autocompleteApi().methodsByType ?? {},
     )) {
-        completionsByType[typeName] = methods.flatMap((method) =>
-            buildCallableCompletions({ ...method, kind: 'method' }),
-        )
+        completionsByType[typeName] = methods
+            // __iter__ and the like are how Python uses a class, not calls
+            .filter((method) => !method.name.startsWith('_'))
+            .flatMap((method) =>
+                buildCallableCompletions({ ...method, kind: 'method' }),
+            )
     }
 
     return completionsByType
@@ -210,7 +219,9 @@ function buildParameterCompletions(entry, argumentsText, allowedNames) {
     return entry.parameters
         .filter(
             (parameter) =>
-                allowedNames.has(parameter.name) && !used.has(parameter.name),
+                !parameter.variadic &&
+                allowedNames.has(parameter.name) &&
+                !used.has(parameter.name),
         )
         .map((parameter) => {
             const value = parameter.required ? '${1}' : parameter.default

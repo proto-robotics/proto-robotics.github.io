@@ -1682,14 +1682,14 @@
         outline-offset: 1px;
     }
 
-    /* the add buttons, a drive motor and a motor group, wrapping to two lines if they must */
+    /* the add buttons, a drive motor and a drivetrain, wrapping to two lines if they must */
     .toolbox-devices-adds {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
     }
 
-    /* a motor group's motors, a line each: the motor, its ratio, and a
+    /* a drivetrain's motors, a line each: the motor, its side, and a
        button that takes it out; then a button that adds one */
     .toolbox-device-motor {
         display: flex;
@@ -1717,7 +1717,7 @@
         outline-offset: 1px;
     }
 
-    /* a motor group motor's ratio, and a variable's starting number */
+    /* a variable's starting number */
     .toolbox-device-number {
         width: 4.5em;
         padding: 2px 6px;

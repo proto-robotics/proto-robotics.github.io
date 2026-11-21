@@ -15,7 +15,7 @@
           {
             "name": "seconds",
             "annotation": "float",
-            "default": "0.05",
+            "default": "STEP_SECONDS",
             "required": false
           }
         ],
@@ -56,9 +56,9 @@
         "category": "Time"
       },
       {
-        "name": "repeat_for",
-        "kind": "function",
-        "description": "Repeats a loop for the given number of seconds, counting the times\nround from 0:\n\n    for i in repeat_for(2):\n        left.spin(30)\n        right.spin(30)",
+        "name": "countdown",
+        "kind": "constructor",
+        "description": "A timer that counts down from the given number of seconds, starting\nwhen it is made.  It is true while there is time left, so\n\n    timer = countdown(2)\n    while timer:\n        robot.drive(50)\n\nrepeats for two seconds, and a `for` loop over one gives the seconds\nleft each time round:\n\n    for time_left in countdown(2):\n        print(time_left)\n\nEach countdown keeps its own time, so several can run at once.",
         "parameters": [
           {
             "name": "seconds",
@@ -67,8 +67,8 @@
             "required": true
           }
         ],
-        "resultType": "Any",
-        "path": "repeat_for",
+        "resultType": "countdown",
+        "path": "countdown",
         "category": "Time"
       },
       {
@@ -94,32 +94,34 @@
         "category": "Motor"
       },
       {
-        "name": "motor_group",
+        "name": "drivetrain",
         "kind": "constructor",
-        "description": "Motors that turn together, each at its own ratio.",
+        "description": "A robot's wheel motors, driven as one: `drivetrain(left, right)`, or `drivetrain(front_left, front_right, back_left, back_right)`. The first, third... are the left wheels, the second, fourth... the right.",
         "parameters": [
           {
             "name": "motors",
-            "annotation": "list",
+            "annotation": null,
             "default": null,
-            "required": true
-          },
-          {
-            "name": "ratios",
-            "annotation": "list",
-            "default": "None",
-            "required": false
+            "required": true,
+            "variadic": true
           }
         ],
-        "resultType": "motor_group",
-        "path": "motor_group",
-        "category": "Motor"
+        "resultType": "drivetrain",
+        "path": "drivetrain",
+        "category": "Drivetrain"
       },
       {
         "name": "button",
-        "kind": "type",
+        "kind": "constructor",
         "description": "A button, either built into the board or plugged into a GROVE port.",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "port",
+            "annotation": "int | str",
+            "default": null,
+            "required": true
+          }
+        ],
         "resultType": "button",
         "path": "button",
         "category": "Board"
@@ -127,7 +129,7 @@
       {
         "name": "encoder",
         "kind": "type",
-        "description": "The encoder built into a DC motor, plugged in to the signal pins of a\nport.  A drive motor makes its own; get it with `get_encoder()`.",
+        "description": "An encoder, plugged in to the signal pins of a port.  It can be on its\nown or built into a DC motor; a drive motor with an encoder makes its\nown, which `get_encoder()` returns.",
         "parameters": [],
         "resultType": "encoder",
         "path": "encoder",
@@ -135,69 +137,90 @@
       },
       {
         "name": "light",
-        "kind": "type",
+        "kind": "constructor",
         "description": "A single LED.",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "port",
+            "annotation": "int | str",
+            "default": null,
+            "required": true
+          }
+        ],
         "resultType": "light",
         "path": "light",
         "category": "Board"
       },
       {
-        "name": "button_a",
+        "name": "L1",
         "kind": "instance",
-        "description": "Button A, built into the board. It also starts the program.",
-        "parameters": [],
-        "resultType": "button",
-        "path": "button_a",
-        "category": "Board"
-      },
-      {
-        "name": "button_b",
-        "kind": "instance",
-        "description": "Button B, built into the board.",
-        "parameters": [],
-        "resultType": "button",
-        "path": "button_b",
-        "category": "Board"
-      },
-      {
-        "name": "button_c",
-        "kind": "instance",
-        "description": "Button C, built into the board.",
-        "parameters": [],
-        "resultType": "button",
-        "path": "button_c",
-        "category": "Board"
-      },
-      {
-        "name": "button_d",
-        "kind": "instance",
-        "description": "Button D, built into the board.",
-        "parameters": [],
-        "resultType": "button",
-        "path": "button_d",
-        "category": "Board"
-      },
-      {
-        "name": "light_l1",
-        "kind": "instance",
-        "description": "Light L1, built into the board.",
+        "description": "Light L1, built into the board, ready to use: `L1.on()`.",
         "parameters": [],
         "resultType": "light",
-        "path": "light_l1",
+        "path": "L1",
         "category": "Board"
       },
       {
-        "name": "light_l2",
+        "name": "L2",
         "kind": "instance",
-        "description": "Light L2, built into the board.",
+        "description": "Light L2, built into the board, ready to use: `L2.on()`.",
         "parameters": [],
         "resultType": "light",
-        "path": "light_l2",
+        "path": "L2",
+        "category": "Board"
+      },
+      {
+        "name": "A",
+        "kind": "instance",
+        "description": "Button A, built into the board, ready to use: `A.pressed()`. It also starts the program.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "A",
+        "category": "Board"
+      },
+      {
+        "name": "B",
+        "kind": "instance",
+        "description": "Button B, built into the board, ready to use: `B.pressed()`.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "B",
+        "category": "Board"
+      },
+      {
+        "name": "C",
+        "kind": "instance",
+        "description": "Button C, built into the board, ready to use: `C.pressed()`.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "C",
+        "category": "Board"
+      },
+      {
+        "name": "D",
+        "kind": "instance",
+        "description": "Button D, built into the board, ready to use: `D.pressed()`.",
+        "parameters": [],
+        "resultType": "button",
+        "path": "D",
         "category": "Board"
       }
     ],
     "methodsByType": {
+      "countdown": [
+        {
+          "name": "__bool__",
+          "description": "",
+          "parameters": [],
+          "resultType": "bool"
+        },
+        {
+          "name": "__iter__",
+          "description": "",
+          "parameters": [],
+          "resultType": "Iterator[float]"
+        }
+      ],
       "drive_motor": [
         {
           "name": "spin",
@@ -212,7 +235,7 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "0.05",
+              "default": "STEP_SECONDS",
               "required": false
             }
           ],
@@ -231,7 +254,7 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "0.05",
+              "default": "STEP_SECONDS",
               "required": false
             }
           ],
@@ -250,7 +273,7 @@
             {
               "name": "power",
               "annotation": "float",
-              "default": "50",
+              "default": "MOVE_POWER",
               "required": false
             }
           ],
@@ -269,7 +292,20 @@
             {
               "name": "power",
               "annotation": "float",
-              "default": "50",
+              "default": "MOVE_POWER",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "hold",
+          "description": "Holds the motor where it is for the given number of seconds.  If no\ntime is given, holds for 0.05 seconds.  With an encoder it pushes\nback against a load to stay at its angle; without one it brakes.\nLike `spin`, it stops when the time is up, so call it in a loop to\nkeep holding.",
+          "parameters": [
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "STEP_SECONDS",
               "required": false
             }
           ],
@@ -300,10 +336,10 @@
           "resultType": "None"
         }
       ],
-      "motor_group": [
+      "drivetrain": [
         {
-          "name": "spin",
-          "description": "Spins every motor at its share of the given power, from -100 to\n100, for the given number of seconds.  If no time is given, spins\nfor 0.05 seconds.  With encoders the motors keep their ratios even\nif one is held back.\n\nThe motors stop when the time is up.  Calling this again straight\naway carries on, so a loop of calls drives smoothly.  Two\nmotor groups stepped in one loop add up.",
+          "name": "drive",
+          "description": "Drives straight at the given power, from -100 to 100, for the given\nnumber of seconds.  If no time is given, drives for 0.05 seconds.\n\nThe motors stop when the time is up.  Calling this again straight\naway carries on, so a loop of calls drives smoothly.  `drive` and\n`turn` called in the same loop add up, and the robot drives an arc.",
           "parameters": [
             {
               "name": "power",
@@ -314,15 +350,15 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "0.05",
+              "default": "STEP_SECONDS",
               "required": false
             }
           ],
           "resultType": "None"
         },
         {
-          "name": "spin_back",
-          "description": "Spins backwards; the same as `spin` with the power negated.",
+          "name": "turn",
+          "description": "Turns on the spot, the left wheels forwards; like `drive` otherwise.",
           "parameters": [
             {
               "name": "power",
@@ -333,15 +369,103 @@
             {
               "name": "seconds",
               "annotation": "float",
-              "default": "0.05",
+              "default": "STEP_SECONDS",
               "required": false
             }
           ],
           "resultType": "None"
         },
         {
-          "name": "spin_degrees",
-          "description": "Turns the motor with the largest ratio through the given number of\ndegrees, negative for backwards, and every other motor through its\nshare, all finishing together, then brakes.  Needs encoders on\nevery motor.",
+          "name": "curve",
+          "description": "Drives the left and right wheels at different powers; like `drive` otherwise.",
+          "parameters": [
+            {
+              "name": "left_power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "STEP_SECONDS",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "drive_back",
+          "description": "Drives backwards; the same as `drive` with the power negated.",
+          "parameters": [
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "STEP_SECONDS",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "turn_back",
+          "description": "Turns the other way; the same as `turn` with the power negated.",
+          "parameters": [
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "STEP_SECONDS",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "curve_back",
+          "description": "Curves backwards; the same as `curve` with both powers negated.",
+          "parameters": [
+            {
+              "name": "left_power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_power",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "seconds",
+              "annotation": "float",
+              "default": "STEP_SECONDS",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "drive_degrees",
+          "description": "Drives straight until every wheel has turned through the given\nnumber of degrees, then brakes.  These are degrees of the wheels,\nnot of the robot.  Needs encoders on every motor.",
           "parameters": [
             {
               "name": "degrees",
@@ -352,15 +476,15 @@
             {
               "name": "power",
               "annotation": "float",
-              "default": "50",
+              "default": "MOVE_POWER",
               "required": false
             }
           ],
           "resultType": "None"
         },
         {
-          "name": "spin_back_degrees",
-          "description": "Spins backwards by degrees; the same as `spin_degrees` negated.",
+          "name": "turn_degrees",
+          "description": "Turns on the spot until every wheel has turned the given degrees; like `drive_degrees`.",
           "parameters": [
             {
               "name": "degrees",
@@ -371,7 +495,95 @@
             {
               "name": "power",
               "annotation": "float",
-              "default": "50",
+              "default": "MOVE_POWER",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "curve_degrees",
+          "description": "Turns the left and right wheels through their own number of\ndegrees, all finishing together, then brakes.  The side with\nfurther to go moves at the given power.",
+          "parameters": [
+            {
+              "name": "left_degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": "MOVE_POWER",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "drive_back_degrees",
+          "description": "Drives backwards by degrees; the same as `drive_degrees` negated.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": "MOVE_POWER",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "turn_back_degrees",
+          "description": "Turns the other way by degrees; the same as `turn_degrees` negated.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": "MOVE_POWER",
+              "required": false
+            }
+          ],
+          "resultType": "None"
+        },
+        {
+          "name": "curve_back_degrees",
+          "description": "Curves backwards by degrees; the same as `curve_degrees` with both negated.",
+          "parameters": [
+            {
+              "name": "left_degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "right_degrees",
+              "annotation": "float",
+              "default": null,
+              "required": true
+            },
+            {
+              "name": "power",
+              "annotation": "float",
+              "default": "MOVE_POWER",
               "required": false
             }
           ],
