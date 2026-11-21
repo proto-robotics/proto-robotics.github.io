@@ -250,7 +250,6 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
             }
         }),
     )
-    BrainButton.hidden = true
 
     const watch = watchBrain((state, handle) => {
         brainHandle = handle

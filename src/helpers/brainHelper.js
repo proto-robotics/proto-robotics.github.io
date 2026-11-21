@@ -34,6 +34,23 @@ export const BrainState = Object.freeze({
  * @param {string} message What went wrong.
  * @returns {Error} The error.
  */
+/**
+ * A promise that settles with `fallback` if `promise` has not settled in
+ * time, so a drive that stops answering cannot stall the button.
+ * @param {Promise} promise
+ * @param {number} ms
+ * @param {*} fallback
+ * @returns {Promise}
+ */
+const withinTime = (promise, ms, fallback) =>
+    Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => resolve(fallback), ms)),
+    ])
+
+/** Milliseconds a check of the drive may take before it counts as present. */
+const CHECK_MS = 2000
+
 const namedError = (name, message) => {
     const error = new Error(message)
     error.name = name
@@ -92,7 +109,11 @@ const browserProvider = {
     remembered: async () => {
         try {
             return (
-                (await withStore('readonly', (store) => store.get(KEY))) ?? null
+                (await withinTime(
+                    withStore('readonly', (store) => store.get(KEY)),
+                    CHECK_MS,
+                    null,
+                )) ?? null
             )
         } catch {
             return null
@@ -127,7 +148,9 @@ const browserProvider = {
             if (permission === 'prompt') {
                 return true
             }
-            await handle.entries().next()
+            // a drive that hangs when listed (one needing repair, say)
+            // counts as present: the click will find out
+            await withinTime(handle.entries().next(), CHECK_MS, null)
             return true
         } catch {
             return false
