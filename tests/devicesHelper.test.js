@@ -6,7 +6,6 @@ import { describe, expect, test } from 'vitest'
 import * as Blockly from 'blockly'
 
 import { setBlockSet, splice } from '../src/libraries/engine'
-import { core } from '../src/libraries/core/index'
 import { make } from '../src/libraries/make/index'
 import {
     devicesCode,
@@ -17,7 +16,7 @@ import {
 } from '../src/helpers/devicesHelper'
 
 // the device kinds come from the libraries
-setBlockSet(splice([core, make]))
+setBlockSet(splice([make]))
 
 const motor = (name, port = '0') => ({
     kind: 'drive_motor',

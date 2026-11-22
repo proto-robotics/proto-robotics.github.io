@@ -1,6 +1,5 @@
 import '../styles.css'
 
-import { core } from './libraries/core/index'
 import { make } from './libraries/make/index'
 import { setBlockSet, splice, toolboxOf, usesDevices } from './libraries/engine'
 import BuildPageContent from './builders/BuildPageContent'
@@ -23,7 +22,7 @@ const main = async () => {
 
     // the IDE's own blocks, the real robot's: the same libraries a host
     // site gives the library build (src/lib.js)
-    const set = splice([core, make])
+    const set = splice([make])
     setBlockSet(set)
     const toolbox = toolboxOf(set, {
         toolbox: editorParams.categories ?? undefined,

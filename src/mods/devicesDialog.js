@@ -2,7 +2,7 @@
  * Devices and variables: what a program sets up at its top
  * (helpers/devicesHelper.js). One button, pinned to the bottom of the
  * toolbox column and drawn like a category tab, opens them in a pop-up: a
- * row per kind the editor's libraries offer (the core library's drive
+ * row per kind the editor's libraries offer (the make library's drive
  * motors, drivetrains and variables), each with a card per item
  * (deviceCard.js) and a tile that adds one. They live with the workspace;
  * the pop-up is a view of them, drawn again whenever they change.

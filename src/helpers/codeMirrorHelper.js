@@ -651,7 +651,7 @@ function buildGutterExtensions(readonly, noGutter) {
 
 /**
  * The first lines of every program, and the whole of an empty one: the
- * editor's libraries' first line (the core library's `from make import *`)
+ * editor's libraries' first line (the make library's `from make import *`)
  * and a blank line.
  * @returns {string}
  */

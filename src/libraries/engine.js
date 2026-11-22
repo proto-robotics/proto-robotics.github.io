@@ -1,14 +1,13 @@
 /*
  * The block engine. The editor has no blocks of its own: everything about
  * blocks comes from libraries, spliced together into one block set per
- * editor. The IDE's page uses [core, make] (core/, make/); a host site
- * passes its own list through the library build (src/lib.js), such as
- * core plus a sandbox world's library.
+ * editor. The IDE's page uses [make] (make/, the real robot's blocks); a
+ * host site passes its own list through the library build (src/lib.js),
+ * such as make plus a sandbox world's library.
  *
  * A library (all optional but `name` and `categories`):
  *   name        what it is called, for messages
- *   brain       true for a library of the real robot: its editors get Send to Brain
- *   preamble    the program's first line (core: `from make import *`)
+ *   preamble    the program's first line (make: `from make import *`)
  *   categories  [{ name, color, icon, hidden, devices, entries }]: blocks and
  *               cheatsheet examples, made with the kit (kit.js). A category
  *               named like one an earlier library has adds its blocks to
@@ -243,7 +242,7 @@ const typesIn = (blocks) => {
  * (the first sets the color, icon and place), blocks a later library hides
  * go, and examples that need a block the set does not have are left out.
  * Registers the blocks with Blockly, so a block set is ready to mount.
- * @param {Library[]} libraries In order: core first.
+ * @param {Library[]} libraries In order: make first.
  * @returns {BlockSet}
  */
 export const splice = (libraries) => {

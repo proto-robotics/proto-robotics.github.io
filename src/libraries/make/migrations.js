@@ -1,5 +1,5 @@
 /*
- * How the core library brings older programs up to date as they load (its
+ * How the make library brings older programs up to date as they load (its
  * `renames.migrate`, run by the engine before the simple renames).
  *
  * For a while make's drivetrain was a motor group (motor_group(motors,

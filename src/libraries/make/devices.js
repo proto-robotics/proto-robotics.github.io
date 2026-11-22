@@ -1,5 +1,5 @@
 /*
- * The core library's devices: what a program sets up before its blocks
+ * The make library's devices: what a program sets up before its blocks
  * run. Each kind holds everything the editor needs about it: its label and
  * picture, the cheatsheet entry its help button opens, the name a new one
  * starts with, its ports and directions, how it is written in Python, how a

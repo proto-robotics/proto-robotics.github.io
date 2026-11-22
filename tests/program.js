@@ -6,14 +6,13 @@
 import * as Blockly from 'blockly'
 import { pythonGenerator } from 'blockly/python'
 import { numbersToSlots, setBlockSet, splice } from '../src/libraries/engine'
-import { core } from '../src/libraries/core/index'
 import { make } from '../src/libraries/make/index'
 
 let defined = false
 /** Splices the IDE's own libraries (core and make), which defines their blocks, once. */
 export const defineBlocks = () => {
     if (!defined) {
-        setBlockSet(splice([core, make]))
+        setBlockSet(splice([make]))
         defined = true
     }
 }

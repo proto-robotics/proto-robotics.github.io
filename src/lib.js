@@ -4,9 +4,9 @@
  * into dist/lib/proto-ide.js and proto-ide.css, with the stylesheet scoped
  * to the editor's root element.
  *
- *   import { mountEditor, core, make, kit } from './proto-ide.js'
+ *   import { mountEditor, make, kit } from './proto-ide.js'
  *   const editor = await mountEditor(container, {
- *       libraries: [core, make],    // the default: the real robot's blocks
+ *       libraries: [make],          // the default: the real robot's blocks
  *       toolbox: ['Motor', 'Time'], // or blocks: ['motorSpin', 'wait']
  *       maxBlocks: 4,
  *       onChange: ({ code, blockTypes, state }) => {},
@@ -17,9 +17,9 @@
  *   // marker it reaches, editor.highlight(id); editor.highlight(null) when done
  *
  * The editor has no blocks of its own: it is given libraries
- * (src/libraries/engine.js). `core` and `make` are the IDE's; a host
+ * (src/libraries/engine.js). `make` is the IDE's, the real robot's blocks; a host
  * writes its own with `kit` (a sandbox world's blocks, say) and passes
- * [core, itsWorld]. A library brings everything about its blocks: their
+ * [make, itsWorld] (a world can also hide make blocks it cannot show). A library brings everything about its blocks: their
  * categories, icons and colors, device kinds, help, Python vocabulary,
  * lint rules and old names.
  */
@@ -35,17 +35,16 @@ import { setRoot } from './helpers/rootHelper'
 import { setWidgetHost } from './helpers/blocklyHelper'
 import { deviceCard } from './mods/deviceCard'
 import { cleanDevice, deviceKinds } from './helpers/devicesHelper'
-import { core } from './libraries/core/index'
 import { make } from './libraries/make/index'
 import * as kit from './libraries/kit'
 import { setBlockSet, splice, toolboxOf, usesDevices } from './libraries/engine'
 
-export { core, make, kit, splice }
+export { make, kit, splice }
 export { pythonGenerator } from 'blockly/python'
 export { whenEditorFontsReady }
 
 /** The IDE's own block set: the real robot's blocks. */
-const DEFAULT_LIBRARIES = [core, make]
+const DEFAULT_LIBRARIES = [make]
 
 /** Block sets already spliced, by their list of libraries, so remounting is cheap. */
 const sets = new Map()
@@ -68,7 +67,7 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  *     the root fills it, so the container decides the size.
  * @param {object} [options]
  * @param {object[]} [options.libraries] The block libraries, in order:
- *     [core, make] (the real robot) unless given.
+ *     [make] (the real robot) unless given.
  * @param {string[]} [options.toolbox] Category names to keep.
  * @param {string[]} [options.blocks] Block types to keep.
  * @param {number} [options.maxBlocks] Cap on blocks, with a counter.
@@ -82,6 +81,8 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {boolean} [options.issues=false] An Issues tab on the right that
  *     lists the program's problems (blank devices and the like). The
  *     blocks with one are marked either way.
+ * @param {boolean} [options.send=true] The Send to Brain button: the host says
+ *     whether the program is for the real robot (a sandbox's is not).
  * @param {boolean} [options.codePreview=false] Show the Python pane.
  * @param {boolean} [options.codeOpen=false] Start with the pane open.
  * @param {(detail: {code: string, blockTypes: string[], state: object}) => void} [options.onChange]
@@ -117,6 +118,7 @@ export const mountEditor = async (
         view = false,
         devices,
         issues = false,
+        send = true,
         codePreview = false,
         codeOpen = false,
         onChange,
@@ -151,8 +153,7 @@ export const mountEditor = async (
             devices: devices ?? (!view && usesDevices(set, { toolbox, blocks })),
             issues,
             blockTypes: set.blockTypes,
-            // Send to Brain only for the real robot's blocks (a library that says it runs there)
-            send: set.libraries.some((library) => library.brain),
+            send,
         },
         { root, onChange, onEscape },
     )
@@ -196,7 +197,7 @@ export const mountEditor = async (
  * @param {(device: object) => void} [options.onChange] The device, after a change.
  * @param {object[]} [options.devices] The program's other devices, for a
  *     kind made from them (a drivetrain's motors).
- * @param {object[]} [options.libraries] Where its kind comes from: [core, make] unless given.
+ * @param {object[]} [options.libraries] Where its kind comes from: [make] unless given.
  * @returns {Promise<{
  *   element: HTMLElement,
  *   set: (device: object) => void,
