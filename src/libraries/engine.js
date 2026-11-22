@@ -8,14 +8,15 @@
  * A library (all optional but `name` and `categories`):
  *   name        what it is called, for messages
  *   preamble    the program's first line (core: `from make import *`)
- *   categories  [{ name, color, icon, hidden, entries }]: blocks and
+ *   categories  [{ name, color, icon, hidden, devices, entries }]: blocks and
  *               cheatsheet examples, made with the kit (kit.js). A category
  *               named like one an earlier library has adds its blocks to
  *               it; the first one sets its color, icon and place
  *   devices     { kind: DeviceKind }: what the Devices pop-up sets up
  *   hides       block types of earlier libraries to leave out (a world that
  *               cannot show them)
- *   renames     { blocks: {old: new}, devices: {old: new} } for old programs
+ *   renames     { blocks: {old: new}, devices: {old: new}, migrate(state) }
+ *               for old programs: migrate first, then the renames
  *   lint        { zeroTime: {type: message}, longTime: [type],
  *               emptySlot: {type: [severity, message]} } for its blocks
  *   takenNames  Python names the program must not use for a device
@@ -70,6 +71,8 @@ import { numberShadows, field, numberOut, block } from './kit'
 export { deviceKinds, deviceRenames }
 /** Old block types to today's. */
 export const blockRenames = {}
+/** The libraries' own migrations of old programs, in order. */
+export const migrations = []
 /** Block types that are steps: they only belong in loops. */
 export const stepBlockTypes = new Set()
 /** Block types that run what is inside them again and again. */
@@ -96,6 +99,9 @@ const register = (library) => {
     Object.assign(deviceKinds, library.devices ?? {})
     Object.assign(deviceRenames, library.renames?.devices ?? {})
     Object.assign(blockRenames, library.renames?.blocks ?? {})
+    if (library.renames?.migrate) {
+        migrations.push(library.renames.migrate)
+    }
     Object.assign(lintRules.zeroTime, library.lint?.zeroTime ?? {})
     for (const type of library.lint?.longTime ?? []) {
         lintRules.longTime.add(type)
@@ -264,9 +270,10 @@ export const splice = (libraries) => {
         for (const category of library.categories) {
             let into = merged.find((c) => c.name === category.name)
             if (!into) {
-                into = { name: category.name, color: category.color, icon: category.icon, hidden: category.hidden, entries: [] }
+                into = { name: category.name, color: category.color, icon: category.icon, hidden: category.hidden, devices: [], entries: [] }
                 merged.push(into)
             }
+            into.devices.push(...(category.devices ?? []))
             into.entries.push(...category.entries.filter((entry) => entry.entryType === 'example' || !hidden.has(entry.name)))
         }
     }
@@ -326,6 +333,30 @@ export const toolboxOf = (set, { toolbox, blocks } = {}) =>
         blocks: blocks ?? null,
         hidden: set.hiddenCategoryNames,
     })
+
+/**
+ * Whether a page's toolbox offers blocks that use devices, so its editor
+ * gets the Devices button: a category that
+ * says which device kinds its blocks use (`devices` on a category), or a
+ * device kind named in `blocks`.
+ */
+export const usesDevices = (set, { toolbox, blocks }) => {
+    if (!Object.keys(set.deviceKinds).length) {
+        return false
+    }
+    if (blocks?.some((type) => type in set.deviceKinds)) {
+        return true
+    }
+    return set.categories.some(
+        (category) =>
+            category.devices?.length &&
+            (toolbox
+                ? toolbox.some((name) => name.toLowerCase() === category.name.toLowerCase())
+                : blocks
+                  ? category.entries.some((entry) => blocks.includes(entry.name))
+                  : true),
+    )
+}
 
 // ---- the editor's block set --------------------------------------------------
 

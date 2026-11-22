@@ -20,6 +20,7 @@ import { FieldLabel, inputs } from 'blockly'
 
 import { blockSet, lintRules, numberShadowTypes, stepBlockTypes } from '../libraries/engine'
 import { getVocab } from '../data/vocab'
+import { UNKNOWN_BLOCK, UNKNOWN_VALUE, unknownMessage } from '../libraries/unknownBlocks'
 import { deviceKinds, getDevices } from '../helpers/devicesHelper'
 import { FieldDevice } from './deviceField'
 import { insideLoop } from './stepBlocks'
@@ -152,6 +153,12 @@ export const blockName = (block) => {
 
 /** @type {BlockRule[]} */
 const blockRules = [
+    // a block this editor does not have (a stand-in keeps it): it cannot run here
+    (block) =>
+        block.type === UNKNOWN_BLOCK || block.type === UNKNOWN_VALUE
+            ? [error(unknownMessage(block.original_?.type ?? '?'))]
+            : [],
+
     // a device dropdown left blank, or naming a device that is not there
     (block, { devices }) =>
         fieldsOf(block)

@@ -226,3 +226,33 @@ export const fields = {
      */
     device: deviceField,
 }
+
+// ---- for a library's migrations (`renames.migrate`) ---------------------------
+
+/** Every block in a saved program, inside and under the others, changed by `change`. */
+export const mapBlocks = (state, change) => {
+    const visit = (blockState) => {
+        if (!blockState || typeof blockState !== 'object') {
+            return blockState
+        }
+        const inputs = Object.fromEntries(
+            Object.entries(blockState.inputs ?? {}).map(([name, input]) => [
+                name,
+                {
+                    ...input,
+                    ...(input?.block ? { block: visit(input.block) } : {}),
+                    ...(input?.shadow ? { shadow: visit(input.shadow) } : {}),
+                },
+            ]),
+        )
+        return change({
+            ...blockState,
+            ...(blockState.inputs ? { inputs } : {}),
+            ...(blockState.next?.block ? { next: { ...blockState.next, block: visit(blockState.next.block) } } : {}),
+        })
+    }
+    if (!state?.blocks?.blocks) {
+        return state
+    }
+    return { ...state, blocks: { ...state.blocks, blocks: state.blocks.blocks.map(visit) } }
+}

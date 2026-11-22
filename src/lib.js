@@ -38,7 +38,7 @@ import { cleanDevice, deviceKinds } from './helpers/devicesHelper'
 import { core } from './libraries/core'
 import { make } from './libraries/make'
 import * as kit from './libraries/kit'
-import { setBlockSet, splice, toolboxOf } from './libraries/engine'
+import { setBlockSet, splice, toolboxOf, usesDevices } from './libraries/engine'
 
 export { core, make, kit, splice }
 export { pythonGenerator } from 'blockly/python'
@@ -55,29 +55,6 @@ const blockSetFor = (libraries) => {
         sets.set(key, splice(libraries))
     }
     return sets.get(key)
-}
-
-/**
- * Whether a page's toolbox offers blocks that use devices: a category that
- * says which device kinds its blocks use (`devices` on a category), or a
- * device kind named in `blocks`.
- */
-const usesDevices = (set, { toolbox, blocks }) => {
-    if (!Object.keys(set.deviceKinds).length) {
-        return false
-    }
-    if (blocks?.some((type) => type in set.deviceKinds)) {
-        return true
-    }
-    return set.categories.some(
-        (category) =>
-            category.devices?.length &&
-            (toolbox
-                ? toolbox.some((name) => name.toLowerCase() === category.name.toLowerCase())
-                : blocks
-                  ? category.entries.some((entry) => blocks.includes(entry.name))
-                  : true),
-    )
 }
 
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
@@ -172,6 +149,7 @@ export const mountEditor = async (
             view,
             devices: devices ?? (!view && usesDevices(set, { toolbox, blocks })),
             issues,
+            blockTypes: set.blockTypes,
         },
         { root, onChange, onEscape },
     )
@@ -202,7 +180,7 @@ export const mountEditor = async (
 
 /**
  * Puts one device's card on a host's page, on its own: the same card the
- * Devices section of the toolbox shows ("fan is a drive motor on port 0 in
+ * Devices pop-up shows ("fan is a drive motor on port 0 in
  * direction clockwise"), at the toolbox's size, so a lesson can show a
  * motor's setup without an editor. With `onChange` the port and direction
  * can be changed and the name typed; without it the card is read-only.

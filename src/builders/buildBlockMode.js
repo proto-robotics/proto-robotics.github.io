@@ -1,6 +1,6 @@
 /*
- * The block editor: the Blockly canvas with its toolbox (with the Devices
- * section when asked for), the code drawer showing the generated Python,
+ * The block editor: the Blockly canvas with its toolbox (and the Devices
+ * button when asked for), the code drawer showing the generated Python,
  * and the controls over the canvas. The
  * workspace is rebuilt in place when the window enters or leaves the phone
  * layout, since Blockly fixes the toolbox's side when it is created.
@@ -110,14 +110,15 @@ export default (
         sounds = true,
         devices: showDevices = false,
         issues: showIssues = true,
+        blockTypes = null,
     } = {},
 ) => {
     const codePreview = createCodeMirrorView({ readonly: true, noGutter: true })
     codePreview.dom.id = 'code-preview'
 
     const instanceOptions = view
-        ? { readonly: true, hideToolbox: true, startScale: 1, sounds }
-        : { maxBlocks, maxInstances, sounds }
+        ? { readonly: true, hideToolbox: true, startScale: 1, sounds, blockTypes }
+        : { maxBlocks, maxInstances, sounds, blockTypes }
     const blocklyInstance = createBlocklyInstance(toolbox, instanceOptions)
 
     // ---- the elements ------------------------------------------------------
@@ -399,7 +400,7 @@ export default (
         destroyBlocklyInstance(blocklyInstance)
         Object.assign(
             blocklyInstance,
-            createBlocklyInstance(editorToolbox, instanceOptions),
+            createBlocklyInstance(toolbox, instanceOptions),
         )
         oldCanvas.replaceWith(blocklyInstance.canvas)
         mount(state)

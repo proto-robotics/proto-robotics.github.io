@@ -2,7 +2,7 @@ import '../styles.css'
 
 import { core } from './libraries/core'
 import { make } from './libraries/make'
-import { setBlockSet, splice, toolboxOf } from './libraries/engine'
+import { setBlockSet, splice, toolboxOf, usesDevices } from './libraries/engine'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 import BuildEmbedContent from './builders/BuildEmbedContent'
@@ -30,10 +30,20 @@ const main = async () => {
         blocks: editorParams.blocks ?? undefined,
     })
 
+    // the iframe page gets what the library build gives a host: Devices
+    // when its toolbox has device blocks, and the block set's types
+    const narrow = {
+        toolbox: editorParams.categories ?? undefined,
+        blocks: editorParams.blocks ?? undefined,
+    }
     const PageContent = params.has('cheatsheet')
         ? BuildCheatSheet()
         : params.has('embed')
-          ? await BuildEmbedContent(toolbox, editorParams)
+          ? await BuildEmbedContent(toolbox, {
+                ...editorParams,
+                devices: !editorParams.view && usesDevices(set, narrow),
+                blockTypes: set.blockTypes,
+            })
           : BuildPageContent(toolbox, editorParams)
 
     document.body.replaceChildren(...PageContent)

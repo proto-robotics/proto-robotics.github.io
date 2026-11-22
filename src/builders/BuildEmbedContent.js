@@ -82,7 +82,8 @@ export const createEmbedEditor = async (
         codeOpen = false,
         view = false,
         devices = false,
-        issues = false,
+        issues = true,
+        blockTypes = null,
     } = {},
     { root, onChange = () => {}, onEscape = () => {} },
 ) => {
@@ -118,6 +119,7 @@ export const createEmbedEditor = async (
             view,
             devices,
             issues,
+            blockTypes,
             // an AudioContext takes seconds to open in an iframe
             sounds: false,
             onChange: ({ code, state }) => {

@@ -1,9 +1,10 @@
 /*
  * The coding page: the top bar with the toolbar, one of the two editors
- * (block or line, switchable, the block editor with its Devices section),
+ * (block or line, switchable, the block editor with its Devices pop-up),
  * and the cheatsheet drawer.
  */
 
+import { blockSet } from '../libraries/engine'
 import { button, header, on, span, tag } from 'ellipsi'
 
 import buildBlockMode from './buildBlockMode'
@@ -36,6 +37,7 @@ export default (
         maxInstances,
         codePreview,
         devices: true,
+        blockTypes: blockSet().blockTypes,
     })
     const lineMode = buildLineMode()
 

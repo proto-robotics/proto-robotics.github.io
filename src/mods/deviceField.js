@@ -2,11 +2,11 @@
  * A dropdown of the devices a program has set up (helpers/devicesHelper.js)
  * for the blocks that act on one: "Spin [motor ▾] at 100 power". It is a
  * grid dropdown like the other choices on the blocks, and lists the devices
- * of one kind by name, as the Devices section has them at the moment it
+ * of one kind by name, as the Devices pop-up has them at the moment it
  * opens.
  *
  * Its value is the name, which is what the Python needs. A block saved
- * before the Devices section existed, or whose device was removed since,
+ * before Devices existed, or whose device was removed since,
  * keeps the name it has: it is shown as it is and offered along with the
  * devices there are. A block taken from the flyout starts on the first
  * device of its kind (or the one its `nth` asks for). With
@@ -209,7 +209,7 @@ export const syncToolboxDevices = (workspace) => {
 
 /**
  * Points the blocks that use a device by one name at another, as one
- * undoable change. For the Devices section, when a device is renamed, or
+ * undoable change. For the Devices pop-up, when a device is renamed, or
  * removed (to '': the blocks are left blank, to be picked again).
  * @param {object} workspace The program's workspace.
  * @param {string} from The old name.

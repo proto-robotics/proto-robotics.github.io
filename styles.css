@@ -1105,7 +1105,7 @@
     }
 
     /* the categories' own icons (assets/images/category-icons, see
-       createCategoryIcon in mods.js): bubbles with a glyph, so a little
+       createCategoryIcon in categories.js): bubbles with a glyph, so a little
        bigger than the dot and without the dot's border */
     img.categoryIcon {
         display: block;

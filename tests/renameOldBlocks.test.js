@@ -5,6 +5,12 @@
 import { describe, expect, test } from 'vitest'
 
 import { currentBlockType, renameOldBlocks } from '../src/helpers/renamedBlocks'
+import { setBlockSet, splice } from '../src/libraries/engine'
+import { core } from '../src/libraries/core'
+import { make } from '../src/libraries/make'
+
+// the renames come from the libraries
+setBlockSet(splice([core, make]))
 
 const group = (name, ...ratios) => ({
     kind: 'motor_group',

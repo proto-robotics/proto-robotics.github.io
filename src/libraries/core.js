@@ -14,6 +14,7 @@
 import { categoryIcon } from '../assets'
 import makeVocab from '../data/pythonLibraryVocab.json'
 import { DEVICE_KINDS } from './coreDevices'
+import { turnMotorGroups } from './coreMigrations'
 import {
     gridDropdown,
     text,
@@ -58,6 +59,8 @@ export const core = {
     categories: [
     {
         name: 'Motor',
+        /** The device kinds its blocks use: the editor gets Devices when it offers them. */
+        devices: ['drive_motor'],
         icon: categoryIcon('motor'),
         color: '#F2737B',
         entries: [
@@ -221,6 +224,8 @@ export const core = {
     },
     {
         name: 'Drivetrain',
+        /** The device kinds its blocks use: the editor gets Devices when it offers them. */
+        devices: ['drivetrain', 'drive_motor'],
         icon: categoryIcon('drivetrain'),
         color: '#00B8AA',
         entries: [
@@ -820,6 +825,8 @@ export const core = {
     },
     {
         name: 'Variables',
+        /** The device kinds its blocks use: the editor gets Devices when it offers them. */
+        devices: ['variable'],
         icon: categoryIcon('variables'),
         color: '#FE8A18',
         entries: [
@@ -956,10 +963,12 @@ export const core = {
     /** Names the blocks themselves write, which a device must not take. */
     takenNames: ['make', 'system_config', 'i'],
     renames: {
-        /** Blocks of the motor groups make had before drivetrains came back. */
-        blocks: { groupSpin: 'driveStep', groupSpinStep: 'driveStep', groupStop: 'drivetrainStop' },
+        /** Blocks of the motor groups make had before drivetrains came back: Drive blocks now. */
+        blocks: { groupSpin: 'driveFor', groupSpinStep: 'driveStep', groupStop: 'drivetrainStop' },
         /** make called a drivetrain a motor group for a while (motor_group(motors, ratios)). */
         devices: { motor_group: 'drivetrain' },
+        /** A motor group that turned the robot: its Spin blocks become Turn blocks. */
+        migrate: turnMotorGroups,
     },
     lint: {
         zeroTime: {

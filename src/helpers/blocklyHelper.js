@@ -24,6 +24,7 @@ import { bundleUrl } from '../assets'
 import { addSharedClipboard, takeSavedBackpack } from './clipboardHelper'
 import { isPhoneLayout } from './phoneLayoutHelper'
 import { renameOldBlocks } from './renamedBlocks'
+import { standInForUnknown } from '../libraries/unknownBlocks'
 
 let modsInjected = false
 
@@ -113,6 +114,7 @@ export const createBlocklyInstance = (
         maxBlocks = undefined,
         maxInstances = undefined,
         sounds = true,
+        blockTypes = null,
     } = {},
 ) => {
     const canvas = div({ id })
@@ -179,6 +181,8 @@ export const createBlocklyInstance = (
         editor,
         phone,
         sounds,
+        /** The block types of the editor's block set: a program's others load as stand-ins. */
+        blockTypes,
         multiselect: null,
         resizeObservers: [],
         cleanupCallbacks: [],
@@ -363,53 +367,19 @@ export const getBlocklyState = (blocklyInstance) => {
     return serialization.workspaces.save(blocklyInstance.workspace)
 }
 
-/** Where the program an old block set made is kept when it is set aside. */
-export const OLD_PROGRAM_KEY = 'blocklyStateOld'
-
 /**
- * @param {object} state A serialized workspace.
- * @returns {string[]} The block types in it that no block has now: a
- *     program made with the old blocks, before the new make.
- */
-export const unknownBlockTypes = (state) => {
-    const unknown = new Set()
-    const visit = (blockState) => {
-        if (!blockState || typeof blockState !== 'object') {
-            return
-        }
-        if (blockState.type && !Blocks[blockState.type]) {
-            unknown.add(blockState.type)
-        }
-        for (const input of Object.values(blockState.inputs ?? {})) {
-            visit(input?.block)
-            visit(input?.shadow)
-        }
-        visit(blockState.next?.block)
-    }
-    for (const top of state?.blocks?.blocks ?? []) {
-        visit(top)
-    }
-    return [...unknown]
-}
-
-/**
- * Loads a previously serialized Blockly JSON state into the workspace. A
- * program made with the old blocks is not converted: it is kept in local
- * storage under OLD_PROGRAM_KEY, and the workspace starts with its devices
- * and no blocks.
+ * Loads a previously serialized Blockly JSON state into the workspace,
+ * brought up to date by the libraries (renamedBlocks.js). A block this
+ * editor does not have loads as a stand-in that keeps it
+ * (libraries/unknownBlocks.js), so nothing is lost and the linter can say
+ * which block cannot run here.
  * @param {object} blocklyInstance Value returned by createBlocklyInstance.
  * @param {object} state Blockly serialization state to load.
  */
 export const setBlocklyState = (blocklyInstance, state) => {
-    let saved = renameOldBlocks(takeSavedBackpack(state))
-    if (unknownBlockTypes(saved).length) {
-        try {
-            localStorage.setItem(OLD_PROGRAM_KEY, JSON.stringify(saved))
-        } catch {
-            // storage is off: the old program is dropped, as it would be
-        }
-        saved = { ...saved, blocks: { languageVersion: 0, blocks: [] } }
-    }
+    const types = blocklyInstance.blockTypes
+    const known = (type) => Boolean(Blocks[type]) && (!types || types.has(type))
+    const saved = standInForUnknown(renameOldBlocks(takeSavedBackpack(state)), known)
     serialization.workspaces.load(saved, blocklyInstance.workspace)
 }
 
