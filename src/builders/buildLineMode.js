@@ -8,7 +8,7 @@ import { closePopUpEvent, PopUp } from '../helpers/popUpHelper'
 import {
     createCodeMirrorView,
     getCodeMirrorText,
-    PROGRAM_PREAMBLE,
+    programPreamble,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
 import { createIssuesDrawer } from '../helpers/issuesDrawerHelper'
@@ -246,7 +246,7 @@ export default ({ persist = true, onChange = null } = {}) => {
         setState: (state) => {
             setCodeMirrorText(
                 view,
-                typeof state === 'string' ? state : PROGRAM_PREAMBLE,
+                typeof state === 'string' ? state : programPreamble(),
             )
             saveState()
             scheduleVerify(0)

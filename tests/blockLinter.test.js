@@ -485,7 +485,7 @@ describe('variables', () => {
         )
     })
 
-    test.each(['wait', 'button_a', 'i', 'for'])(
+    test.each(['wait', 'B', 'i', 'for'])(
         'a variable named %s',
         (name) => {
             expect(only([], [{ ...count, name }])).toEqual({
@@ -509,7 +509,7 @@ describe('devices', () => {
         'drivetrain',
         'button',
         'wait',
-        'light_l1',
+        'L1',
         'A',
         'L2',
         'for',

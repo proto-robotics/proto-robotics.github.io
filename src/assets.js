@@ -42,45 +42,12 @@ export const helpIcon = asset('images/help.svg')
 export const multiselectOnIcon = asset('images/multiselect-on.svg')
 export const multiselectOffIcon = asset('images/multiselect-off.svg')
 
-/** Each kind of device's picture: a cartoon render of the real parts. */
-const deviceIcons = {
-    drive_motor: 'images/devices/drive-motor-cartoon.png',
-    drivetrain: 'images/devices/drivetrain-cartoon.png',
-    // a variable has no part to picture: its category's icon
-    variable: 'images/category-icons/variables.svg',
-}
-
 /**
- * The picture for a kind of device, in the Devices pop-up.
- * @param {string} kind A key of deviceKinds.
- * @returns {string|null} The picture's URL, or null when there is none.
+ * A category icon in images/category-icons: a coloured bubble with a
+ * glyph, drawn in the toolbox column in place of the plain colour dot. A
+ * library names its categories' icons with this (src/libraries/core.js);
+ * the editor uses it for its own tabs (Search) and the Devices button.
+ * @param {string} name The icon's file name, without .svg.
+ * @returns {string} Its URL.
  */
-export const deviceIcon = (kind) =>
-    deviceIcons[kind] ? asset(deviceIcons[kind]) : null
-
-/** The toolbox categories that have an icon in images/category-icons. */
-const categoryIconNames = new Set([
-    'board',
-    'devices',
-    'drivetrain',
-    'flow',
-    'input',
-    'motor',
-    'operators',
-    'search',
-    'time',
-    'variables',
-])
-
-/**
- * The icon for a toolbox category: a coloured bubble with a glyph, drawn
- * in the toolbox column in place of the plain colour dot.
- * @param {string} name The category's name, as in the toolbox.
- * @returns {string|null} The icon's URL, or null when there is none.
- */
-export const categoryIcon = (name) => {
-    const key = String(name).trim().toLowerCase()
-    return categoryIconNames.has(key)
-        ? asset(`images/category-icons/${key}.svg`)
-        : null
-}
+export const categoryIcon = (name) => asset(`images/category-icons/${name}.svg`)

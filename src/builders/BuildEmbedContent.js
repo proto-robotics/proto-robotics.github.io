@@ -140,7 +140,7 @@ export const createEmbedEditor = async (
                 showOpenFullCheatSheet: false,
             }),
         {
-            blockLookup: cheatSheetBlockElementNumbers,
+            blockLookup: cheatSheetBlockElementNumbers(),
         },
     )
 
@@ -280,7 +280,7 @@ export const createEmbedEditor = async (
 
     // for a host that runs the program and lights up the running block
     const highlight = (id) => editor.highlight?.(id ?? null)
-    const getTracedCode = () => editor.getTracedCode?.() ?? ''
+    const getTracedCode = (marker) => editor.getTracedCode?.(marker) ?? ''
     // for a host that lets the learner bring in an earlier program
     const addBlocks = (state, clientX, clientY) =>
         editor.addBlocks?.(state, clientX, clientY)

@@ -5,16 +5,15 @@
  */
 import * as Blockly from 'blockly'
 import { pythonGenerator } from 'blockly/python'
-import { processJengaTower } from '@protorobotics/jenga'
-
-import { jengaBlocks, numbersToSlots } from '../src/data/library'
-import '../src/helpers/devicesHelper'
+import { numbersToSlots, setBlockSet, splice } from '../src/libraries/engine'
+import { core } from '../src/libraries/core'
+import { make } from '../src/libraries/make'
 
 let defined = false
-/** Defines the library's blocks, once. */
+/** Splices the IDE's own libraries (core and make), which defines their blocks, once. */
 export const defineBlocks = () => {
     if (!defined) {
-        processJengaTower(jengaBlocks, pythonGenerator)
+        setBlockSet(splice([core, make]))
         defined = true
     }
 }

@@ -1,17 +1,13 @@
 import '../styles.css'
-import { processJengaTower } from '@protorobotics/jenga'
-import { pythonGenerator } from 'blockly/python'
 
-import {
-    hiddenCategoryNames,
-    jengaBlocks,
-    toolboxHiddenBlockTypes,
-} from './data/library'
+import { core } from './libraries/core'
+import { make } from './libraries/make'
+import { setBlockSet, splice, toolboxOf } from './libraries/engine'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'
 import BuildEmbedContent from './builders/BuildEmbedContent'
 import { whenEditorFontsReady } from './helpers/fontHelper'
-import { filterToolbox, readEditorParams } from './helpers/editorParamsHelper'
+import { readEditorParams } from './helpers/editorParamsHelper'
 
 /**
  * Builds the coding page, the full cheatsheet (`?cheatsheet`), or the bare
@@ -25,14 +21,13 @@ const main = async () => {
     const params = new URLSearchParams(window.location.search)
     const editorParams = readEditorParams(params)
 
-    const { toolbox: fullToolbox } = processJengaTower(
-        jengaBlocks,
-        pythonGenerator,
-    )
-    const toolbox = filterToolbox(fullToolbox, {
-        ...editorParams,
-        hidden: hiddenCategoryNames,
-        hiddenBlocks: toolboxHiddenBlockTypes,
+    // the IDE's own blocks, the real robot's: the same libraries a host
+    // site gives the library build (src/lib.js)
+    const set = splice([core, make])
+    setBlockSet(set)
+    const toolbox = toolboxOf(set, {
+        toolbox: editorParams.categories ?? undefined,
+        blocks: editorParams.blocks ?? undefined,
     })
 
     const PageContent = params.has('cheatsheet')

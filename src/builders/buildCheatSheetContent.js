@@ -5,7 +5,8 @@
 
 import { hr, on, tag } from 'ellipsi'
 
-import { cheatSheetBlocks as blocks } from '../data/library'
+import { blockSet } from '../libraries/engine'
+import { deviceKinds } from '../helpers/devicesHelper'
 import { copyWorkspaceStateToClipboard } from '../helpers/blockClipboardHelper'
 import { animateScrollTo } from '../helpers/scrollHelper'
 import {
@@ -41,7 +42,7 @@ function buildBlockElementNumberLookup() {
     const lookup = {}
     let nextElementNumber = 1
 
-    for (const section of blocks) {
+    for (const section of blockSet().cheatsheet) {
         for (const block of section.entries) {
             lookup[block.name] = nextElementNumber
             nextElementNumber++
@@ -53,10 +54,13 @@ function buildBlockElementNumberLookup() {
     return lookup
 }
 
-/** Maps each Blockly block name to its numbered cheatsheet item. */
-export const cheatSheetBlockElementNumbers = Object.freeze(
-    buildBlockElementNumberLookup(),
-)
+/**
+ * Maps each Blockly block name to its numbered cheatsheet item, for the
+ * editor's block set (built with the editor, after its libraries are
+ * spliced).
+ * @returns {Record<string, number>}
+ */
+export const cheatSheetBlockElementNumbers = () => buildBlockElementNumberLookup()
 
 /**
  * Counts the items in preceding sections to keep element numbers stable.
@@ -64,7 +68,7 @@ export const cheatSheetBlockElementNumbers = Object.freeze(
  * @returns {number} Number of items before the section.
  */
 function countItemsBeforeSection(sectionIndex) {
-    return blocks
+    return blockSet().cheatsheet
         .slice(0, sectionIndex)
         .reduce(
             (count, section) =>
@@ -73,12 +77,6 @@ function countItemsBeforeSection(sectionIndex) {
                 (section.examples?.length ?? 0),
             0,
         )
-}
-
-/** The device name a block's preview shows, by kind of device. */
-const PREVIEW_DEVICE_NAMES = {
-    drive_motor: 'arm',
-    drivetrain: 'robot',
 }
 
 /**
@@ -92,7 +90,8 @@ function createSingleBlockWorkspaceState(block) {
     const deviceField = block.blocklyTemplate
         .find((part) => part.name === 'name')
         ?.field?.()
-    const name = PREVIEW_DEVICE_NAMES[deviceField?.kind]
+    const kind = deviceKinds[deviceField?.kind]
+    const name = kind?.preview ?? kind?.base
     return {
         blocks: {
             languageVersion: 0,
@@ -575,7 +574,7 @@ function watchActiveSection(content, sectionTabs) {
 function buildSectionTabs(content) {
     return tag(
         'cheatsheet-section-tabs',
-        ...blocks.map((section, index) =>
+        ...blockSet().cheatsheet.map((section, index) =>
             tag(
                 'button',
                 {
@@ -651,7 +650,7 @@ export function buildCheatSheetContent({
 
         // the print stage has no controls, so no Copy buttons either
         const settings = { mode: displayMode, showCopy: showControls }
-        const sections = blocks.map((section, index) =>
+        const sections = blockSet().cheatsheet.map((section, index) =>
             buildSection(section, settings, index),
         )
         contentRoot.dataset.previewMode = displayMode

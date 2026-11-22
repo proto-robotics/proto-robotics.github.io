@@ -27,7 +27,7 @@ import {
 import {
     createCodeMirrorView,
     getCodeMirrorText,
-    PROGRAM_PREAMBLE,
+    programPreamble,
     setCodeMirrorText,
 } from '../helpers/codeMirrorHelper'
 import {
@@ -46,10 +46,9 @@ import { getRoot } from '../helpers/rootHelper'
 import { devicesButton } from '../mods/devicesDialog'
 import { addNote, startNotes } from '../mods/notes'
 import { createClickModes } from '../mods/clickModes'
-import { startRadialMenu } from '../mods/radialMenu'
 import { openDevicesEvent, syncToolboxDevices } from '../mods/deviceField'
 import { lintBlocks } from '../mods/blockLinter'
-import { numberShadowTypes } from '../data/library'
+import { numberShadowTypes } from '../libraries/engine'
 import { createIssuesDrawer } from '../helpers/issuesDrawerHelper'
 
 /** The workspace events after which the program is regenerated and saved. */
@@ -279,7 +278,7 @@ export default (
         }
         const code = getBlocklyCode(blocklyInstance)
         const setup = devicesCode(getDevices(blocklyInstance.workspace))
-        setCodeMirrorText(codePreview, PROGRAM_PREAMBLE + setup + code)
+        setCodeMirrorText(codePreview, programPreamble() + setup + code)
         // the viewer only shows a program, so it marks nothing
         if (!view) {
             lint()
@@ -337,10 +336,6 @@ export default (
                 if (!view) {
                     startMultiselect(blocklyInstance)
                     blocklyInstance.cleanupCallbacks.push(clickModes.start())
-                    // the simplified menu's round menu (no toolbox then)
-                    blocklyInstance.cleanupCallbacks.push(
-                        startRadialMenu(blocklyInstance.workspace, CanvasWrap),
-                    )
                     // notes: the edge handle, links to blocks, their lines
                     blocklyInstance.cleanupCallbacks.push(
                         startNotes(blocklyInstance.workspace, refreshProgram),
@@ -606,19 +601,21 @@ export default (
     }
 
     /**
-     * The program with a `make._block('<block id>')` line before every
-     * block's code, for a host that runs it somewhere that can report which
-     * block is running (a simulator; the real make library has no
-     * `_block`). Pass each id it reports to `highlight`.
+     * The program with a marker line before every block's code, for a host
+     * that runs it somewhere that can report which block is running (a
+     * simulator). The host says what the line is: `sim.block(%1)`, with %1
+     * standing for the block's id in quotes. Pass each id it reports to
+     * `highlight`.
+     * @param {string} marker The line, with %1 for the id.
      * @returns {string} The whole program: imports, devices, then the blocks.
      */
-    mode.getTracedCode = () => {
+    mode.getTracedCode = (marker) => {
         const workspace = blocklyInstance.workspace
         const before = pythonGenerator.STATEMENT_PREFIX
-        pythonGenerator.STATEMENT_PREFIX = 'make._block(%1)\n'
+        pythonGenerator.STATEMENT_PREFIX = `${marker}\n`
         try {
             return (
-                PROGRAM_PREAMBLE +
+                programPreamble() +
                 devicesCode(getDevices(workspace)) +
                 getBlocklyCode(blocklyInstance)
             )

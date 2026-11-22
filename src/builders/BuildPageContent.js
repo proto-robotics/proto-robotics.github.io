@@ -169,39 +169,6 @@ export default (
         ),
     )
 
-    // ---- the simplified menu -------------------------------------------------
-
-    // A trial: on, it hides the toolbox and its blocks (a click on the
-    // canvas opens a round menu instead: mods/radialMenu.js), every
-    // button on the canvas, the drawers, and the whole top bar but this
-    // switch, so it can be turned off again (styles.css, body.simplified).
-    // Remembered like the minimap.
-    const setSimplified = (wanted) => {
-        document.body.classList.toggle('simplified', wanted)
-        SimplifiedToggle.setAttribute('aria-checked', String(wanted))
-        localStorage.setItem('simplified', wanted ? 'on' : 'off')
-        // Blockly measures the canvas again on a window resize
-        window.dispatchEvent(new Event('resize'))
-    }
-    const SimplifiedToggle = button(
-        {
-            type: 'button',
-            role: 'switch',
-            class: 'simplified-toggle',
-            'aria-checked': 'false',
-        },
-        tag('span', { class: 'simplified-toggle-track', 'aria-hidden': 'true' }),
-        tag('span', 'Simplified Menu'),
-        on('click', () =>
-            setSimplified(
-                SimplifiedToggle.getAttribute('aria-checked') !== 'true',
-            ),
-        ),
-    )
-    // Hidden for now (to be revisited): the switch is not on the page, so
-    // the menu stays off even if it was left on before.
-    setSimplified(false)
-
     // ---- the page ------------------------------------------------------------
 
     // One bar: the brand, then the toolbar, then the copyright. The
@@ -210,7 +177,6 @@ export default (
         buildSiteNav({
             tagline: 'Code Editor',
             controls: [Toolbar],
-            // pinned: [SimplifiedToggle], (hidden for now)
         }),
     )
     watchHeaderHeight(Header)
@@ -223,7 +189,7 @@ export default (
                 showOpenFullCheatSheet: true,
             }),
         {
-            blockLookup: cheatSheetBlockElementNumbers,
+            blockLookup: cheatSheetBlockElementNumbers(),
         },
     )
 

@@ -1,9 +1,8 @@
 /*
- * The devices a program sets up before its blocks run: drive motors, each
- * with a name, a port and a direction, and drivetrains: two or more drive
- * motors driven as one (make's drivetrain(left, right)). Its variables live
- * here too, each a name and the number it starts at (the Variables pop-up
- * shows them). They are part of the workspace's state (a
+ * The devices a program sets up before its blocks run, each a name and
+ * what its kind needs (a drive motor its port and direction, a variable
+ * the number it starts at); the kinds come from the libraries. They are
+ * part of the workspace's state (a
  * Blockly serializer under the key `devices`), so they save and load with
  * the blocks, in local storage and in a project file, and the generated
  * Python starts with one line per device, in make's own words
@@ -12,112 +11,16 @@
 
 import { serialization } from 'blockly'
 
-/** The drive ports, for DC motors with encoders. */
-const DRIVE_PORTS = ['0', '1', '2', '3']
-
-const DIRECTIONS = [
-    ['clockwise ↻', '1'],
-    ['counter-clockwise ↺', '-1'],
-]
-
 /**
- * A device's port and direction, each one its kind allows.
- * @param {object} kind
- * @param {object} device As saved or typed.
- * @returns {{port: string, direction?: string}}
+ * The kinds of device there are, by name, from every library spliced on
+ * the page (src/libraries/engine.js fills it in; each library brings its
+ * own, see src/libraries/coreDevices.js). Nothing here knows a kind.
+ * @type {Record<string, import('../libraries/engine').DeviceKind>}
  */
-const cleanPortAndDirection = (kind, device) => {
-    const port = kind.ports.includes(String(device.port))
-        ? String(device.port)
-        : kind.ports[0]
-    if (!kind.directions) {
-        return { port }
-    }
-    const directions = kind.directions.map(([, value]) => value)
-    return {
-        port,
-        direction: directions.includes(String(device.direction))
-            ? String(device.direction)
-            : directions[0],
-    }
-}
+export const deviceKinds = {}
 
-/** `, direction=-1` for a reversed motor, nothing otherwise. */
-const directionArgument = (direction) =>
-    direction === '-1' ? ', direction=-1' : ''
-
-/**
- * The kinds of device there are. Each has a label, the cheatsheet entry its
- * help button opens, its ports, the fields it has besides its name, the
- * name a new one starts with, how it is written in Python, and how a saved
- * one is cleaned.
- */
-export const deviceKinds = {
-    drive_motor: {
-        label: 'drive motor',
-        help: 'motorSpin',
-        base: 'motor',
-        ports: DRIVE_PORTS,
-        directions: DIRECTIONS,
-        fields: ['port', 'direction'],
-        code: ({ name, port, direction }) =>
-            `${name} = drive_motor(port=${port}${directionArgument(direction)})`,
-        clean(device) {
-            return cleanPortAndDirection(this, device)
-        },
-    },
-    drivetrain: {
-        label: 'drivetrain',
-        help: 'driveFor',
-        base: 'robot',
-        /** Made from drive motors, so it is set up after them. */
-        order: 1,
-        fields: ['motors'],
-        /**
-         * `robot = drivetrain(left, right)`: the motors in order, the
-         * first, third... on the left and the second, fourth... on the
-         * right.
-         */
-        code: ({ name, motors }) =>
-            // a motor not picked yet is left out (the Issues list has it)
-            `${name} = drivetrain(${motors.filter(Boolean).join(', ')})`,
-        /**
-         * @param {object} device As saved or typed. A motor group (make's
-         *     motor_group, from before drivetrain came back) loads as a
-         *     drivetrain of its motors, its ratios dropped; an older
-         *     drivetrain saved with `left` and `right` loads as those two.
-         * @returns {{motors: string[]}} Its motors by name, in order (blank
-         *     when none is picked).
-         */
-        clean(device) {
-            const motors = Array.isArray(device.motors)
-                ? device.motors
-                : [device.left, device.right]
-            return {
-                motors: motors.map((motor) =>
-                    cleanName(typeof motor === 'object' ? motor?.name : motor),
-                ),
-            }
-        },
-    },
-    variable: {
-        label: 'variable',
-        help: 'varSet',
-        base: 'count',
-        /** Set after the devices, last at the top of the program. */
-        order: 2,
-        fields: ['value'],
-        code: ({ name, value }) => `${name} = ${value}`,
-        /**
-         * @param {object} device As saved or typed.
-         * @returns {{value: string}} The number it starts at.
-         */
-        clean(device) {
-            const value = Number(device.value)
-            return { value: Number.isFinite(value) ? String(value) : '0' }
-        },
-    },
-}
+/** Device kinds by an old name, from the libraries' renames. */
+export const deviceRenames = {}
 
 /** The devices of each workspace. */
 const devicesByWorkspace = new WeakMap()
@@ -172,18 +75,12 @@ export const cleanName = (name) =>
         .replace(/^\d+/, '')
 
 /**
- * Device kinds by an old name: for a while make called a drivetrain a
- * motor group (motor_group(motors, ratios)).
- */
-export const OLD_KINDS = { motor_group: 'drivetrain' }
-
-/**
  * Checks one device as saved or typed, filling in anything missing.
  * @param {object} device
  * @returns {object|null} The device, or null if it is not one we know.
  */
 export const cleanDevice = (device) => {
-    const kindName = OLD_KINDS[device?.kind] ?? device?.kind
+    const kindName = deviceRenames[device?.kind] ?? device?.kind
     const kind = deviceKinds[kindName]
     if (!kind) {
         return null
@@ -214,14 +111,13 @@ export const nextName = (devices, base) => {
 }
 
 /**
- * The first of the kind's ports that no device is on yet, or the first
- * port when they are all taken.
+ * The first of these ports that no device is on yet, or the first port
+ * when they are all taken.
  * @param {object[]} devices The devices there are.
- * @param {string} kindName The kind of device.
+ * @param {string[]} ports A kind's ports.
  * @returns {string}
  */
-export const nextPort = (devices, kindName) => {
-    const ports = deviceKinds[kindName].ports
+export const nextPort = (devices, ports) => {
     const taken = new Set(
         devices.filter((device) => device.port).map((device) => device.port),
     )
@@ -244,23 +140,17 @@ export const removeDevice = (devices, index) => {
 }
 
 /**
- * The devices with a drive motor's name changed in every drivetrain made
- * from it (to blank, when the motor is gone).
+ * The devices with a device's name changed in every device made from it,
+ * such as a drivetrain from its motors (to blank, when it is gone). Each
+ * kind says how, with its `renameMotor`.
  * @param {object[]} devices
- * @param {string} from The motor's old name.
- * @param {string} to Its new name.
+ * @param {string} from The old name.
+ * @param {string} to The new name.
  * @returns {object[]}
  */
 export const renameMotor = (devices, from, to) =>
-    devices.map((device) =>
-        device.kind === 'drivetrain'
-            ? {
-                  ...device,
-                  motors: device.motors.map((motor) =>
-                      motor === from ? to : motor,
-                  ),
-              }
-            : device,
+    devices.map(
+        (device) => deviceKinds[device.kind]?.renameMotor?.(device, from, to) ?? device,
     )
 
 /**

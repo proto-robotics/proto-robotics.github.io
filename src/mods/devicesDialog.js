@@ -2,20 +2,20 @@
  * Devices and variables: what a program sets up at its top
  * (helpers/devicesHelper.js). One button, pinned to the bottom of the
  * toolbox column and drawn like a category tab, opens them in a pop-up: a
- * row per kind (drive motors, drivetrains, then variables) with a card per item (deviceCard.js) and a tile that adds
- * one. They live with the workspace; the pop-up is a view of them, drawn
- * again whenever they change.
+ * row per kind the editor's libraries offer (the core library's drive
+ * motors, drivetrains and variables), each with a card per item
+ * (deviceCard.js) and a tile that adds one. They live with the workspace;
+ * the pop-up is a view of them, drawn again whenever they change.
  */
 
 import { button, div, on, p, tag } from 'ellipsi'
 
-import { categoryIcon, deviceIcon } from '../assets'
+import { categoryIcon } from '../assets'
+import { blockSet } from '../libraries/engine'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 import {
     deviceKinds,
     getDevices,
-    nextName,
-    nextPort,
     removeDevice,
     setDevices,
     watchDevices,
@@ -30,26 +30,25 @@ import { getRoot } from '../helpers/rootHelper'
 import { deviceCard } from './deviceCard'
 import { renameDeviceInBlocks } from './deviceField'
 
-/** The kinds the Devices pop-up shows, in its order. */
-export const DEVICE_KINDS = ['drive_motor', 'drivetrain']
-/** The kinds the Variables pop-up shows. */
-export const VARIABLE_KINDS = ['variable']
-
 /**
- * @param {object[]} devices
- * @returns {string[]} The drive motors among them, by name.
+ * The kinds the editor's libraries offer, devices first and then
+ * variables, each group in its libraries' order.
+ * @returns {string[]}
  */
-const motorNames = (devices) =>
-    devices
-        .filter((device) => device.kind === 'drive_motor' && device.name)
-        .map((device) => device.name)
+const offeredKinds = () => {
+    const kinds = Object.entries(blockSet().deviceKinds)
+    return [
+        ...kinds.filter(([, kind]) => kind.group !== 'variables'),
+        ...kinds.filter(([, kind]) => kind.group === 'variables'),
+    ].map(([name]) => name)
+}
 
 /**
  * @param {object[]} devices
- * @param {string[]} [kinds] The kinds to count.
+ * @param {string[]} kinds The kinds to count.
  * @returns {string} How many of each kind: "2 drive motors, 1 drivetrain".
  */
-export const devicesSummary = (devices, kinds = Object.keys(deviceKinds)) =>
+const devicesSummary = (devices, kinds) =>
     kinds
         .map((kindName) => {
             const n = devices.filter((d) => d.kind === kindName).length
@@ -58,30 +57,6 @@ export const devicesSummary = (devices, kinds = Object.keys(deviceKinds)) =>
         })
         .filter(Boolean)
         .join(', ')
-
-/** A new item of each kind, given the ones there are. */
-const fresh = {
-    drive_motor: (list) => ({
-        kind: 'drive_motor',
-        name: nextName(list, deviceKinds.drive_motor.base),
-        port: nextPort(list, 'drive_motor'),
-        direction: '1',
-    }),
-    drivetrain: (list) => {
-        const motors = motorNames(list)
-        return {
-            kind: 'drivetrain',
-            name: nextName(list, deviceKinds.drivetrain.base),
-            // the first two drive motors, left and right
-            motors: [motors[0] ?? '', motors[1] ?? ''],
-        }
-    },
-    variable: (list) => ({
-        kind: 'variable',
-        name: nextName(list, deviceKinds.variable.base),
-        value: '0',
-    }),
-}
 
 /**
  * The devices (or variables) of a workspace, editable: a row per kind, each
@@ -95,10 +70,10 @@ const fresh = {
  *     button was pressed, for the cheatsheet entry of this name.
  * @returns {{element: HTMLElement, destroy: () => void}}
  */
-export const devicesEditor = (
+const devicesEditor = (
     workspace,
     {
-        kinds = DEVICE_KINDS,
+        kinds = offeredKinds(),
         intro = 'Devices are set up at the top of your program, so your blocks can use them by name.',
         onHelp,
     } = {},
@@ -115,10 +90,10 @@ export const devicesEditor = (
                     const changed = devices().map((other, i) =>
                         i === index ? { ...other, ...patch } : other,
                     )
-                    // a drivetrain made from a renamed motor follows the new name
+                    // a device made from a renamed one (a drivetrain from
+                    // its motors) follows the new name
                     update(
-                        renamedFrom !== undefined &&
-                            device.kind === 'drive_motor'
+                        renamedFrom !== undefined
                             ? renameMotor(changed, renamedFrom, patch.name)
                             : changed,
                     )
@@ -142,7 +117,7 @@ export const devicesEditor = (
                 },
                 onHelp: () => onHelp?.(kind.help),
             },
-            { motors: motorNames(devices()) },
+            { devices: devices() },
         )
     }
 
@@ -162,10 +137,10 @@ export const devicesEditor = (
             tag('span', `Add ${kind.label}`),
             on('click', () => {
                 const list = devices()
-                update([...list, fresh[kindName](list)])
+                update([...list, kind.fresh(list)])
             }),
         )
-        const picture = deviceIcon(kindName)
+        const picture = kind.picture
         const Row = div(
             { class: 'devices-row' },
             div(
@@ -327,7 +302,7 @@ export const devicesButton = (getWorkspace) => {
         title: 'Devices and Variables',
         // two short lines, to fit the toolbox column
         label: 'Devices &\nVariables',
-        kinds: [...DEVICE_KINDS, ...VARIABLE_KINDS],
+        kinds: offeredKinds(),
         intro: 'Devices and variables are set up at the top of your program, so your blocks can use them by name. A variable is a number your program remembers; it starts at its value, and Set and Change blocks change it.',
         className: 'devices-button',
         icons: [categoryIcon('devices'), categoryIcon('variables')],

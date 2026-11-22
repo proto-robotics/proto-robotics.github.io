@@ -8,7 +8,8 @@ import * as pyrefly from '../pyrefly/pyrefly_wasm'
 const MAIN_FILE_NAME = 'main.py'
 const API_STUB_FILE_NAME = 'make.pyi'
 const CONFIG_FILE_NAME = 'pyrefly.toml'
-const PYTHON_VERSION = getVocab().lint?.pythonVersion ?? '3.12'
+/** The Python the checker types against, from the libraries' vocabulary (read once an editor is built). */
+const pythonVersion = () => getVocab().lint?.pythonVersion ?? '3.12'
 
 const INFORMATIONAL_DIAGNOSTICS = new Set([
     'unused-import',
@@ -121,7 +122,7 @@ function buildPublicApiStub() {
  */
 function buildInitialPyreflyFiles() {
     const configuration = [
-        `python-version = "${PYTHON_VERSION}"`,
+        `python-version = "${pythonVersion()}"`,
         '[errors]',
         "unimported-directive = 'ignore'",
     ].join('\n')
@@ -149,7 +150,7 @@ async function createPyreflyState() {
         await pyrefly.default()
     }
 
-    const state = new pyrefly.State(PYTHON_VERSION)
+    const state = new pyrefly.State(pythonVersion())
     state.updateSandboxFiles(buildInitialPyreflyFiles(), true)
     state.setActiveFile(MAIN_FILE_NAME)
     return state

@@ -4,101 +4,80 @@
  * into dist/lib/proto-ide.js and proto-ide.css, with the stylesheet scoped
  * to the editor's root element.
  *
- *   import { mountEditor, fields } from './proto-ide.js'
+ *   import { mountEditor, core, make, kit } from './proto-ide.js'
  *   const editor = await mountEditor(container, {
- *       categories: [myCategory],   // extra block categories, library.js shape
+ *       libraries: [core, make],    // the default: the real robot's blocks
  *       toolbox: ['Motor', 'Time'], // or blocks: ['motorSpin', 'wait']
  *       maxBlocks: 4,
  *       onChange: ({ code, blockTypes, state }) => {},
  *   })
  *   editor.setTask({ goal, markdown, requiredBlocks, hints, projectName })
  *   editor.load(state)
- *   // a simulator runs editor.tracedCode(), and for each make._block(id)
- *   // it reaches, editor.highlight(id); editor.highlight(null) when done
+ *   // a simulator runs editor.tracedCode('sim.block(%1)'), and for each
+ *   // marker it reaches, editor.highlight(id); editor.highlight(null) when done
  *
- * The host's categories are plain objects in the same shape as the entries
- * in src/data/library.js, with `codeGenerator` functions of their own, so a
- * host can add blocks the IDE knows nothing about. They never reach the
- * cheatsheet. `fields` builds the field factories a template needs. The
- * Python those blocks write can be described with `vocab` (the shape of
- * src/data/pythonLibraryVocab.json), so the line editor completes it and
- * the checker accepts it.
+ * The editor has no blocks of its own: it is given libraries
+ * (src/libraries/engine.js). `core` and `make` are the IDE's; a host
+ * writes its own with `kit` (a sandbox world's blocks, say) and passes
+ * [core, itsWorld]. A library brings everything about its blocks: their
+ * categories, icons and colors, device kinds, help, Python vocabulary,
+ * lint rules and old names.
  */
 import '../styles.css'
 import './lib.css'
 
-import { FieldNumber, FieldTextInput } from 'blockly'
-import { pythonGenerator } from 'blockly/python'
-import { processJengaTower } from '@protorobotics/jenga'
 import { div } from 'ellipsi'
 
-import {
-    extractJengaBlocks,
-    gridDropdown,
-    hiddenCategoryNames,
-    jengaBlocks,
-    toolboxHiddenBlockTypes,
-} from './data/library'
 import { createEmbedEditor } from './builders/BuildEmbedContent'
-import { addVocab } from './data/vocab'
-import { filterToolbox } from './helpers/editorParamsHelper'
 import { whenEditorFontsReady } from './helpers/fontHelper'
 import { watchPhoneLayout } from './helpers/phoneLayoutHelper'
 import { setRoot } from './helpers/rootHelper'
 import { setWidgetHost } from './helpers/blocklyHelper'
-import { deviceField } from './mods/deviceField'
 import { deviceCard } from './mods/deviceCard'
-import { cleanDevice } from './helpers/devicesHelper'
+import { cleanDevice, deviceKinds } from './helpers/devicesHelper'
+import { core } from './libraries/core'
+import { make } from './libraries/make'
+import * as kit from './libraries/kit'
+import { setBlockSet, splice, toolboxOf } from './libraries/engine'
 
-export { addVocab, pythonGenerator, whenEditorFontsReady }
+export { core, make, kit, splice }
+export { pythonGenerator } from 'blockly/python'
+export { whenEditorFontsReady }
 
-/** Field factories for a host category's `blocklyTemplate` entries. */
-export const fields = {
-    /**
-     * @param {number} value Starting value.
-     * @param {number} [min] Smallest allowed.
-     * @param {number} [max] Largest allowed.
-     * @param {number} [precision] Step, 1 for whole numbers.
-     */
-    number: (value, min, max, precision) => () =>
-        new FieldNumber(value, min, max, precision),
-    /** @param {string} value Starting text. */
-    text: (value) => () => new FieldTextInput(value),
-    /** @param {Array<[string, string]>} options Choices as [label, value]. */
-    dropdown: (options) => () => gridDropdown(options),
-    /**
-     * A choice of the program's devices of a kind, by name.
-     * @param {string} kind 'drive_motor' or 'drivetrain'.
-     * @param {{nth?: number}} [options] Blank while there are none.
-     */
-    device: deviceField,
+/** The IDE's own block set: the real robot's blocks. */
+const DEFAULT_LIBRARIES = [core, make]
+
+/** Block sets already spliced, by their list of libraries, so remounting is cheap. */
+const sets = new Map()
+const blockSetFor = (libraries) => {
+    const key = libraries.map((library) => library.name).join('+')
+    if (!sets.has(key)) {
+        sets.set(key, splice(libraries))
+    }
+    return sets.get(key)
 }
 
 /**
- * Builds the toolbox from the IDE's library plus the host's categories.
- * Host categories are hidden ones: no help icon (there is no cheatsheet
- * entry to open), and they only appear when `toolbox` names them or
- * `blocks` names one of their blocks.
- * @param {object[]} categories The host's categories, library.js shape.
- * @param {object} narrow
- * @param {string[]} [narrow.toolbox] Category names to keep.
- * @param {string[]} [narrow.blocks] Block types to keep.
- * @returns {object} A Blockly toolbox.
+ * Whether a page's toolbox offers blocks that use devices: a category that
+ * says which device kinds its blocks use (`devices` on a category), or a
+ * device kind named in `blocks`.
  */
-const buildToolbox = (categories, { toolbox, blocks }) => {
-    const extra = extractJengaBlocks(
-        categories.map((category) => ({ ...category, hidden: true })),
+const usesDevices = (set, { toolbox, blocks }) => {
+    if (!Object.keys(set.deviceKinds).length) {
+        return false
+    }
+    if (blocks?.some((type) => type in set.deviceKinds)) {
+        return true
+    }
+    return set.categories.some(
+        (category) =>
+            category.devices?.length &&
+            (toolbox
+                ? toolbox.some((name) => name.toLowerCase() === category.name.toLowerCase())
+                : blocks
+                  ? category.entries.some((entry) => blocks.includes(entry.name))
+                  : true),
     )
-    const { toolbox: full } = processJengaTower(
-        [...jengaBlocks, ...extra],
-        pythonGenerator,
-    )
-    return filterToolbox(full, {
-        categories: toolbox ?? null,
-        blocks: blocks ?? null,
-        hidden: [...hiddenCategoryNames, ...categories.map((c) => c.name)],
-        hiddenBlocks: toolboxHiddenBlockTypes,
-    })
 }
 
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
@@ -111,18 +90,18 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  * @param {HTMLElement} container Gets the editor's root element appended;
  *     the root fills it, so the container decides the size.
  * @param {object} [options]
- * @param {object[]} [options.categories] Extra block categories.
- * @param {object} [options.vocab] Python vocabulary for them: { members,
- *     methodsByType }, see src/data/vocab.js. Kept for every later editor.
+ * @param {object[]} [options.libraries] The block libraries, in order:
+ *     [core, make] (the real robot) unless given.
  * @param {string[]} [options.toolbox] Category names to keep.
  * @param {string[]} [options.blocks] Block types to keep.
  * @param {number} [options.maxBlocks] Cap on blocks, with a counter.
  * @param {Record<string, number>} [options.maxInstances] Per-type caps.
  * @param {boolean} [options.view=false] Read-only viewer.
- * @param {boolean} [options.devices=false] Pin a Devices button to the
- *     bottom of the toolbox column: it opens the program's motors and
- *     drivetrains in a pop-up, where they are set up. A device counts in
- *     `blockTypes` under its kind (`drive_motor` or `drivetrain`).
+ * @param {boolean} [options.devices] Pin a Devices button to the bottom of
+ *     the toolbox column: it opens the program's devices in a pop-up, where
+ *     they are set up. On by itself for an editable editor whose toolbox
+ *     offers blocks that use devices. A device counts in `blockTypes`
+ *     under its kind.
  * @param {boolean} [options.issues=false] An Issues tab on the right that
  *     lists the program's problems (blank devices and the like). The
  *     blocks with one are marked either way.
@@ -137,28 +116,28 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  *   clear: () => void,
  *   setCheatsheet: (open?: boolean) => void,
  *   highlight: (id: string|null) => void,
- *   tracedCode: () => string,
+ *   tracedCode: (marker: string) => string,
  *   add: (state: object, clientX?: number, clientY?: number) => void,
  *   destroy: () => void,
  * }>} The mounted editor, once the workspace exists. `add` puts a saved
  *     program's blocks into the workspace beside what is there (at a point
  *     on the screen, or under the existing blocks), and adds any of its
- *     devices the program does not have yet. `tracedCode` is the
- *     program with `make._block('<id>')` before each block's code, for a
- *     simulator that reports which block is running; `highlight` lights up
- *     that block (and the blocks it sits inside), or none with null.
+ *     devices the program does not have yet. `tracedCode(marker)` is the
+ *     program with the marker before each block's code, `%1` standing for
+ *     the block's id in quotes, for a simulator that reports which block
+ *     is running; `highlight` lights up that block (and the blocks it sits
+ *     inside), or none with null.
  */
 export const mountEditor = async (
     container,
     {
-        categories = [],
-        vocab,
+        libraries = DEFAULT_LIBRARIES,
         toolbox,
         blocks,
         maxBlocks,
         maxInstances,
         view = false,
-        devices = false,
+        devices,
         issues = false,
         codePreview = false,
         codeOpen = false,
@@ -172,18 +151,18 @@ export const mountEditor = async (
     // dropdowns and text inputs are positioned in page coordinates, so they
     // live on the page's body, not inside the editor's positioned root
     setWidgetHost(document.body)
-    if (vocab) {
-        addVocab(vocab)
-    }
 
+    const set = blockSetFor(libraries)
     const root = div({ class: 'proto-ide' })
     if (!view) {
-        // dialogs and the phone layout belong to the full editor
+        // dialogs, the phone layout, the Devices pop-up and the cheatsheet
+        // belong to the full editor, and work from its block set
         setRoot(root)
+        setBlockSet(set)
     }
 
     const api = await createEmbedEditor(
-        buildToolbox(categories, { toolbox, blocks }),
+        toolboxOf(set, { toolbox, blocks }),
         {
             mode: 'block',
             maxBlocks,
@@ -191,7 +170,7 @@ export const mountEditor = async (
             codePreview,
             codeOpen,
             view,
-            devices,
+            devices: devices ?? (!view && usesDevices(set, { toolbox, blocks })),
             issues,
         },
         { root, onChange, onEscape },
@@ -230,11 +209,12 @@ export const mountEditor = async (
  * There is no remove or help button.
  * @param {HTMLElement} container Gets the card's root element appended.
  * @param {object} [options]
- * @param {{kind?: string, name?: string, port?: string, direction?: string}} [options.device]
- *     The device; a drive motor named motor on port 0, clockwise, if left out.
+ * @param {{kind: string, name?: string}} options.device The device, with its
+ *     kind's fields (a drive motor's port and direction).
  * @param {(device: object) => void} [options.onChange] The device, after a change.
- * @param {string[]} [options.motors] For a drivetrain: the drive motors it
- *     can be made from, by name.
+ * @param {object[]} [options.devices] The program's other devices, for a
+ *     kind made from them (a drivetrain's motors).
+ * @param {object[]} [options.libraries] Where its kind comes from: [core, make] unless given.
  * @returns {Promise<{
  *   element: HTMLElement,
  *   set: (device: object) => void,
@@ -243,19 +223,17 @@ export const mountEditor = async (
  */
 export const mountDeviceCard = async (
     container,
-    { device, onChange, motors = [] } = {},
+    { device, onChange, devices = [], libraries = DEFAULT_LIBRARIES } = {},
 ) => {
     await whenEditorFontsReady()
+    blockSetFor(libraries)
+    if (!deviceKinds[device?.kind]) {
+        throw new Error(`No library has a device kind ${device?.kind}`)
+    }
     const root = div({ class: 'proto-ide proto-ide-card' })
-    // a device in an older shape (a motor_group) shows as it is now
+    // a device saved in an older shape shows as it is now
     const clean = (shown) => ({ ...shown, ...cleanDevice(shown) })
-    let current = clean({
-        kind: 'drive_motor',
-        name: 'motor',
-        port: '0',
-        direction: '1',
-        ...device,
-    })
+    let current = clean(device)
     const draw = () =>
         root.replaceChildren(
             div(
@@ -272,7 +250,7 @@ export const mountDeviceCard = async (
                               },
                           }
                         : {},
-                    { motors },
+                    { devices },
                 ),
             ),
         )

@@ -18,7 +18,8 @@
 
 import { FieldLabel, inputs } from 'blockly'
 
-import { numberShadowTypes, stepBlockTypes } from '../data/library'
+import { blockSet, lintRules, numberShadowTypes, stepBlockTypes } from '../libraries/engine'
+import { getVocab } from '../data/vocab'
 import { deviceKinds, getDevices } from '../helpers/devicesHelper'
 import { FieldDevice } from './deviceField'
 import { insideLoop } from './stepBlocks'
@@ -26,118 +27,29 @@ import { insideLoop } from './stepBlocks'
 /** The id the linter's warnings go under, apart from any other warning. */
 const LINT_ID = 'lint'
 
+/** Words Python keeps for itself: a device or variable named one breaks the program. */
+const PYTHON_WORDS = [
+    'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break',
+    'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally',
+    'for', 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal',
+    'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
+]
+
 /**
- * Words Python keeps for itself, and the names `from make import *` brings
- * in or the program already uses: a device or variable named one of them
- * breaks the program.
+ * The names a device or variable cannot have: Python's words, every name
+ * the libraries' vocabulary brings in (make's wait, drive_motor, the board's
+ * A and L1...), and the names the libraries say their blocks use.
+ * @returns {Set<string>}
  */
-const TAKEN_NAMES = new Set([
-    // Python
-    'False',
-    'None',
-    'True',
-    'and',
-    'as',
-    'assert',
-    'async',
-    'await',
-    'break',
-    'class',
-    'continue',
-    'def',
-    'del',
-    'elif',
-    'else',
-    'except',
-    'finally',
-    'for',
-    'from',
-    'global',
-    'if',
-    'import',
-    'in',
-    'is',
-    'lambda',
-    'nonlocal',
-    'not',
-    'or',
-    'pass',
-    'raise',
-    'return',
-    'try',
-    'while',
-    'with',
-    'yield',
-    // make
-    'make',
-    'wait',
-    'wait_until',
-    'wait_while',
-    'countdown',
-    'drive_motor',
-    'drivetrain',
-    'button',
-    'light',
-    'encoder',
-    'system_config',
-    // the board's ports, which the buttons and lights are made on
-    'A',
-    'B',
-    'C',
-    'D',
-    'L1',
-    'L2',
-    // the buttons and lights the program makes (button_a = button(A))
-    'button_a',
-    'button_b',
-    'button_c',
-    'button_d',
-    'light_l1',
-    'light_l2',
-    // the loops' counter
-    'i',
-])
+const takenNames = () =>
+    new Set([
+        ...PYTHON_WORDS,
+        ...(getVocab().autocomplete?.members ?? []).map((member) => member.name),
+        ...blockSet().takenNames,
+    ])
 
 /** A time this long or longer is likely meant in milliseconds. */
 const LONG_SECONDS = 60
-
-/** Blocks with a time in a `time` field, and what 0 seconds means there. */
-const ZERO_TIME = {
-    wait: 'Waiting 0 seconds does nothing. Wait at least a little, like 1 second.',
-    repeatSeconds:
-        'Repeat for 0 seconds never runs the blocks inside. Set how many seconds.',
-    lightFlash: 'A 0 second flash is too short to see. Try 0.2 seconds.',
-    motorHold: 'Holding for 0 seconds does nothing. Set how many seconds.',
-    curveFor:
-        'For 0 seconds is no time at all, so nothing moves. Set how many seconds.',
-}
-
-/** Of those, the ones where a long time is likely a mistake. */
-const LONG_TIME = new Set(['wait', 'motorHold', 'curveFor'])
-
-/**
- * What an empty slot does, for the blocks where it is worse than a gap:
- * [severity, message]. The rest get a general warning.
- */
-const EMPTY_SLOT = {
-    if: [
-        'error',
-        'If needs a condition. With none, the blocks inside never run.',
-    ],
-    ifElse: [
-        'error',
-        'If needs a condition. With none, only the else blocks run.',
-    ],
-    until: [
-        'error',
-        'Wait until needs a condition. With none, it waits forever.',
-    ],
-    repeatIf: [
-        'error',
-        'Repeat needs a condition. Put a condition block in its slot.',
-    ],
-    repeatFor: ['error', 'Repeat needs a number of times.'],
-}
 
 /**
  * A problem found by a rule.
@@ -297,10 +209,10 @@ const blockRules = [
             problems.push(longTime(n))
         }
         const time = numberField(block, 'time')
-        if (ZERO_TIME[block.type] && time === 0) {
-            problems.push(warning(ZERO_TIME[block.type]))
+        if (lintRules.zeroTime[block.type] && time === 0) {
+            problems.push(warning(lintRules.zeroTime[block.type]))
         }
-        if (LONG_TIME.has(block.type) && time >= LONG_SECONDS) {
+        if (lintRules.longTime.has(block.type) && time >= LONG_SECONDS) {
             problems.push(longTime(time))
         }
         return problems
@@ -404,7 +316,7 @@ const blockRules = [
                     !input.connection.targetBlock(),
             )
             .map(() => {
-                const [severity, message] = EMPTY_SLOT[block.type] ?? [
+                const [severity, message] = lintRules.emptySlot[block.type] ?? [
                     'warning',
                     `${blockName(block)} has an empty slot. Put a block in it.`,
                 ]
@@ -462,7 +374,7 @@ const deviceRules = [
                 add(error(`A ${label} has no name. Give it one.`))
                 return
             }
-            if (TAKEN_NAMES.has(device.name)) {
+            if (takenNames().has(device.name)) {
                 add(
                     error(
                         `${device.name} can't be a ${what}'s name: the program uses that word. Pick another name.`,

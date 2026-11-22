@@ -19,7 +19,7 @@ import {
     ProtoSearchCategory,
     SEARCH_CATEGORY_KIND,
 } from './categories.js'
-import { numberShadowTypes } from '../data/library'
+import { numberShadowTypes } from '../libraries/engine'
 import { ContinuousColumnFlyout, ContinuousRowFlyout } from './flyouts.js'
 import { ProtoRenderer } from './proto_renderer/proto_renderer.js'
 import { SEARCH_FIELD_KIND, SearchFieldInflater } from './searchField.js'
@@ -52,7 +52,7 @@ class ProtoMetrics extends ContinuousMetrics {
         return metrics
     }
 
-    /** A hidden toolbox (the simplified menu's) takes no room either. */
+    /** A hidden toolbox (the phone layout's drawer, closed) takes no room either. */
     getToolboxMetrics() {
         const metrics = super.getToolboxMetrics()
         const toolbox = this.workspace_.getToolbox()

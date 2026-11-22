@@ -5,6 +5,9 @@
 import { describe, expect, test } from 'vitest'
 import * as Blockly from 'blockly'
 
+import { setBlockSet, splice } from '../src/libraries/engine'
+import { core } from '../src/libraries/core'
+import { make } from '../src/libraries/make'
 import {
     devicesCode,
     nextPort,
@@ -12,6 +15,9 @@ import {
     removeDevice,
     setDevices,
 } from '../src/helpers/devicesHelper'
+
+// the device kinds come from the libraries
+setBlockSet(splice([core, make]))
 
 const motor = (name, port = '0') => ({
     kind: 'drive_motor',
@@ -168,9 +174,9 @@ describe('every kind of device', () => {
 
     test('a new drive motor takes the first free port', () => {
         expect(
-            nextPort([motor('a', '0'), motor('b', '1')], 'drive_motor'),
+            nextPort([motor('a', '0'), motor('b', '1')], ['0', '1', '2', '3']),
         ).toBe('2')
-        expect(nextPort([], 'drive_motor')).toBe('0')
+        expect(nextPort([], ['0', '1', '2', '3'])).toBe('0')
     })
 
     test('a drive motor on a port the board lacks moves to port 0 when loaded', () => {

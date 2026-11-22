@@ -5,6 +5,7 @@
  * assets/images/category-icons where it has one. Registered in mods.js.
  */
 
+import { categoryLooks } from '../libraries/engine'
 import * as Blockly from 'blockly'
 import { ContinuousCategory } from '@blockly/continuous-toolbox'
 // registers its category under SEARCH_CATEGORY_KIND; it exports nothing
@@ -23,12 +24,15 @@ const ToolboxSearchCategory = Blockly.registry.getClass(
 )
 
 /**
- * Creates a toolbox tab's icon: the category's own bubble, when it has one.
+ * Creates a toolbox tab's icon: the bubble its library gives the category
+ * (`icon`), or the editor's own for its Search tab.
  * @param {string} name The category's name.
  * @returns {HTMLImageElement|null} The icon, or null for a category without.
  */
 export const createCategoryIcon = (name) => {
-    const icon = categoryIcon(name)
+    const icon =
+        categoryLooks[name]?.icon ??
+        (String(name).toLowerCase() === 'search' ? categoryIcon('search') : null)
     if (!icon) {
         return null
     }

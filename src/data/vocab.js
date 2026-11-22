@@ -1,45 +1,37 @@
 /*
  * The Python vocabulary the line editor completes from and the checker
- * types against: the `make` library in pythonLibraryVocab.json, plus
- * whatever a host adds for blocks of its own (src/lib.js, `vocab`). Read it
- * through getVocab() rather than importing the JSON, so additions count.
+ * types against: every spliced library's `vocab` folded together. The core
+ * library brings make's (pythonLibraryVocab.json, generated from make's
+ * source by scripts/make-vocab.mjs); another library can add the names its
+ * blocks write. Read it through getVocab(), so every library counts.
  */
-import pythonLibraryVocab from './pythonLibraryVocab.json'
 
-/** @type {object[]} Extra top-level members, same shape as the JSON's. */
-const extraMembers = []
-/** @type {Record<string, object[]>} Extra methods keyed by receiver type. */
-const extraMethodsByType = {}
+/** The libraries' vocabularies, in the order they were added. */
+const vocabs = []
 
 /**
- * Adds to the vocabulary. Call before the first editor is built: the
- * checker writes its stub from the vocabulary once, when it starts.
- * @param {object} vocab
- * @param {object[]} [vocab.members] Functions and classes, as in
- *     pythonLibraryVocab.json: { name, kind, description, parameters,
- *     resultType, path, category }.
- * @param {Record<string, object[]>} [vocab.methodsByType] Methods per class.
+ * Adds a library's vocabulary. The engine (src/libraries/engine.js) calls
+ * it when it registers a library, before an editor is built: the checker
+ * writes its stub from the vocabulary when it starts.
+ * @param {object} vocab In the shape of pythonLibraryVocab.json:
+ *     { lint: { pythonVersion }, autocomplete: { members, methodsByType } }.
  */
-export const addVocab = ({ members = [], methodsByType = {} } = {}) => {
-    extraMembers.push(...members)
-    for (const [typeName, methods] of Object.entries(methodsByType)) {
-        ;(extraMethodsByType[typeName] ??= []).push(...methods)
-    }
+export const addVocab = (vocab) => {
+    vocabs.push(vocab)
 }
 
-/** @returns {object} The vocabulary with every addition folded in. */
+/** @returns {object} The vocabularies folded together: the first one's lint settings, every one's names. */
 export const getVocab = () => {
-    const base = pythonLibraryVocab.autocomplete ?? {}
-    const methodsByType = { ...(base.methodsByType ?? {}) }
-    for (const [typeName, methods] of Object.entries(extraMethodsByType)) {
-        methodsByType[typeName] = [...(methodsByType[typeName] ?? []), ...methods]
+    const members = []
+    const methodsByType = {}
+    for (const { autocomplete = {} } of vocabs) {
+        members.push(...(autocomplete.members ?? []))
+        for (const [typeName, methods] of Object.entries(autocomplete.methodsByType ?? {})) {
+            ;(methodsByType[typeName] ??= []).push(...methods)
+        }
     }
     return {
-        ...pythonLibraryVocab,
-        autocomplete: {
-            ...base,
-            members: [...(base.members ?? []), ...extraMembers],
-            methodsByType,
-        },
+        lint: vocabs.find((vocab) => vocab.lint)?.lint ?? {},
+        autocomplete: { members, methodsByType },
     }
 }

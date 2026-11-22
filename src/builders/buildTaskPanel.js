@@ -1,52 +1,40 @@
 import { button, div, on, tag } from 'ellipsi'
 import { marked } from 'marked'
 
-import { library } from '../data/library'
+import { blockEntries } from '../libraries/engine'
+import { deviceKinds } from '../helpers/devicesHelper'
 import { currentBlockType } from '../helpers/renamedBlocks'
-
-/** What to add in Devices for a required device kind. */
-const DEVICE_WORDS = {
-    drive_motor: 'a drive motor',
-    drivetrain: 'a drivetrain',
-    variable: 'a variable',
-}
 
 /**
  * A required block as the learner sees it: its words, with each dropdown
- * and number slot shown as "…", in its category's colour. A host's own
- * categories (lib.js `categories`) are not in the library and show their
- * block type.
+ * and number slot shown as "…", in its category's colour. Any block of
+ * the libraries spliced on the page.
  * @param {string} type
  * @returns {{label: string, colour: string}|null}
  */
 const describeBlock = (type) => {
-    for (const category of library) {
-        const entry = category.entries.find(
-            (e) => e.entryType === 'block' && e.name === type,
-        )
-        if (!entry) {
-            continue
-        }
-        const words = entry.blocklyTemplate
-            .filter((part) => part.name !== 'info_icon')
-            .map((part) => (part.text ?? '…').trim())
-            .filter(Boolean)
-            // one "…" for slots side by side ("fan forward" is one gap)
-            .filter((word, i, all) => !(word === '…' && all[i - 1] === '…'))
-        return { label: words.join(' '), colour: category.color }
+    const found = blockEntries[type]
+    if (!found) {
+        return null
     }
-    return null
+    const words = found.entry.blocklyTemplate
+        .filter((part) => part.name !== 'info_icon')
+        .map((part) => (part.text ?? '…').trim())
+        .filter(Boolean)
+        // one "…" for slots side by side ("fan forward" is one gap)
+        .filter((word, i, all) => !(word === '…' && all[i - 1] === '…'))
+    return { label: words.join(' '), colour: found.category.color }
 }
 
 /** One item of the checklist. */
 const blockItem = (type) => {
-    if (DEVICE_WORDS[type]) {
+    if (deviceKinds[type]) {
         return tag(
             'li',
             tag(
                 'span',
                 { class: 'task-device' },
-                `Devices: ${DEVICE_WORDS[type]}`,
+                `Devices: a ${deviceKinds[type].label}`,
             ),
         )
     }

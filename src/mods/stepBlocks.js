@@ -10,7 +10,7 @@
 
 import * as Blockly from 'blockly'
 
-import { loopBlockTypes, stepBlockTypes } from '../data/library'
+import { loopBlockTypes, stepBlockTypes } from '../libraries/engine'
 
 /** How see-through a default number in a slot is (1 is solid). */
 const SHADOW_OPACITY = '0.5'

@@ -1,213 +1,64 @@
 /*
- * The blocks, built around the make library (from make import *). Every
- * block writes one make call, and every motion block says how long it
- * runs: some seconds, some degrees, or one short step. A step block (a
- * dashed edge, `step: true`) runs make's 0.05 second default and only
- * belongs inside a loop, where it runs again and again; mods/stepBlocks.js
- * keeps it there.
+ * The core blocks: everything that runs both on the robot and in a
+ * sandbox. Every block writes a call of the make library (from make import
+ * *), and every motion block says how long it runs: some seconds, some
+ * degrees, or one short step. A step block (a dashed edge, `step: true`)
+ * runs make's 0.05 second default and only belongs inside a loop, where it
+ * runs again and again; mods/stepBlocks.js keeps it there.
  *
- * Each category's entries are blocks (`entryType: 'block'`) and examples
- * (`entryType: 'example'`, a saved workspace with its devices) for the
- * cheatsheet. @protorobotics/jenga turns the blocks into Blockly blocks.
+ * Besides the blocks, this library holds the program's first line, the
+ * devices (drive motors, drivetrains, variables) the Devices pop-up sets
+ * up, the names make already uses, the linter's rules for its blocks and
+ * how blocks and devices of older programs load.
  */
-import { FieldImage, FieldNumber } from 'blockly'
-import { Order, pythonGenerator } from 'blockly/python'
-import { FieldGridDropdown } from '@blockly/field-grid-dropdown'
-import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
+import { categoryIcon } from '../assets'
+import makeVocab from '../data/pythonLibraryVocab.json'
+import { DEVICE_KINDS } from './coreDevices'
+import {
+    gridDropdown,
+    text,
+    field,
+    slot,
+    ways,
+    turns,
+    units,
+    stops,
+    num,
+    val,
+    buttons,
+    deviceOf,
+    isBack,
+    timedCall,
+    stepCall,
+    curvePowers,
+    stopCall,
+    inside,
+    condition,
+    number,
+    boardPart,
+    block,
+    example,
+    boolOut,
+    numberOut,
+    ARM,
+    LEFT,
+    RIGHT,
+    ROBOT,
+    Order,
+    fields,
+} from './kit'
+import { FieldNumber } from 'blockly'
 import { deviceField } from '../mods/deviceField'
-import { helpIcon } from '../assets'
 
-/**
- * A dropdown whose choices open as a grid of buttons rather than a list
- * (@blockly/field-grid-dropdown), easier to hit on a touch screen. Short
- * lists sit in one row; longer ones wrap at four.
- * @param {Array<[string, string]>} options The choices, as [label, value].
- * @returns {FieldGridDropdown} The field.
- */
-export const gridDropdown = (options) =>
-    new FieldGridDropdown(options, undefined, {
-        columns: Math.min(options.length, 4),
-    })
-
-// ---- the parts blocks are made of ------------------------------------------
-
-const text = (words) => ({ text: words })
-const field = (name, make) => ({ name, field: make })
-const slot = (name, type, shadow) => ({
-    blocklyInput: { name, type, ...(shadow ? { shadow } : {}) },
-})
-
-/** forward or backward, for Spin, Drive and Curve. */
-const ways = () =>
-    gridDropdown([
-        ['forward', 'forward'],
-        ['backward', 'backward'],
-    ])
-/** right or left, for Turn: make's turn has the left wheels go forward. */
-const turns = () =>
-    gridDropdown([
-        ['right', 'right'],
-        ['left', 'left'],
-    ])
-/** How a timed block measures how long it runs. */
-const units = () =>
-    gridDropdown([
-        ['seconds', 'seconds'],
-        ['degrees', 'degrees'],
-    ])
-/** How a Stop block stops. */
-const stops = () =>
-    gridDropdown([
-        ['brake', 'brake'],
-        ['coast', 'coast'],
-    ])
-
-/**
- * Every number on a block is a slot holding a number (a shadow block), so a
- * variable or a sum can be dropped over it. Each default value has its own
- * hidden number block type (num_50, num_0_2...), since a slot's shadow is
- * named by type alone; they all write their number, and take the colour of
- * the block they sit in (mods/stepBlocks.js).
- */
-const numberShadows = new Map()
-const numberShadow = (value) => {
-    const type = `num_${String(value).replace('-', 'm').replace('.', '_')}`
-    numberShadows.set(type, value)
-    return type
-}
-/** A number slot with its default. */
-const num = (name, value) => slot(name, 'Number', numberShadow(value))
-/** The Python of a number slot: what is in it, or 0 if it is empty. */
-const val = (block, name) =>
-    pythonGenerator.valueToCode(block, name, Order.NONE) || '0'
-
-// the board's buttons and lights; the value is the port in lower case
-const buttons = [
-    ['A', 'a'],
-    ['B', 'b'],
-    ['C', 'c'],
-    ['D', 'd'],
-]
-const lights = [
-    ['L1', 'l1'],
-    ['L2', 'l2'],
-]
-
-// ---- what blocks write -------------------------------------------------------
-
-/**
- * Converts learner-entered names into valid Python identifiers.
- * @param {string} str Name entered in a Blockly text field.
- * @returns {string} Name with whitespace replaced by underscores.
- */
-const spacesToUnderscores = (str) => String(str ?? '').replace(/\s+/g, '_')
-
-/** @returns {string} The device a block uses, as Python names it. */
-const deviceOf = (block) => spacesToUnderscores(block.getFieldValue('name'))
-
-/** Backward, or left for a Turn: make's _back version of the call. */
-const isBack = (block) =>
-    ['backward', 'left'].includes(block.getFieldValue('way'))
-
-/**
- * A make call for a timed motion block: the seconds version, or the
- * degrees version when the block is set to degrees.
- * @param {object} block
- * @param {string} verb spin, drive or turn.
- * @returns {string} One line of Python.
- */
-const timedCall = (block, verb) => {
-    const method = isBack(block) ? `${verb}_back` : verb
-    const p = val(block, 'power')
-    const n = val(block, 'amount')
-    return block.getFieldValue('unit') === 'degrees'
-        ? `${deviceOf(block)}.${method}_degrees(degrees=${n}, power=${p})\n`
-        : `${deviceOf(block)}.${method}(power=${p}, seconds=${n})\n`
-}
-
-/** A step: make's call with no time, so its 0.05 second default. */
-const stepCall = (block, verb) => {
-    const method = isBack(block) ? `${verb}_back` : verb
-    return `${deviceOf(block)}.${method}(power=${val(block, 'power')})\n`
-}
-
-/** Curve's two powers, left then right, as make's curve takes them. */
-const curvePowers = (block) =>
-    `left_power=${val(block, 'left')}, right_power=${val(block, 'right')}`
-
-const stopCall = (block) =>
-    `${deviceOf(block)}.${block.getFieldValue('mode') === 'coast' ? 'stop' : 'brake'}()\n`
-
-/** The Python inside a loop or If; pass when it is empty. */
-const inside = (block, generator, name = 'input') =>
-    generator.statementToCode(block, name) || `${generator.INDENT}pass\n`
-
-const condition = (block, generator, name = 'function') =>
-    generator.valueToCode(block, name, Order.NONE) || 'False'
-
-const number = (block, generator, name, order = Order.NONE) =>
-    generator.valueToCode(block, name, order) || '0'
-
-/**
- * A board button or light. make has the board's own ready under their
- * port's name, so a block uses that name: A, L1.
- * @param {object} block A block with a `button` or `light` field.
- * @param {'button'|'light'} kind
- * @returns {string}
- */
-const boardPart = (block, kind) => block.getFieldValue(kind).toUpperCase()
-
-// ---- the blocks --------------------------------------------------------------
-
-/**
- * A block entry.
- * @param {string} name The block's type.
- * @param {string} description What it does, for the cheatsheet and tooltip.
- * @param {object[]} blocklyTemplate Its parts, in order.
- * @param {Function} codeGenerator What it writes.
- * @param {object} [more] blocklyOutput, inputsInline, step, toolbox.
- * @returns {object}
- */
-const block = (
-    name,
-    description,
-    blocklyTemplate,
-    codeGenerator,
-    more = {},
-) => ({
-    entryType: 'block',
-    name,
-    description,
-    blocklyTemplate,
-    codeGenerator,
-    inputsInline: true,
-    ...more,
-})
-
-/** A cheatsheet example: a saved workspace with its devices. */
-const example = (name, preamble, devices, blocks) => ({
-    entryType: 'example',
-    name,
-    preamble,
-    workspace: {
-        devices,
-        blocks: { languageVersion: 0, blocks },
-    },
-})
-
-const boolOut = { blocklyOutput: { type: 'Boolean', name: 'value' } }
-const numberOut = { blocklyOutput: { type: 'Number', name: 'value' } }
-
-// example devices
-const ARM = { kind: 'drive_motor', name: 'arm', port: '0', direction: '1' }
-const LEFT = { kind: 'drive_motor', name: 'left', port: '1', direction: '1' }
-const RIGHT = { kind: 'drive_motor', name: 'right', port: '2', direction: '-1' }
-// a drivetrain of the two wheels, left then right (make's drivetrain(left, right))
-const ROBOT = { kind: 'drivetrain', name: 'robot', motors: ['left', 'right'] }
-
-export const library = [
+/** @type {import('./engine').Library} */
+export const core = {
+    name: 'core',
+    /** What every program starts with: the make library's names, bare. */
+    preamble: 'from make import *',
+    categories: [
     {
         name: 'Motor',
+        icon: categoryIcon('motor'),
         color: '#F2737B',
         entries: [
             block(
@@ -370,6 +221,7 @@ export const library = [
     },
     {
         name: 'Drivetrain',
+        icon: categoryIcon('drivetrain'),
         color: '#00B8AA',
         entries: [
             block(
@@ -587,6 +439,7 @@ export const library = [
     },
     {
         name: 'Board',
+        icon: categoryIcon('board'),
         color: '#6395CF',
         entries: [
             block(
@@ -616,36 +469,6 @@ export const library = [
                     Order.FUNCTION_CALL,
                 ],
                 boolOut,
-            ),
-            block(
-                'lightSet',
-                "Turns one of the board's lights on or off, or the other way round with toggle.",
-                [
-                    text('Light'),
-                    field('light', () => gridDropdown(lights)),
-                    field('action', () =>
-                        gridDropdown([
-                            ['on', 'on'],
-                            ['off', 'off'],
-                            ['toggle', 'toggle'],
-                        ]),
-                    ),
-                ],
-                (b, g) =>
-                    `${boardPart(b, 'light')}.${b.getFieldValue('action')}()\n`,
-            ),
-            block(
-                'lightFlash',
-                'Turns a light on and off again after some seconds, without waiting: the program goes straight on.',
-                [
-                    text('Flash'),
-                    field('light', () => gridDropdown(lights)),
-                    text('for'),
-                    num('time', 0.2),
-                    text('seconds'),
-                ],
-                (b, g) =>
-                    `${boardPart(b, 'light')}.flash(seconds=${val(b, 'time')})\n`,
             ),
             example(
                 'The light shows the button',
@@ -696,6 +519,7 @@ export const library = [
     },
     {
         name: 'Time',
+        icon: categoryIcon('time'),
         color: '#9970B1',
         entries: [
             block(
@@ -752,6 +576,7 @@ export const library = [
     },
     {
         name: 'Flow',
+        icon: categoryIcon('flow'),
         color: '#F8BF41',
         entries: [
             block(
@@ -885,6 +710,7 @@ export const library = [
     },
     {
         name: 'Operators',
+        icon: categoryIcon('operators'),
         color: '#59B03C',
         entries: [
             block(
@@ -994,6 +820,7 @@ export const library = [
     },
     {
         name: 'Variables',
+        icon: categoryIcon('variables'),
         color: '#FE8A18',
         entries: [
             block(
@@ -1122,230 +949,34 @@ export const library = [
             ),
         ],
     },
-]
-
-// the hidden number blocks the slots hold
-library.push({
-    name: 'Numbers',
-    color: '#9a9a9a',
-    hidden: true,
-    entries: [...numberShadows].map(([type, value]) =>
-        block(
-            type,
-            'A number.',
-            [field('operation', () => new FieldNumber(value))],
-            (b) => [`${b.getFieldValue('operation')}`, Order.ATOMIC],
-            numberOut,
-        ),
-    ),
-})
-
-/** Each block type's number slots: slot name to the default's block type. */
-export const numberSlots = Object.fromEntries(
-    library.flatMap((category) =>
-        category.entries
-            .filter((entry) => entry.entryType === 'block')
-            .map((entry) => [
-                entry.name,
-                Object.fromEntries(
-                    entry.blocklyTemplate
-                        .filter((part) => part.blocklyInput?.type === 'Number')
-                        .map((part) => [
-                            part.blocklyInput.name,
-                            part.blocklyInput.shadow,
-                        ]),
-                ),
-            ]),
-    ),
-)
-
-/** The hidden number block types. */
-export const numberShadowTypes = new Set(numberShadows.keys())
-
-/**
- * A saved block (and everything in and under it) with its numbers in
- * their slots: a number given as a field ({ power: 50 }) becomes the
- * slot's default block holding it, and a number block in a slot takes the
- * slot's own default type. Examples and tests write numbers as fields.
- * @param {object} blockState
- * @returns {object}
- */
-export const numbersToSlots = (blockState) => {
-    if (!blockState || typeof blockState !== 'object') {
-        return blockState
-    }
-    const slots = numberSlots[blockState.type] ?? {}
-    const fields = { ...(blockState.fields ?? {}) }
-    const inputs = { ...(blockState.inputs ?? {}) }
-    for (const [name, shadowType] of Object.entries(slots)) {
-        if (typeof fields[name] === 'number') {
-            inputs[name] = {
-                ...inputs[name],
-                shadow: {
-                    type: shadowType,
-                    fields: { operation: fields[name] },
-                },
-            }
-            delete fields[name]
-        } else if (inputs[name]?.shadow?.type === 'numberInput') {
-            inputs[name] = {
-                ...inputs[name],
-                shadow: { ...inputs[name].shadow, type: shadowType },
-            }
-        }
-    }
-    for (const [name, input] of Object.entries(inputs)) {
-        inputs[name] = {
-            ...input,
-            ...(input.block ? { block: numbersToSlots(input.block) } : {}),
-        }
-    }
-    return {
-        ...blockState,
-        fields,
-        ...(Object.keys(inputs).length ? { inputs } : {}),
-        ...(blockState.next?.block
-            ? { next: { block: numbersToSlots(blockState.next.block) } }
-            : {}),
-    }
+    ],
+    devices: DEVICE_KINDS,
+    /** The make library's names, for the line editor and checker (scripts/make-vocab.mjs writes it). */
+    vocab: makeVocab,
+    /** Names the blocks themselves write, which a device must not take. */
+    takenNames: ['make', 'system_config', 'i'],
+    renames: {
+        /** Blocks of the motor groups make had before drivetrains came back. */
+        blocks: { groupSpin: 'driveStep', groupSpinStep: 'driveStep', groupStop: 'drivetrainStop' },
+        /** make called a drivetrain a motor group for a while (motor_group(motors, ratios)). */
+        devices: { motor_group: 'drivetrain' },
+    },
+    lint: {
+        zeroTime: {
+            wait: 'Waiting 0 seconds does nothing. Wait at least a little, like 1 second.',
+            repeatSeconds:
+                'Repeat for 0 seconds never runs the blocks inside. Set how many seconds.',
+            motorHold: 'Holding for 0 seconds does nothing. Set how many seconds.',
+            curveFor:
+                'For 0 seconds is no time at all, so nothing moves. Set how many seconds.',
+        },
+        longTime: ['wait', 'motorHold', 'curveFor'],
+        emptySlot: {
+            if: ['error', 'If needs a condition. With none, the blocks inside never run.'],
+            ifElse: ['error', 'If needs a condition. With none, only the else blocks run.'],
+            until: ['error', 'Wait until needs a condition. With none, it waits forever.'],
+            repeatIf: ['error', 'Repeat needs a condition. Put a condition block in its slot.'],
+            repeatFor: ['error', 'Repeat needs a number of times.'],
+        },
+    },
 }
-
-// the examples are written with numbers as fields
-for (const category of library) {
-    for (const entry of category.entries) {
-        if (entry.entryType === 'example') {
-            entry.workspace.blocks.blocks =
-                entry.workspace.blocks.blocks.map(numbersToSlots)
-        }
-    }
-}
-
-/** The block types of every block marked `step: true`: they only belong in loops. */
-export const stepBlockTypes = new Set(
-    library.flatMap((category) =>
-        category.entries
-            .filter((entry) => entry.step)
-            .map((entry) => entry.name),
-    ),
-)
-
-/** The block types that run what is inside them again and again. */
-export const loopBlockTypes = new Set(
-    library.flatMap((category) =>
-        category.entries
-            .filter((entry) => entry.loop)
-            .map((entry) => entry.name),
-    ),
-)
-
-/**
- * Adds the shared cheatsheet-help control to each Blockly block definition.
- * @param {object[]} blocks Blockly category definitions to modify.
- * @returns {object[]} The same categories with help controls attached.
- */
-const injectHelpButton = (blocks) => {
-    blocks.forEach((category) => {
-        // A hidden category has no cheatsheet entry for the icon to open.
-        if (category.hidden) {
-            return
-        }
-
-        category.entries.forEach((entry) => {
-            if (entry.entryType && entry.entryType !== 'block') {
-                return
-            }
-
-            entry.blocklyTemplate.push({
-                field: () =>
-                    new FieldImage(helpIcon, 15, 15, 'Info', () => {
-                        document.dispatchEvent(
-                            new CustomEvent(openCheatSheetDrawerEvent, {
-                                detail: { blockName: entry.name },
-                            }),
-                        )
-                    }),
-                name: 'info_icon',
-            })
-        })
-    })
-
-    return blocks
-}
-
-/** Names of the categories left out unless an embed asks for them. */
-export const hiddenCategoryNames = library
-    .filter((category) => category.hidden)
-    .map((category) => category.name)
-
-/** Types of the blocks left out of the toolbox unless an embed asks for them. */
-export const toolboxHiddenBlockTypes = library.flatMap((category) =>
-    category.entries
-        .filter(
-            (entry) => entry.entryType === 'block' && entry.toolbox === false,
-        )
-        .map((entry) => entry.name),
-)
-
-/**
- * Extracts block-only categories for the interactive Jenga toolbox.
- * @param {object[]} [sourceLibrary=library] Library categories to extract.
- * @returns {object[]} Toolbox-ready Blockly categories.
- */
-export function extractJengaBlocks(sourceLibrary = library) {
-    const categories = Array.isArray(sourceLibrary)
-        ? sourceLibrary
-        : [sourceLibrary]
-
-    const jengaBlocks = categories.map((category) => {
-        const blockEntries = category.entries
-            .filter((entry) => entry.entryType === 'block')
-            // eslint-disable-next-line no-unused-vars
-            .map(({ entryType, ...blockEntry }) => ({
-                ...blockEntry,
-                blocklyTemplate: [...blockEntry.blocklyTemplate],
-            }))
-
-        return {
-            name: category.name,
-            color: category.color,
-            hidden: category.hidden,
-            entries: blockEntries,
-        }
-    })
-
-    return injectHelpButton(jengaBlocks)
-}
-
-/**
- * Extracts blocks and examples for cheatsheet rendering.
- * @param {object[]} [sourceLibrary=library] Library categories to extract.
- * @returns {object[]} Cheatsheet-ready categories.
- */
-export function extractCheatSheetBlocks(sourceLibrary = library) {
-    const categories = Array.isArray(sourceLibrary)
-        ? sourceLibrary
-        : [sourceLibrary]
-
-    const cheatSheetCategories = categories
-        .filter((category) => !category.hidden)
-        .map((category) => ({
-            name: category.name,
-            color: category.color,
-            entries: category.entries
-                .filter((entry) => entry.entryType === 'block')
-                // eslint-disable-next-line no-unused-vars
-                .map(({ entryType, ...blockEntry }) => ({
-                    ...blockEntry,
-                    blocklyTemplate: [...blockEntry.blocklyTemplate],
-                })),
-            examples: category.entries
-                .filter((entry) => entry.entryType === 'example')
-                // eslint-disable-next-line no-unused-vars
-                .map(({ entryType, ...exampleEntry }) => exampleEntry),
-        }))
-
-    return injectHelpButton(cheatSheetCategories)
-}
-
-export const jengaBlocks = extractJengaBlocks(library)
-export const cheatSheetBlocks = extractCheatSheetBlocks(library)

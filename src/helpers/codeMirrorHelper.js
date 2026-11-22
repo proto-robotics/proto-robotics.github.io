@@ -4,6 +4,7 @@
  * Read-only views reuse only the display portion of the configuration.
  */
 
+import { blockSet } from '../libraries/engine'
 import {
     autocompletion,
     closeBrackets,
@@ -648,8 +649,16 @@ function buildGutterExtensions(readonly, noGutter) {
     return extensions
 }
 
-/** The first lines of every program, and the whole of an empty one. */
-export const PROGRAM_PREAMBLE = 'from make import *\n\n'
+/**
+ * The first lines of every program, and the whole of an empty one: the
+ * editor's libraries' first line (the core library's `from make import *`)
+ * and a blank line.
+ * @returns {string}
+ */
+export const programPreamble = () => {
+    const line = blockSet().preamble
+    return line ? `${line}\n\n` : ''
+}
 
 /**
  * Creates a configured Python CodeMirror view.
@@ -680,7 +689,7 @@ export function createCodeMirrorView({
     ]
 
     const view = new EditorView({
-        doc: PROGRAM_PREAMBLE,
+        doc: programPreamble(),
         extensions,
     })
 
