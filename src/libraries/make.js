@@ -17,6 +17,8 @@ import {
 /** @type {import('./engine').Library} */
 export const make = {
     name: 'make',
+    /** Its programs are for the real robot: the editor gets Send to Brain. */
+    brain: true,
     categories: [
         {
             name: 'Board',

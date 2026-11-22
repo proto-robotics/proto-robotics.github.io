@@ -49,6 +49,7 @@ import { createClickModes } from '../mods/clickModes'
 import { openDevicesEvent, syncToolboxDevices } from '../mods/deviceField'
 import { lintBlocks } from '../mods/blockLinter'
 import { numberShadowTypes } from '../libraries/engine'
+import { UNKNOWN_BLOCK, UNKNOWN_VALUE, unknownMessage } from '../libraries/unknownBlocks'
 import { createIssuesDrawer } from '../helpers/issuesDrawerHelper'
 
 /** The workspace events after which the program is regenerated and saved. */
@@ -644,6 +645,44 @@ export default (
         ) {
             workspace.highlightBlock(block.id, true)
         }
+    }
+
+    /**
+     * Where a block's part is on the screen, for a host that points at it
+     * (an arrow from a control beside the editor): a number slot by its
+     * name, or a field (a dropdown) by its name.
+     * @param {string} id The block's id.
+     * @param {string} name The slot's or field's name.
+     * @returns {DOMRect|null} Its box in page coordinates, or null when
+     *     the block or the part is not drawn.
+     */
+    mode.partBox = (id, name) => {
+        const block = blocklyInstance.workspace?.getBlockById(id)
+        if (!block) {
+            return null
+        }
+        const field = block.getField(name)
+        const inSlot = block.getInput(name)?.connection?.targetBlock()
+        const element = field?.getSvgRoot?.() ?? inSlot?.getSvgRoot?.() ?? null
+        return element ? element.getBoundingClientRect() : null
+    }
+
+    /**
+     * What keeps the program off the brain: a block this editor does not
+     * have (a stand-in, libraries/unknownBlocks.js), in the Issues list's
+     * words, once each.
+     * @returns {string[]}
+     */
+    mode.getSendBlockers = () => {
+        const workspace = blocklyInstance.workspace
+        if (!workspace) {
+            return []
+        }
+        const messages = workspace
+            .getAllBlocks(false)
+            .filter((block) => block.type === UNKNOWN_BLOCK || block.type === UNKNOWN_VALUE)
+            .map((block) => unknownMessage(block.original_?.type ?? '?'))
+        return [...new Set(messages)]
     }
 
     /** Disposes of the workspace, for a host that removes the editor. */

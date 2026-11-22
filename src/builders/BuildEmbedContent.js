@@ -84,6 +84,7 @@ export const createEmbedEditor = async (
         devices = false,
         issues = true,
         blockTypes = null,
+        send = true,
     } = {},
     { root, onChange = () => {}, onEscape = () => {} },
 ) => {
@@ -193,11 +194,14 @@ export const createEmbedEditor = async (
     const Toolbar = tag(
         'tool-bar',
         ProjectNameInput,
-        buildBrainButton({
-            getProjectName: () => ProjectNameInput.value,
-            getProjectFiles: (projectName) =>
-                editor.getProjectFiles(projectName),
-        }),
+        // only a program for the real robot goes to the brain
+        send &&
+            buildBrainButton({
+                getProjectName: () => ProjectNameInput.value,
+                getProjectFiles: (projectName) =>
+                    editor.getProjectFiles(projectName),
+                getBlockers: () => editor.getSendBlockers?.() ?? [],
+            }),
         button(
             'Export',
             on('click', async () => {
@@ -283,6 +287,8 @@ export const createEmbedEditor = async (
     // for a host that runs the program and lights up the running block
     const highlight = (id) => editor.highlight?.(id ?? null)
     const getTracedCode = (marker) => editor.getTracedCode?.(marker) ?? ''
+    // for a host that points at a part of a block
+    const partBox = (id, name) => editor.partBox?.(id, name) ?? null
     // for a host that lets the learner bring in an earlier program
     const addBlocks = (state, clientX, clientY) =>
         editor.addBlocks?.(state, clientX, clientY)
@@ -293,6 +299,7 @@ export const createEmbedEditor = async (
         setCheatsheet,
         highlight,
         getTracedCode,
+        partBox,
         addBlocks,
         dispose,
     }

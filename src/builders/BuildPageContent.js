@@ -148,6 +148,7 @@ export default (
         UndoButton,
         RedoButton,
         buildBrainButton({
+            getBlockers: () => currentMode?.getSendBlockers?.() ?? [],
             getProjectName: () => ProjectNameInput.value,
             getProjectFiles: (projectName) =>
                 currentMode.getProjectFiles(projectName),

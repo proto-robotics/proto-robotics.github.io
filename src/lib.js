@@ -94,6 +94,7 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
  *   setCheatsheet: (open?: boolean) => void,
  *   highlight: (id: string|null) => void,
  *   tracedCode: (marker: string) => string,
+ *   partBox: (blockId: string, name: string) => DOMRect|null,
  *   add: (state: object, clientX?: number, clientY?: number) => void,
  *   destroy: () => void,
  * }>} The mounted editor, once the workspace exists. `add` puts a saved
@@ -150,6 +151,8 @@ export const mountEditor = async (
             devices: devices ?? (!view && usesDevices(set, { toolbox, blocks })),
             issues,
             blockTypes: set.blockTypes,
+            // Send to Brain only for the real robot's blocks (a library that says it runs there)
+            send: set.libraries.some((library) => library.brain),
         },
         { root, onChange, onEscape },
     )
@@ -168,6 +171,7 @@ export const mountEditor = async (
         clear: () => api.setState(null),
         setCheatsheet: api.setCheatsheet,
         highlight: api.highlight,
+        partBox: api.partBox,
         tracedCode: api.getTracedCode,
         add: api.addBlocks,
         destroy: () => {

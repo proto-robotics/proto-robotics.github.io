@@ -7,6 +7,7 @@
  *
  * A library (all optional but `name` and `categories`):
  *   name        what it is called, for messages
+ *   brain       true for a library of the real robot: its editors get Send to Brain
  *   preamble    the program's first line (core: `from make import *`)
  *   categories  [{ name, color, icon, hidden, devices, entries }]: blocks and
  *               cheatsheet examples, made with the kit (kit.js). A category

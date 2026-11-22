@@ -111,9 +111,12 @@ const describeSendError = (error) =>
  * @param {(projectName: string) => {name: string, text: string}[]}
  *     options.getProjectFiles The files to write (EditorMode.getProjectFiles
  *     of the current editor).
+ * @param {() => string[]} [options.getBlockers] What keeps the program off
+ *     the brain now (blocks that cannot run there), in words; it is not
+ *     sent while there are any.
  * @returns {HTMLButtonElement} The button.
  */
-export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
+export const buildBrainButton = ({ getProjectName, getProjectFiles, getBlockers = () => [] }) => {
     /** @type {FileSystemDirectoryHandle|null} The remembered drive. */
     let brainHandle = null
     /** Set where the browser cannot write to a drive. */
@@ -132,6 +135,17 @@ export const buildBrainButton = ({ getProjectName, getProjectFiles }) => {
 
     /** @returns {Promise<boolean>} Whether the program was sent. */
     const send = async () => {
+        // a block that cannot run on the brain: say which, and send nothing
+        const blockers = getBlockers()
+        if (blockers.length) {
+            getRoot().appendChild(
+                PopUp(
+                    tag('h2', 'This program cannot go to the brain yet'),
+                    ...blockers.map((message) => tag('p', message)),
+                ),
+            )
+            return false
+        }
         if (!brainHandle) {
             brainHandle = await connectBrainWithHelp()
             watch.refresh()
