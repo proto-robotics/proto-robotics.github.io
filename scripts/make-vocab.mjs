@@ -274,28 +274,27 @@ if (boardStart < 0) throw new Error(`no board ${boardName}`)
 const boardText = boards.slice(boardStart, boards.indexOf('\n)\n', boardStart))
 const startButton = boardText.match(/start_button_port=['"](\w+)['"]/)?.[1]
 
-// a named port is a built-in button or light when the schema says so
-// ('A': button_port(...)), and otherwise just its name
-const portKinds = boardText.matchAll(
-    /^\s*['"](\w+)['"]\s*:\s*(button_port|light_port|port)\(/gm,
-)
+// a named port with a default constructor ('A': port(...,
+// default_constructor=button)) is that device, built into the board;
+// any other named port is just its name
+const portLines = boardText.matchAll(/^\s*['"](\w+)['"]\s*:\s*port\((.*)\)/gm)
 
-for (const [, port, kind] of portKinds) {
+for (const [, port, args] of portLines) {
+    const device = args.match(/default_constructor=(\w+)/)?.[1] ?? 'str'
     const description = {
-        button_port:
+        button:
             `Button ${port}, built into the board, ready to use: \`${port}.pressed()\`.` +
             (port === startButton ? ' It also starts the program.' : ''),
-        light_port: `Light ${port}, built into the board, ready to use: \`${port}.on()\`.`,
-        port: `The name of port ${port} on the board.`,
-    }[kind]
+        light: `Light ${port}, built into the board, ready to use: \`${port}.on()\`.`,
+        str: `The name of port ${port} on the board.`,
+    }[device]
+    if (!description) throw new Error(`no description for a built-in ${device}`)
     members.push({
         name: port,
         kind: 'instance',
         description,
         parameters: [],
-        resultType: { button_port: 'button', light_port: 'light', port: 'str' }[
-            kind
-        ],
+        resultType: device,
         path: port,
         category: 'Board',
     })
