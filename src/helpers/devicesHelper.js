@@ -14,7 +14,7 @@ import { serialization } from 'blockly'
 /**
  * The kinds of device there are, by name, from every library spliced on
  * the page (src/libraries/engine.js fills it in; each library brings its
- * own, see src/libraries/coreDevices.js). Nothing here knows a kind.
+ * own, see src/libraries/core/devices.js). Nothing here knows a kind.
  * @type {Record<string, import('../libraries/engine').DeviceKind>}
  */
 export const deviceKinds = {}

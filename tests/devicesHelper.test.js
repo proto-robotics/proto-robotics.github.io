@@ -6,8 +6,8 @@ import { describe, expect, test } from 'vitest'
 import * as Blockly from 'blockly'
 
 import { setBlockSet, splice } from '../src/libraries/engine'
-import { core } from '../src/libraries/core'
-import { make } from '../src/libraries/make'
+import { core } from '../src/libraries/core/index'
+import { make } from '../src/libraries/make/index'
 import {
     devicesCode,
     nextPort,

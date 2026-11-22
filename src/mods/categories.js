@@ -2,7 +2,7 @@
  * The toolbox's tabs. Both the ordinary categories and the search category
  * (@blockly/toolbox-search) are drawn as the continuous toolbox draws them,
  * a bubble over a small label, with the category's own icon from
- * assets/images/category-icons where it has one. Registered in mods.js.
+ * its library gives it (the Search tab's is the editor's own). Registered in mods.js.
  */
 
 import { categoryLooks } from '../libraries/engine'
@@ -11,7 +11,7 @@ import { ContinuousCategory } from '@blockly/continuous-toolbox'
 // registers its category under SEARCH_CATEGORY_KIND; it exports nothing
 import '@blockly/toolbox-search'
 
-import { categoryIcon } from '../assets'
+import { searchIcon } from '../assets'
 import { SEARCH_FIELD_KIND, searchFieldOf } from './searchField.js'
 
 /** The kind the search plugin registers its category as. */
@@ -32,7 +32,7 @@ const ToolboxSearchCategory = Blockly.registry.getClass(
 export const createCategoryIcon = (name) => {
     const icon =
         categoryLooks[name]?.icon ??
-        (String(name).toLowerCase() === 'search' ? categoryIcon('search') : null)
+        (String(name).toLowerCase() === 'search' ? searchIcon : null)
     if (!icon) {
         return null
     }

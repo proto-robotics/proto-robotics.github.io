@@ -9,7 +9,7 @@
  * positive first ratio, left for a negative one.
  */
 
-import { mapBlocks } from './kit'
+import { mapBlocks } from '../kit'
 
 /** The blocks that become a Turn block for a motor group that turned. */
 const TURNED_BLOCKS = {

@@ -2,7 +2,7 @@
  * The kit a block library is written with: the parts a block is made of
  * (text, fields, number slots), what blocks commonly write (make calls on a
  * device, the Python inside a loop), and the block() and example() entries.
- * The IDE's own libraries (core.js, make.js) use it, and so can a host's:
+ * The IDE's own libraries (core/, make/) use it, and so can a host's:
  * the library build exports it as `kit`.
  *
  * Every number on a block is a slot holding a hidden number block, one type

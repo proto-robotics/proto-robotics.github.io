@@ -1104,7 +1104,7 @@
         border: 1px solid rgba(0, 0, 0, 0.2) !important;
     }
 
-    /* the categories' own icons (assets/images/category-icons, see
+    /* the categories' own icons (their libraries', src/libraries, see
        createCategoryIcon in categories.js): bubbles with a glyph, so a little
        bigger than the dot and without the dot's border */
     img.categoryIcon {

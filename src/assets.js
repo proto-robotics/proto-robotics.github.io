@@ -43,11 +43,8 @@ export const multiselectOnIcon = asset('images/multiselect-on.svg')
 export const multiselectOffIcon = asset('images/multiselect-off.svg')
 
 /**
- * A category icon in images/category-icons: a coloured bubble with a
- * glyph, drawn in the toolbox column in place of the plain colour dot. A
- * library names its categories' icons with this (src/libraries/core.js);
- * the editor uses it for its own tabs (Search) and the Devices button.
- * @param {string} name The icon's file name, without .svg.
- * @returns {string} Its URL.
+ * The editor's own toolbox pictures: its Search tab and its Devices
+ * button. A library brings its categories' icons itself (src/libraries).
  */
-export const categoryIcon = (name) => asset(`images/category-icons/${name}.svg`)
+export const searchIcon = asset('images/category-icons/search.svg')
+export const devicesIcon = asset('images/category-icons/devices.svg')

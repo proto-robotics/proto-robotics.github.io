@@ -1,8 +1,8 @@
 /*
  * The make blocks: the real robot's own, which a sandbox has no part for.
- * The board's lights now; later its sensors and servos.
+ * The board's lights now; later its sensors and servos. Its Board
+ * category joins core's, which brings the icon.
  */
-import { categoryIcon } from '../assets'
 import {
     gridDropdown,
     text,
@@ -12,7 +12,7 @@ import {
     lights,
     boardPart,
     block,
-} from './kit'
+} from '../kit'
 
 /** @type {import('./engine').Library} */
 export const make = {
@@ -23,7 +23,6 @@ export const make = {
         {
             name: 'Board',
             color: '#6395CF',
-            icon: categoryIcon('board'),
             entries: [
                 block(
                     'lightSet',

@@ -9,12 +9,20 @@
  * Besides the blocks, this library holds the program's first line, the
  * devices (drive motors, drivetrains, variables) the Devices pop-up sets
  * up, the names make already uses, the linter's rules for its blocks and
- * how blocks and devices of older programs load.
+ * how blocks and devices of older programs load. Its pictures (the
+ * category icons, the device cartoons) are in images/ beside it, so the
+ * library is whole on its own.
  */
-import { categoryIcon } from '../assets'
-import makeVocab from '../data/pythonLibraryVocab.json'
-import { DEVICE_KINDS } from './coreDevices'
-import { turnMotorGroups } from './coreMigrations'
+import boardIcon from './images/board.svg'
+import drivetrainIcon from './images/drivetrain.svg'
+import flowIcon from './images/flow.svg'
+import motorIcon from './images/motor.svg'
+import operatorsIcon from './images/operators.svg'
+import timeIcon from './images/time.svg'
+import variablesIcon from './images/variables.svg'
+import makeVocab from '../../data/pythonLibraryVocab.json'
+import { DEVICE_KINDS } from './devices'
+import { turnMotorGroups } from './migrations'
 import {
     gridDropdown,
     text,
@@ -47,9 +55,9 @@ import {
     ROBOT,
     Order,
     fields,
-} from './kit'
+} from '../kit'
 import { FieldNumber } from 'blockly'
-import { deviceField } from '../mods/deviceField'
+import { deviceField } from '../../mods/deviceField'
 
 /** @type {import('./engine').Library} */
 export const core = {
@@ -61,7 +69,7 @@ export const core = {
         name: 'Motor',
         /** The device kinds its blocks use: the editor gets Devices when it offers them. */
         devices: ['drive_motor'],
-        icon: categoryIcon('motor'),
+        icon: motorIcon,
         color: '#F2737B',
         entries: [
             block(
@@ -226,7 +234,7 @@ export const core = {
         name: 'Drivetrain',
         /** The device kinds its blocks use: the editor gets Devices when it offers them. */
         devices: ['drivetrain', 'drive_motor'],
-        icon: categoryIcon('drivetrain'),
+        icon: drivetrainIcon,
         color: '#00B8AA',
         entries: [
             block(
@@ -444,7 +452,7 @@ export const core = {
     },
     {
         name: 'Board',
-        icon: categoryIcon('board'),
+        icon: boardIcon,
         color: '#6395CF',
         entries: [
             block(
@@ -524,7 +532,7 @@ export const core = {
     },
     {
         name: 'Time',
-        icon: categoryIcon('time'),
+        icon: timeIcon,
         color: '#9970B1',
         entries: [
             block(
@@ -581,7 +589,7 @@ export const core = {
     },
     {
         name: 'Flow',
-        icon: categoryIcon('flow'),
+        icon: flowIcon,
         color: '#F8BF41',
         entries: [
             block(
@@ -715,7 +723,7 @@ export const core = {
     },
     {
         name: 'Operators',
-        icon: categoryIcon('operators'),
+        icon: operatorsIcon,
         color: '#59B03C',
         entries: [
             block(
@@ -827,7 +835,7 @@ export const core = {
         name: 'Variables',
         /** The device kinds its blocks use: the editor gets Devices when it offers them. */
         devices: ['variable'],
-        icon: categoryIcon('variables'),
+        icon: variablesIcon,
         color: '#FE8A18',
         entries: [
             block(

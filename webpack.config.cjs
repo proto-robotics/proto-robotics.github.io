@@ -33,6 +33,15 @@ const fontRule = {
     },
 }
 
+/** A picture a module imports (a block library's icons): copied out, its URL imported. */
+const imageRule = {
+    test: /\.(svg|png)$/i,
+    type: 'asset/resource',
+    generator: {
+        filename: 'assets/images/[name].[contenthash][ext]',
+    },
+}
+
 const copyImages = { from: 'assets/images', to: 'assets/images' }
 // Blockly's sounds and sprites, so nothing is fetched from blockly-demo.appspot.com
 const copyBlocklyMedia = { from: 'node_modules/blockly/media', to: 'media' }
@@ -72,6 +81,7 @@ const site = {
                 use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },
             fontRule,
+            imageRule,
         ],
     },
     plugins: [
@@ -203,6 +213,7 @@ const lib = {
                 ],
             },
             fontRule,
+            imageRule,
         ],
     },
     plugins: [

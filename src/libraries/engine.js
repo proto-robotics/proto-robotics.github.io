@@ -1,7 +1,7 @@
 /*
  * The block engine. The editor has no blocks of its own: everything about
  * blocks comes from libraries, spliced together into one block set per
- * editor. The IDE's page uses [core, make] (core.js, make.js); a host site
+ * editor. The IDE's page uses [core, make] (core/, make/); a host site
  * passes its own list through the library build (src/lib.js), such as
  * core plus a sandbox world's library.
  *
@@ -112,9 +112,8 @@ const register = (library) => {
         addVocab(library.vocab)
     }
     for (const category of library.categories) {
-        if (!categoryLooks[category.name]) {
-            categoryLooks[category.name] = { color: category.color, icon: category.icon }
-        }
+        const look = (categoryLooks[category.name] ??= { color: category.color, icon: category.icon })
+        look.icon ??= category.icon
         for (const entry of category.entries) {
             if (entry.entryType === 'example') {
                 entry.workspace.blocks.blocks = entry.workspace.blocks.blocks.map(numbersToSlots)

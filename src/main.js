@@ -1,7 +1,7 @@
 import '../styles.css'
 
-import { core } from './libraries/core'
-import { make } from './libraries/make'
+import { core } from './libraries/core/index'
+import { make } from './libraries/make/index'
 import { setBlockSet, splice, toolboxOf, usesDevices } from './libraries/engine'
 import BuildPageContent from './builders/BuildPageContent'
 import BuildCheatSheet from './builders/BuildCheatSheet'

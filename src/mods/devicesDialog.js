@@ -10,7 +10,7 @@
 
 import { button, div, on, p, tag } from 'ellipsi'
 
-import { categoryIcon } from '../assets'
+import { devicesIcon } from '../assets'
 import { blockSet } from '../libraries/engine'
 import { openCheatSheetDrawerEvent } from '../helpers/cheatSheetDrawerHelper'
 import {
@@ -305,7 +305,12 @@ export const devicesButton = (getWorkspace) => {
         kinds: offeredKinds(),
         intro: 'Devices and variables are set up at the top of your program, so your blocks can use them by name. A variable is a number your program remembers; it starts at its value, and Set and Change blocks change it.',
         className: 'devices-button',
-        icons: [categoryIcon('devices'), categoryIcon('variables')],
+        // the editor's devices picture, and the picture of the libraries'
+        // variables when they have them
+        icons: [
+            devicesIcon,
+            Object.values(blockSet().deviceKinds).find((kind) => kind.group === 'variables')?.picture,
+        ],
     })
     const Button = list.element
 

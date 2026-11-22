@@ -10,9 +10,11 @@
 
 import { button, div, on, tag } from 'ellipsi'
 
-import { asset, categoryIcon } from '../assets'
-import { cleanName, nextName, nextPort } from '../helpers/devicesHelper'
-import { numberBox, select } from './deviceCardParts'
+import { cleanName, nextName, nextPort } from '../../helpers/devicesHelper'
+import { numberBox, select } from '../deviceCardParts'
+import driveMotorPicture from './images/drive-motor.png'
+import drivetrainPicture from './images/drivetrain.png'
+import variablesIcon from './images/variables.svg'
 
 /** The drive ports, for DC motors with encoders. */
 const DRIVE_PORTS = ['0', '1', '2', '3']
@@ -103,7 +105,7 @@ export const DEVICE_KINDS = {
         help: 'motorSpin',
         base: 'motor',
         preview: 'arm',
-        picture: asset('images/devices/drive-motor-cartoon.png'),
+        picture: driveMotorPicture,
         ports: DRIVE_PORTS,
         directions: DIRECTIONS,
         code: ({ name, port, direction }) =>
@@ -147,7 +149,7 @@ export const DEVICE_KINDS = {
         help: 'driveFor',
         base: 'robot',
         preview: 'robot',
-        picture: asset('images/devices/drivetrain-cartoon.png'),
+        picture: drivetrainPicture,
         /** Made from drive motors, so it is set up after them. */
         order: 1,
         /**
@@ -193,7 +195,7 @@ export const DEVICE_KINDS = {
         group: 'variables',
         help: 'varSet',
         base: 'count',
-        picture: categoryIcon('variables'),
+        picture: variablesIcon,
         /** Set after the devices, last at the top of the program. */
         order: 2,
         code: ({ name, value }) => `${name} = ${value}`,
