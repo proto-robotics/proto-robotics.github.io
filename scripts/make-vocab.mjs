@@ -44,7 +44,6 @@ const RESULT_TYPES = {
     'drive_motor.get_encoder': 'encoder',
     // a for loop over a countdown gives the seconds left
     'countdown.__iter__': 'Iterator[float]',
-    'countdown.__bool__': 'bool',
 }
 
 /**
@@ -56,9 +55,9 @@ const PARAMETER_TYPES = {
     'light.port': 'int | str',
 }
 
-/** Methods that start with _ yet are part of how a class is used: a
- * countdown is true while time is left, and a for loop can go over it. */
-const PROTOCOL_METHODS = new Set(['__iter__', '__bool__'])
+/** Methods that start with _ yet are part of how a class is used: a for
+ * loop can go over a countdown. */
+const PROTOCOL_METHODS = new Set(['__iter__'])
 
 /** Constructor parameters a learner never passes. */
 const HIDDEN_PARAMETERS = new Set(['self', 'schema'])

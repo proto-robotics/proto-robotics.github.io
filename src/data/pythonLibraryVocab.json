@@ -58,7 +58,7 @@
       {
         "name": "countdown",
         "kind": "constructor",
-        "description": "A timer that counts down from the given number of seconds, starting\nwhen it is made.  It is true while there is time left, so\n\n    timer = countdown(2)\n    while timer:\n        robot.drive(50)\n\nrepeats for two seconds, and a `for` loop over one gives the seconds\nleft each time round:\n\n    for time_left in countdown(2):\n        print(time_left)\n\nEach countdown keeps its own time, so several can run at once.",
+        "description": "A timer that counts down from the given number of seconds, starting\nwhen it is made.  `has_seconds_left()` is true while there is time\nleft, so\n\n    timer = countdown(2)\n    while timer.has_seconds_left():\n        robot.drive(50)\n\nrepeats for two seconds.  `get_seconds_left()` says how long is left,\nand a `for` loop over one gives the seconds left each time round:\n\n    for time_left in countdown(2):\n        print(time_left)\n\nEach countdown keeps its own time, so several can run at once.",
         "parameters": [
           {
             "name": "seconds",
@@ -209,10 +209,16 @@
     "methodsByType": {
       "countdown": [
         {
-          "name": "__bool__",
-          "description": "",
+          "name": "has_seconds_left",
+          "description": "Returns true while there is time left.",
           "parameters": [],
           "resultType": "bool"
+        },
+        {
+          "name": "get_seconds_left",
+          "description": "Returns the seconds left, never below 0.",
+          "parameters": [],
+          "resultType": "float"
         },
         {
           "name": "__iter__",
