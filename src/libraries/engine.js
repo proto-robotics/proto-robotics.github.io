@@ -306,7 +306,7 @@ export const splice = (libraries) => {
             examples: category.entries.filter((entry) => entry.entryType === 'example'),
         }))
 
-    return {
+    const set = {
         libraries,
         categories,
         blockTypes,
@@ -317,6 +317,8 @@ export const splice = (libraries) => {
         takenNames: new Set(libraries.flatMap((library) => library.takenNames ?? [])),
         hiddenCategoryNames: categories.filter((category) => category.hidden).map((category) => category.name),
     }
+    latest = set
+    return set
 }
 
 /**
@@ -361,6 +363,8 @@ export const usesDevices = (set, { toolbox, blocks }) => {
 // ---- the editor's block set --------------------------------------------------
 
 let active = null
+/** The last block set spliced: what a page with only read-only views works from. */
+let latest = null
 
 /**
  * The block set of the full editor on the page (there is one), for the
@@ -371,8 +375,11 @@ export const setBlockSet = (set) => {
     active = set
 }
 
-/** @returns {BlockSet} The full editor's block set. */
+/** @returns {BlockSet} The full editor's block set, or, on a page with only read-only views, the last one spliced. */
 export const blockSet = () => {
+    if (!active && latest) {
+        return latest
+    }
     if (!active) {
         throw new Error('No block set yet: splice the libraries and setBlockSet() before building an editor.')
     }
