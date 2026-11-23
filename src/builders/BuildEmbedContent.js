@@ -194,14 +194,16 @@ export const createEmbedEditor = async (
     const Toolbar = tag(
         'tool-bar',
         ProjectNameInput,
-        // only a program for the real robot goes to the brain
-        send &&
-            buildBrainButton({
-                getProjectName: () => ProjectNameInput.value,
-                getProjectFiles: (projectName) =>
-                    editor.getProjectFiles(projectName),
-                getBlockers: () => editor.getSendBlockers?.() ?? [],
-            }),
+        // only a program for the real robot goes to the brain; null, not
+        // false, since ellipsi skips null but writes false out as text
+        send
+            ? buildBrainButton({
+                  getProjectName: () => ProjectNameInput.value,
+                  getProjectFiles: (projectName) =>
+                      editor.getProjectFiles(projectName),
+                  getBlockers: () => editor.getSendBlockers?.() ?? [],
+              })
+            : null,
         button(
             'Export',
             on('click', async () => {
