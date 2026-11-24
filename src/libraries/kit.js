@@ -42,6 +42,15 @@ export const ways = () =>
         ['forward', 'forward'],
         ['backward', 'backward'],
     ])
+/**
+ * forward or backward for one wheel of a Curve, starting on `start`.
+ * @param {'forward'|'backward'} start
+ */
+export const wheelWays = (start) => () => {
+    const dropdown = ways()
+    dropdown.setValue(start)
+    return dropdown
+}
 /** right or left, for Turn: make's turn has the left wheels go forward. */
 export const turns = () =>
     gridDropdown([
@@ -134,6 +143,24 @@ export const stepCall = (block, verb) => {
 /** Curve's two powers, left then right, as make's curve takes them. */
 export const curvePowers = (block) =>
     `left_power=${val(block, 'left')}, right_power=${val(block, 'right')}`
+
+/**
+ * One wheel's power for make's curve: the slot's number, made negative when
+ * that wheel's dropdown says backward, so a learner never types a minus.
+ * @param {object} block
+ * @param {string} wayField The wheel's forward/backward field.
+ * @param {string} slotName The wheel's power slot.
+ * @returns {string} Python: 50, -50 or -(x).
+ */
+export const signedPower = (block, wayField, slotName) => {
+    const power = val(block, slotName)
+    if (block.getFieldValue(wayField) !== 'backward' || power === '0') return power
+    return /^\d+(\.\d+)?$/.test(power) ? `-${power}` : `-(${power})`
+}
+
+/** Curve, with a direction for each wheel: one make curve call. */
+export const curveForCall = (block) =>
+    `${deviceOf(block)}.curve(left_power=${signedPower(block, 'leftWay', 'left')}, right_power=${signedPower(block, 'rightWay', 'right')}, seconds=${val(block, 'time')})\n`
 
 export const stopCall = (block) =>
     `${deviceOf(block)}.${block.getFieldValue('mode') === 'coast' ? 'stop' : 'brake'}()\n`

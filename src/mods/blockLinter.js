@@ -257,6 +257,19 @@ const blockRules = [
                 ),
             )
         }
+        // a Curve wheel below 0 power: its own dropdown turns it around
+        for (const side of ['left', 'right']) {
+            const n = numberField(block, side)
+            const way = block.getField(`${side}Way`) && block.getFieldValue(`${side}Way`)
+            if (n !== null && n < 0 && way) {
+                const other = way === 'forward' ? 'backward' : 'forward'
+                problems.push(
+                    warning(
+                        `Less than 0 power turns the ${side} wheel around, so it goes ${other}. Pick ${other} for it and use power above 0.`,
+                    ),
+                )
+            }
+        }
         return problems
     },
 

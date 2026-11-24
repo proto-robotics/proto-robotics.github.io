@@ -201,26 +201,26 @@ describe('Drivetrain', () => {
     })
 
     test.each([
-        ['forward', 'robot.curve(left_power=50, right_power=20, seconds=2)'],
-        [
-            'backward',
-            'robot.curve_back(left_power=50, right_power=20, seconds=2)',
-        ],
-    ])('Curve %s for 2 seconds', (way, code) => {
+        ['forward', 'forward', 'left_power=50, right_power=40'],
+        ['forward', 'backward', 'left_power=50, right_power=-40'],
+        ['backward', 'forward', 'left_power=-50, right_power=40'],
+        ['backward', 'backward', 'left_power=-50, right_power=-40'],
+    ])('Curve left %s right %s for 2 seconds', (leftWay, rightWay, powers) => {
         expect(
             python(
                 [
                     block('curveFor', {
                         name: 'robot',
-                        way,
+                        leftWay,
+                        rightWay,
                         left: 50,
-                        right: 20,
+                        right: 40,
                         time: 2,
                     }),
                 ],
                 robot(),
             ),
-        ).toBe(code)
+        ).toBe(`robot.curve(${powers}, seconds=2)`)
     })
 
     test.each([

@@ -24,7 +24,7 @@ import timeIcon from './images/time.svg'
 import variablesIcon from './images/variables.svg'
 import makeVocab from '../../data/pythonLibraryVocab.json'
 import { DEVICE_KINDS } from './devices'
-import { turnMotorGroups } from './migrations'
+import { curveWheelWays, turnMotorGroups } from './migrations'
 import {
     gridDropdown,
     text,
@@ -42,6 +42,8 @@ import {
     timedCall,
     stepCall,
     curvePowers,
+    curveForCall,
+    wheelWays,
     stopCall,
     inside,
     condition,
@@ -300,23 +302,23 @@ export const make = {
             ),
             block(
                 'curveFor',
-                'Drives a drivetrain in a curve for some seconds, its left and right wheels at their own powers, then stops it. The robot curves toward the slower side.',
+                'Drives a drivetrain for some seconds, each wheel forward or backward at its own power, then stops it. The robot curves toward the slower wheel; one wheel backward turns it sharply.',
                 [
                     text('Curve'),
                     field('name', deviceField('drivetrain')),
-                    field('way', ways),
-                    text('left at'),
+                    text('left'),
+                    field('leftWay', wheelWays('forward')),
+                    text('at'),
                     num('left', 50),
-                    text('right at'),
+                    text('right'),
+                    field('rightWay', wheelWays('forward')),
+                    text('at'),
                     num('right', 25),
                     text('power for'),
                     num('time', 1),
                     text('seconds'),
                 ],
-                (b) => {
-                    const method = isBack(b) ? 'curve_back' : 'curve'
-                    return `${deviceOf(b)}.${method}(${curvePowers(b)}, seconds=${val(b, 'time')})\n`
-                },
+                curveForCall,
             ),
             block(
                 'curveStep',
@@ -1009,7 +1011,8 @@ export const make = {
         /** make called a drivetrain a motor group for a while (motor_group(motors, ratios)). */
         devices: { motor_group: 'drivetrain' },
         /** A motor group that turned the robot: its Spin blocks become Turn blocks. */
-        migrate: turnMotorGroups,
+        /** Then a Curve with one way for both wheels gets that way on each. */
+        migrate: (state) => curveWheelWays(turnMotorGroups(state)),
     },
     lint: {
         zeroTime: {

@@ -299,7 +299,7 @@ describe('times and degrees', () => {
         ['motorHold', { name: 'arm' }, 'Holding for 0 seconds does nothing'],
         [
             'curveFor',
-            { name: 'robot', way: 'forward', left: 50, right: 20 },
+            { name: 'robot', leftWay: 'forward', rightWay: 'forward', left: 50, right: 20 },
             'For 0 seconds is no time at all',
         ],
     ])('%s for 0 seconds', (type, fields, start) => {
@@ -315,7 +315,8 @@ describe('times and degrees', () => {
                 [
                     block('curveFor', {
                         name: 'robot',
-                        way: 'forward',
+                        leftWay: 'forward',
+                        rightWay: 'forward',
                         left: 0,
                         right: 0,
                         time: 1,

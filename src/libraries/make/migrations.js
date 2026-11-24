@@ -7,6 +7,9 @@
  * Drive blocks. A motor group whose ratios turned the robot (1, -1, 1...)
  * was used to turn, so its Spin blocks become Turn blocks, right for a
  * positive first ratio, left for a negative one.
+ *
+ * The timed Curve had one forward/backward for both wheels (`way`); now
+ * each wheel has its own (`leftWay`, `rightWay`), and both take the old one.
  */
 
 import { mapBlocks } from '../kit'
@@ -62,3 +65,17 @@ export const turnMotorGroups = (state) => {
         }
     })
 }
+
+/**
+ * Timed Curve blocks saved with one way for both wheels, with that way on each.
+ * @param {object} state A saved program.
+ * @returns {object}
+ */
+export const curveWheelWays = (state) =>
+    mapBlocks(state, (blockState) => {
+        if (blockState.type !== 'curveFor' || !blockState.fields?.way || blockState.fields.leftWay) {
+            return blockState
+        }
+        const { way, ...fields } = blockState.fields
+        return { ...blockState, fields: { ...fields, leftWay: way, rightWay: way } }
+    })

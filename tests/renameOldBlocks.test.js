@@ -95,6 +95,36 @@ describe('renameOldBlocks', () => {
         expect(renameOldBlocks(state).blocks.blocks[0].type).toBe('driveFor')
     })
 
+    test('a Curve saved with one way gets it on each wheel, inside loops too', () => {
+        const curve = (fields) => ({ type: 'curveFor', fields: { name: 'robot', ...fields } })
+        const state = {
+            devices: [],
+            blocks: {
+                languageVersion: 0,
+                blocks: [
+                    {
+                        ...curve({ way: 'backward' }),
+                        next: {
+                            block: {
+                                type: 'repeatFor',
+                                inputs: { input: { block: curve({ way: 'forward' }) } },
+                            },
+                        },
+                    },
+                    curve({ leftWay: 'forward', rightWay: 'backward' }),
+                ],
+            },
+        }
+        const [first, already] = renameOldBlocks(state).blocks.blocks
+        expect(first.fields).toEqual({ name: 'robot', leftWay: 'backward', rightWay: 'backward' })
+        expect(first.next.block.inputs.input.block.fields).toEqual({
+            name: 'robot',
+            leftWay: 'forward',
+            rightWay: 'forward',
+        })
+        expect(already.fields).toEqual({ name: 'robot', leftWay: 'forward', rightWay: 'backward' })
+    })
+
     test('leaves a state with no blocks alone', () => {
         expect(renameOldBlocks(null)).toBe(null)
         expect(renameOldBlocks({ devices: [] })).toEqual({ devices: [] })
