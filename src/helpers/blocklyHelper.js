@@ -47,7 +47,8 @@ class TouchSafeZoomToFitControl extends ZoomToFitControl {
 /**
  * The plugin classes for an editable workspace (registered in mods.js):
  * the continuous toolbox, whose flyout stays open and scrolls through every
- * category, and scroll options, which make the wheel scroll the canvas
+ * category (a second tap on the open tab folds it, ProtoToolbox in
+ * src/mods/toolbox.js), and scroll options, which make the wheel scroll the canvas
  * (also mid-drag) and scroll it along when a block is dragged to an edge,
  * except over the trash and clipboard (ProtoBlockDragger in mods.js).
  * The cheatsheet previews have no toolbox and get none of this.
@@ -55,7 +56,7 @@ class TouchSafeZoomToFitControl extends ZoomToFitControl {
 const editorPlugins = {
     flyoutsVerticalToolbox: 'ProtoColumnFlyout',
     metricsManager: 'ProtoMetrics',
-    toolbox: 'ContinuousToolbox',
+    toolbox: 'ProtoToolbox',
     blockDragger: 'ProtoBlockDragger',
 }
 

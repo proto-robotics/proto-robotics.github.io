@@ -24,6 +24,7 @@ import { ContinuousColumnFlyout, ContinuousRowFlyout } from './flyouts.js'
 import { ProtoRenderer } from './proto_renderer/proto_renderer.js'
 import { SEARCH_FIELD_KIND, SearchFieldInflater } from './searchField.js'
 import { registerStepBlocks } from './stepBlocks.js'
+import { ProtoToolbox } from './toolbox.js'
 
 export { SEARCH_CATEGORY_KIND } from './categories.js'
 
@@ -193,6 +194,12 @@ export function injectMods() {
     // The always-open toolbox: every category's blocks in one scrolling
     // flyout (see editorPlugins in blocklyHelper.js).
     registerContinuousToolbox()
+    // the same toolbox, folding on a second tap of the open tab (toolbox.js)
+    Blockly.registry.register(
+        Blockly.registry.Type.TOOLBOX,
+        'ProtoToolbox',
+        ProtoToolbox,
+    )
     // after the plugin, which registers its own category class
     Blockly.registry.register(
         Blockly.registry.Type.TOOLBOX_ITEM,
